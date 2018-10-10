@@ -1,0 +1,108 @@
+---
+name: Routing Information Protocol Version 2
+group: Networks
+version: 1.0
+description: |
+     Routing Information Protocol Version 2 (RIPv2)
+
+hosts: all
+  
+
+addTitle: 'NEW NETWORK'
+editTitle: '{{ name }}'
+name: 'ripv2'
+title: 'RIPv2'
+basePath: 'ipam_networks'
+stateTree: 'infraNetworksList'
+breadcrumbName: 'INFRA NETWORK'
+showActions: true
+launchclick: 'addNew("ripv2")'
+wizards: 
+    basic: 
+      index: 1
+      name: 'Variable'
+      type: 'collection'
+      title: 'Variable'
+    
+    relation: 
+      index: 2
+      name: 'Relation'
+      type: 'collection'
+      title: 'Relation'
+    opts:
+      index: 3
+      name: 'Option'
+      type: 'collection'
+      title: 'Option'
+
+fields:
+  name: 
+      label: 'Name'
+      type: 'text'
+      ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+      required: true
+      ngShow: 'tabId == 1'
+
+  description: 
+    label: 'Description'
+    type: 'text'
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 1'
+
+  token:
+    label: 'Token'
+    type: 'text'
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 1'
+
+  datacenter: 
+    label: 'Datacenter'
+    type: 'select'
+    defaultText: 'Choose a Datacenter'
+    ngModel: 'datacenter'
+    ngOptions: 'item as item.label for item in datacenter_type_options'
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 2'
+  
+  credential: 
+    label: 'Credential'
+    type: 'select'
+    defaultText: 'Choose a Credential'
+    ngModel: 'credential'
+    ngOptions: 'item as item.label for item in credential_type_options'
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 2'
+      
+  opts: 
+    label: 'Input Opts'
+    class: 'Form-textAreaLabel Form-formGroup--fullWidth'
+    type: 'textarea'
+    rows: 15
+    default: '---'
+    showParseTypeToggle: true
+    parseTypeName: 'parseTypeOpts'
+    awPopOverWatch: "opts_help_text"
+    dataTitle: i18n._('Input Opts')
+    dataPlacement: 'right'
+    dataContainer: "body"
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 3'
+
+buttons: 
+  wizardcancel:
+    ngClick: 'formCancel()'
+    ngShow: 'tabId == 1'
+
+  previous:
+    ngClick: 'WizardClick(1)'
+    ngShow: 'tabId > 1'
+
+  next:
+    ngClick: 'WizardClick(2)'
+    ngShow: 'tabId < 3'
+
+  save:
+    title: 'Finish'
+    ngClick: 'formSave()'
+    ngShow: 'tabId == 3'
+    ngDisabled: true
