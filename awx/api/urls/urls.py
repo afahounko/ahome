@@ -70,6 +70,9 @@ from .instance_group import urls as instance_group_urls
 from .oauth2 import urls as oauth2_urls
 from .oauth2_root import urls as oauth2_root_urls
 
+#ipam
+from awx.ipam.views import *
+from awx.ipam.routers import ipam_router
 
 v1_urls = [
     url(r'^$', ApiV1RootView.as_view(), name='api_v1_root_view'),
@@ -131,6 +134,7 @@ v2_urls = [
     url(r'^applications/(?P<pk>[0-9]+)/tokens/$', ApplicationOAuth2TokenList.as_view(), name='application_o_auth2_token_list'),
     url(r'^tokens/$', OAuth2TokenList.as_view(), name='o_auth2_token_list'),
     url(r'^', include(oauth2_urls)),
+    url(r'^', include(ipam_router.urls)),
 ]
 
 app_name = 'api'
