@@ -42,6 +42,33 @@ import atLibComponents from '~components';
 import atLibModels from '~models';
 import atLibServices from '~services';
 
+import ipamPrefixes from './ipam-prefixes/main';
+import ipamRirs from './ipam-rirs/main';
+import ipamVrfs from './ipam-vrfs/main';
+import ipamAggregates from './ipam-aggregates/main';
+import ipamSubnets from './ipam-subnets/main';
+import ipamIpAddresses from './ipam-ip-addresses/main';
+import ipamVlans from './ipam-vlans/main';
+import ipamDatacenters from './ipam-datacenters/main';
+
+
+import infraProviders from './infra-providers/main';
+import infraStorages from './infra-storages/main';
+import infraNetworks from './infra-networks/main';
+import infraServices from './infra-services/main';
+import infraApps from './infra-apps/main';
+import infraPki from './infra-pki/main';
+import infraMonitorings from './infra-monitorings/main';
+import infraBackups from './infra-backups/main';
+import infraSecurity from './infra-security/main';
+import infraDocumentations from './infra-documentations/main';
+import infraJobs from './infra-jobs/main';
+import resourceNetworkGears from './resource-network-gears/main';
+import resourceRegistries from './resource-registries/main';
+import resourcePhysicalHosts from './resource-physical-hosts/main';
+import resourceVirtualHosts from './resource-virtual-hosts/main';
+
+
 start.bootstrap(() => {
     angular.bootstrap(document.body, ['awApp']);
 });
@@ -75,6 +102,31 @@ angular
         credentialTypes.name,
         organizations.name,
         managementJobs.name,
+
+    	ipamPrefixes.name,
+        ipamRirs.name,
+        ipamVrfs.name,
+        ipamAggregates.name,
+        ipamSubnets.name,
+        ipamIpAddresses.name,
+        ipamVlans.name,
+        ipamDatacenters.name,
+        infraProviders.name,
+        infraStorages.name,
+        infraNetworks.name,
+        infraServices.name,
+        infraApps.name,
+        infraPki.name,
+        infraMonitorings.name,
+        infraBackups.name,
+        infraSecurity.name,
+        infraDocumentations.name,
+        infraJobs.name,
+        resourceNetworkGears.name,
+        resourceRegistries.name,
+        resourcePhysicalHosts.name,
+        resourceVirtualHosts.name,
+
         breadCrumb.name,
         home.name,
         login.name,
