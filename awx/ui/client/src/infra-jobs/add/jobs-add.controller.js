@@ -226,28 +226,122 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
         };
         // Save
         $scope.formSave = function() {
-            var fld, data = {};
+        	
+			var fld, base, data = {}, data_project = {}, data_job = {};
             Rest.setUrl(defaultUrl);
             var data = processNewData(form.fields);
+            console.log($scope);
+            console.log($scope.name);
+            
             console.log(data);
             Wait('start');
             Rest.post(data)
                 .then(({data}) => {
-                    var base = $location.path().replace(/^\//, '').split('/')[0];
+                    base = $location.path().replace(/^\//, '').split('/')[0];
                     console.log(base);
-                    if (base === 'ipam_infrastructure_jobs') {
+                    /*if (base === 'ipam_infrastructure_jobs') {
                         $rootScope.flashMessage = i18n._('New Job successfully created!');
                         $rootScope.$broadcast("EditIndicatorChange", "Job", data.id);
                         
                         $state.go('infraJobsList', null, { reload: true});
                     } else {
                         ReturnToCaller(1);
-                    }
-                    console.log('succeed');
+                    }*/ 
+                    console.log('InfraJob Post succeed');
                 })
                 .catch(({data, status}) => {
                     ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to add new Job. POST returned status: ') + status });
                 });
+                
+            //Project Saving
+    		data_project.name = $scope.name;
+    		data_project.description = "";
+    		data_project.scm_type = "git";
+    		data_project.scm_url = "https://github.com/dfederlein/ansible-demos.git";
+    		data_project.scm_branch = "";
+    		data_project.scm_clean = true;
+    		data_project.scm_delete_on_update = true;
+    		data_project.credential = null;
+    		data_project.timeout = 0;
+    		data_project.organization = 1;
+    		data_project.scm_update_on_launch = true;
+    		data_project.scm_update_cache_timeout = 0;
+
+			console.log(data_project);
+
+            //defaultprojectUrl = GetBasePath('projects');
+			//url = (base === 'teams') ? GetBasePath('teams') + $stateParams.team_id + '/projects/' : defaultprojectUrl;
+			//console.log(url);
+            Rest.setUrl(GetBasePath('projects'));
+            Rest.post(data_project)
+                .then(({data_project}) => {
+                    //$scope.addedItem = data_project.id;
+                    //$state.go('projects.edit', { project_id: data_project.id }, { reload: true });
+					console.log('Project Post succeed');
+                })
+                .catch(({data_project, status}) => {
+                });
+              
+			//Job Saving
+    		data_job.name = $scope.name;
+			data_job.description = "";
+			data_job.job_type = "run";
+			data_job.inventory = 1;
+			data_job.project = 4;
+			data_job.playbook = "site.yml";
+			data_job.credential = 1;
+			data_job.vault_credential = null;
+			data_job.forks = 0;
+			data_job.limit = "";
+			data_job.verbosity = 0;
+			data_job.extra_vars = "webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3";
+			data_job.job_tags = "";
+			data_job.force_handlers = false;
+			data_job.skip_tags = "";
+			data_job.start_at_task = "";
+			data_job.timeout = 0;
+			data_job.use_fact_cache = false;
+			data_job.host_config_key = "";
+			data_job.ask_diff_mode_on_launch = false;
+			data_job.ask_variables_on_launch = false;
+			data_job.ask_limit_on_launch = false;
+			data_job.ask_tags_on_launch = false;
+			data_job.ask_skip_tags_on_launch = false;
+			data_job.ask_job_type_on_launch = false;
+			data_job.ask_verbosity_on_launch = false;
+			data_job.ask_inventory_on_launch = false;
+			data_job.ask_credential_on_launch = false;
+			data_job.survey_enabled = false;
+			data_job.become_enabled = true;
+			data_job.diff_mode = true;
+			data_job.allow_simultaneous = false;
+			data_job.cloud_credential = null;
+			data_job.network_credential = null;
+
+			console.log(data_job);
+
+            //defaultprojectUrl = GetBasePath('projects');
+			//url = (base === 'teams') ? GetBasePath('teams') + $stateParams.team_id + '/projects/' : defaultprojectUrl;
+			//console.log(url);
+            Rest.setUrl(GetBasePath('job_templates'));
+            Rest.post(data_job)
+                .then(({data_job}) => {
+                	console.log('Job Template Post succeed');
+                    if (base === 'ipam_infrastructure_jobs') {
+                        $rootScope.flashMessage = i18n._('New Job successfully created!');
+                        $rootScope.$broadcast("EditIndicatorChange", "Job", data.id);
+
+                        $state.go('infraJobsList', null, { reload: true});
+                    } else {
+                        ReturnToCaller(1);
+                    }
+                })
+                .catch(({data_job, status}) => {
+                    Wait('stop');
+                    ProcessErrors($scope, data_job, status, form, { hdr: i18n._('Error!'),
+                        msg: i18n._('Failed to create new project. POST returned status: ') + status });
+                });
+               
         };
 
         $scope.formCancel = function() {
