@@ -142,8 +142,9 @@ def infrastructure_api_job_source():
 			data[_directory][_subdirectory]['related'] = OrderedDict()
 			for _subfile in _subfiles:
 				voutput = from_yml_get_related( "%s/%s/%s/%s"  % ( DIR_INFRASTRUCTURES, _directory, _subdirectory, _subfile ) )
-				data[_directory][_subdirectory]['results'].append(voutput['id'])
+#				data[_directory][_subdirectory]['results'].append(voutput['id'])
 				if voutput['id'] != 'form':
+				        data[_directory][_subdirectory]['results'].append(voutput['id'])
 					data[_directory][_subdirectory]['boxes'][voutput['id']] = OrderedDict()
 					data[_directory][_subdirectory]['boxes'][voutput['id']] = voutput
 					data[_directory][_subdirectory]['boxes'][voutput['id']]['boxid'] = _directory
@@ -156,9 +157,11 @@ def from_yml_get_related(src_path):
 
 
     data_loaded = {}
-    data = yaml.load(open(src_path), Loader=yamlordereddictloader.Loader)
-    data_loaded.update(data)
-    data_loaded['id'] = wizard_slugify(data['name'])
+    data = {}
+    if os.path.isfile(src_path):
+      data = yaml.load(open(src_path), Loader=yamlordereddictloader.Loader)
+      data_loaded.update(data)
+    data_loaded['id'] = wizard_slugify(data['name']) if data.get('name') != None else 'form'
     return data_loaded
 
 
