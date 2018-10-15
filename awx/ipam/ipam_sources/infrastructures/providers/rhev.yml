@@ -8,16 +8,15 @@ description: |
 
 hosts: all
   
-label: ''
+label_prefix: ''
 url: 'https://github.com/afahounko'
 project: 'https://github.com/ansible/ansible-tower-samples.git'
 playbook: 'local.yml'
 
-subitem_label: 'Install'
+subitem_label_prefix: 'Configure'
 subitem_url: 'https://github.com/afahounko'
 subitem_project: 'https://github.com/ansible/ansible-tower-samples.git'
 subitem_playbook: 'local.yml'
-
 
 
 addTitle: 'NEW PROVIDER'
