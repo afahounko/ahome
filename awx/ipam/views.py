@@ -246,11 +246,13 @@ class GenericSourceView(viewsets.ViewSet):
         for file in files:
             voutput = sources.from_yml_get_related( "%s/%s/%s"  % ( DIRECTORY, pk, file ) )
 
-            data['results'].append(voutput['id'])
-            if voutput['id'] != 'form':
+#            data['results'].append(voutput['id'])
+            if voutput['id'] != 'form' and voutput['id'] != None:
+                data['results'].append(voutput['id'])
                 data['boxes'][voutput['id']] = OrderedDict()
                 data['boxes'][voutput['id']] = voutput
 
+        data['count'] = len(data['results'])
         return Response( data )
 
 
