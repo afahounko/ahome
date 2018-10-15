@@ -8,10 +8,16 @@ description: |
 
 hosts: all
   
-# roles:
-#   - common
-#   - os-controller
-#   - os-compute
+label: ''
+url: 'https://github.com/afahounko'
+project: 'https://github.com/ansible/ansible-tower-samples.git'
+playbook: 'local.yml'
+
+subitem_label: 'Configure'
+subitem_url: 'https://github.com/afahounko'
+subitem_project: 'https://github.com/ansible/ansible-tower-samples.git'
+subitem_playbook: 'local.yml'
+
 
 addTitle: 'NEW PROVIDER'
 editTitle: '{{ name }}'
