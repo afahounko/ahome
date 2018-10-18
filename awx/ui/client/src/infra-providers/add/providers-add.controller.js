@@ -14,9 +14,9 @@ const user_type_options = [
 
 export default ['$window', '$scope', '$rootScope', 'ProviderForm', 'GenerateForm', 'Rest','ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath',
-    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString',
+    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString', 
     function($window, $scope, $rootScope, ProviderForm, GenerateForm, Rest, ParseTypeChange, Alert,
-    ProcessErrors, ReturnToCaller, GetBasePath, Wait, CreateSelect2,
+    ProcessErrors, ReturnToCaller, GetBasePath, Wait, CreateSelect2, 
     $state, $location, i18n, ParseVariableString) {
 
         var defaultUrl = GetBasePath('ipam_providers'),
@@ -27,7 +27,6 @@ export default ['$window', '$scope', '$rootScope', 'ProviderForm', 'GenerateForm
 
         function init() {
             // apply form definition's default field values
-
 			console.log("Add FORM Init");
 			console.log(id_type);
 			console.log(form);

@@ -15,7 +15,6 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'AppList', 'Prompt',
 
         var list = AppList,
         defaultUrl = GetBasePath('ipam_apps');
-
         init();
 
         function init() {
@@ -71,7 +70,7 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'AppList', 'Prompt',
                 $('#prompt-modal').modal('hide');
                 Wait('start');
                 var url = defaultUrl + id + '/';
-                Rest.setUrl(url);
+				Rest.setUrl(url);
                 Rest.destroy()
                     .then(() => {
                         let reloadListStateParams = null;

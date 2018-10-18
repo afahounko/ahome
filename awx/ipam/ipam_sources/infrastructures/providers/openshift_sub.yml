@@ -9,12 +9,12 @@ description: |
 hosts: all
 
 
-label: ''
+label_prefix: ''
 url: 'https://github.com/afahounko'
 project: 'https://github.com/ansible/ansible-tower-samples.git'
 playbook: 'local.yml'
 
-subitem_label: 'Installation'
+subitem_label_prefix: 'Configure'
 subitem_url: 'https://github.com/afahounko'
 subitem_project: 'https://github.com/ansible/ansible-tower-samples.git'
 subitem_playbook: 'local.yml'
@@ -24,6 +24,8 @@ addTitle: 'NEW PROVIDER'
 editTitle: '{{ name }}'
 name: 'openshift_sub'
 title: 'Openshift Container Platform on-premise'
+basePath: 'ipam_providers'
+stateTree: 'infraProviders'
 breadcrumbName: 'INFRA PROVIDER'
 showActions: true
 launchclick: 'addNew("openshift_sub")'

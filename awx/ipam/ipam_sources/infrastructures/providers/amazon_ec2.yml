@@ -5,21 +5,7 @@ group: Cloud
 version: 1.0
 description: |
      Amazon Elastic Compute
-
 hosts: all
-  
-
-label: ''
-url: 'https://github.com/afahounko'
-project: 'https://github.com/ansible/ansible-tower-samples.git'
-playbook: 'local.yml'
-
-subitem_label: 'Configure'
-subitem_url: 'https://github.com/afahounko'
-subitem_project: 'https://github.com/ansible/ansible-tower-samples.git'
-subitem_playbook: 'local.yml'
-
-
 addTitle: 'NEW PROVIDER'
 editTitle: '{{ name }}'
 name: 'amazon_ec2'
@@ -78,12 +64,25 @@ fields:
     ngShow: 'tabId == 2'
 
   credential: 
-    label: Credential
+    label: 'Credential'
     type: 'select'
     defaultText: 'Choose a Credential'
     ngModel: 'credential'
     ngOptions: 'item as item.label for item in credential_type_options'
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 2'
+
+  organization:
+    label: 'Organization'
+    type: 'lookup'
+    list: 'OrganizationList'
+    sourceModel: 'organization'
+    basePath: 'organizations'
+    sourceField: 'name'
+    dataTitle: 'Organization'
+    required: true
+    dataContainer: 'body'
+    dataPlacement: 'right'
     ngShow: 'tabId == 2'
 
   opts: 

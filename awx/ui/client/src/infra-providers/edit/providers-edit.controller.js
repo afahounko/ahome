@@ -6,12 +6,12 @@
 
 import { N_ } from "../../i18n";
 
-export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm', 'GenerateForm', 'Rest','ParseTypeChange',
+export default ['$window', '$scope', '$rootScope', 'ProviderForm', 'GenerateForm', 'Rest','ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath',
     'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString',
-    function($window, $scope, $rootScope, $stateParams, ProviderForm, GenerateForm, Rest, ParseTypeChange, Alert,
-    ProcessErrors, ReturnToCaller, GetBasePath, Wait, CreateSelect2,
-	$state, $location, i18n,ParseVariableString) {
+    function($window, $scope, $rootScope, ProviderForm, GenerateForm, Rest, ParseTypeChange, Alert,
+    ProcessErrors, ReturnToCaller, GetBasePath, Wait, CreateSelect2, 
+    $state, $location, i18n, ParseVariableString) {
 
         var master = {}, boxes, box, variable, 
             id = $stateParams.provider_id,
@@ -277,6 +277,21 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
                         msg: i18n.sprintf(i18n._('Failed to retrieve Ipam: %s. GET status: '), $stateParams.id) + status
                     });
                 });
+        };
+		$scope.lookupCredential = function(){
+            // Perform a lookup on the credential_type. Git, Mercurial, and Subversion
+            // all use SCM as their credential type.
+            let credType = _.filter(CredentialTypes, function(credType){
+                return ($scope.scm_type.value !== "insights" && credType.kind === "scm" ||
+                    $scope.scm_type.value === "insights" && credType.kind === "insights");
+            });
+            $state.go('.credential', {
+                credential_search: {
+                    credential_type: credType[0].id,
+                    page_size: '5',
+                    page: '1'
+                }
+            });
         };
     }
 ];
