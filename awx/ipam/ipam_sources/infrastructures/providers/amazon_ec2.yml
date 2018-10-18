@@ -85,6 +85,16 @@ fields:
     dataPlacement: 'right'
     ngShow: 'tabId == 2'
 
+  instance_groups:
+    label: 'Instance Groups'
+    type: 'custom'
+    awPopOver: "<p> Select the Instance Groups for this Inventory to run on. </p>"
+    dataTitle: 'Instance Groups'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    control: '<instance-groups-multiselect instance-groups="instance_groups" field-is-disabled="!(inventory_obj.summary_fields.user_capabilities.edit || canAdd)"></instance-groups-multiselect>'
+    ngShow: 'tabId == 2'
+
   opts: 
     label: Input Opts'
     class: 'Form-textAreaLabel Form-formGroup--fullWidth'

@@ -14,10 +14,10 @@ const user_type_options = [
 
 export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'Rest','ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath',
-    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString','CredentialTypes',
+    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString',
     function($window, $scope, $rootScope, JobForm, GenerateForm, Rest, ParseTypeChange, Alert,
     ProcessErrors, ReturnToCaller, GetBasePath, Wait, CreateSelect2,
-    $state, $location, i18n, ParseVariableString, CredentialTypes) {
+    $state, $location, i18n, ParseVariableString) {
 
         var defaultUrl = GetBasePath('ipam_infrastructure_jobs'),
         	fk_model = $window.localStorage.getItem('fk_model'),
