@@ -44,26 +44,27 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'ServiceList', 'Promp
         
         $scope.infraJobs= function() {
         	console.log("********* Launch ************");
-        	//var locationTo = 'infraJobsList.services.' + this.service.related.opts.id_type;
+        	//var locationTo = 'infraJobsList.services.' + this.service.opts.id_type;
         	//console.log(locationTo);
         	$window.localStorage.setItem('fk_model', 'services');
-        	$window.localStorage.setItem('fk_type', this.service.related.opts.id_type);
-        	$window.localStorage.setItem('fk_id', this.service.id);
+        	$window.localStorage.setItem('fk_type', this.service.opts.id_type);
+        	$window.localStorage.setItem('fk_id', this.service.id); 
             $state.go('infraJobsList');
 			console.log("State Go finished");
         };
         
         $scope.launchService= function() {
         	console.log("Launch");
-            //$rootScope.form_id = this.service.related.opts.id_type;
+            //$rootScope.form_id = this.service.opts.id_type;
             //$state.go('infraJobsList', null, { reload: true});
         };
 
         $scope.editService= function() {
         	console.log("stateGO");
-            console.log('infraServicesList.edit_' + this.service.related.opts.id_type);
-            $window.localStorage.setItem('form_id', this.service.related.opts.id_type);
-            $state.go('infraServicesList.edit_' + this.service.related.opts.id_type, { service_id: this.service.id });
+        	console.log(this.service);
+            console.log('infraServicesList.edit_' + this.service.opts.id_type);
+            $window.localStorage.setItem('form_id', this.service.opts.id_type);
+            $state.go('infraServicesList.edit_' + this.service.opts.id_type, { service_id: this.service.id });
         };
 
         $scope.deleteService = function(id, name) {

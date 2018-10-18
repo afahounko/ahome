@@ -17,7 +17,7 @@ export default ['Wait','GetBasePath','Rest','i18n', '$q', function(Wait,GetBaseP
 	var return_val = null;
 	var formData = new FormData();
 	formData.append("param", "");
-
+	console.log(formData);
 	var request = new XMLHttpRequest();
     request.open("GET", defaultUrl, false);
     request.onload = function () {

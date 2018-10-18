@@ -192,6 +192,9 @@ export default ['$scope', '$location', '$stateParams', 'GenerateForm',
                 return ($scope.scm_type.value !== "insights" && credType.kind === "scm" ||
                     $scope.scm_type.value === "insights" && credType.kind === "insights");
             });
+            console.log($scope.scm_type);
+            console.log(credType);
+            
             $state.go('.credential', {
                 credential_search: {
                     credential_type: credType[0].id,

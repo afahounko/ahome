@@ -23,6 +23,8 @@ addTitle: 'NEW PROVIDER'
 editTitle: '{{ name }}'
 name: 'rhev'
 title: 'Red Hat Enterprise Virtualization'
+basePath: 'ipam_providers'
+stateTree: 'infraProviders'
 breadcrumbName: 'INFRA PROVIDER'
 showActions: true
 launchclick: 'addNew("rhev")'

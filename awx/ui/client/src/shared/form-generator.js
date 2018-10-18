@@ -1458,7 +1458,7 @@ export default
                         //
                         var btn, button, fld, field, html = '', section, group,
                             sectionShow, offset, width, ngDisabled, itm;
-
+						this.mode = options.mode;
                         // title and exit button
                         if (!(this.form.showHeader !== undefined && this.form.showHeader === false)) {
                             html += "<div class=\"Form-header\">";
@@ -1501,6 +1501,7 @@ export default
                         }
 
                         if (!_.isEmpty(this.form.related) || !_.isEmpty(this.form.relatedButtons)) {
+                        	console.log(this.mode);
                             var collection, details = i18n._('Details');
                             html += "<div class=\"Form-tabHolder\">";
 
@@ -1586,7 +1587,7 @@ export default
 
                                 for (itm in this.form.relatedButtons) {
                                     button = this.form.relatedButtons[itm];
-
+									
                                     // Build button HTML
                                     html += "<button type=\"button\" ";
                                     html += "class=\"btn btn-sm Form-tab--disabled";

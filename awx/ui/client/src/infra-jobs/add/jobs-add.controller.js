@@ -14,10 +14,10 @@ const user_type_options = [
 
 export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'Rest','ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath',
-    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString',
+    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString','CredentialTypes',
     function($window, $scope, $rootScope, JobForm, GenerateForm, Rest, ParseTypeChange, Alert,
     ProcessErrors, ReturnToCaller, GetBasePath, Wait, CreateSelect2,
-    $state, $location, i18n, ParseVariableString) {
+    $state, $location, i18n, ParseVariableString, CredentialTypes) {
 
         var defaultUrl = GetBasePath('ipam_infrastructure_jobs'),
         	fk_model = $window.localStorage.getItem('fk_model'),
@@ -228,36 +228,13 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
         $scope.formSave = function() {
         	
 			var fld, base, data = {}, data_project = {}, data_job = {};
-            Rest.setUrl(defaultUrl);
-            var data = processNewData(form.fields);
-            console.log($scope);
-            console.log($scope.name);
-            
-            console.log(data);
-            Wait('start');
-            Rest.post(data)
-                .then(({data}) => {
-                    base = $location.path().replace(/^\//, '').split('/')[0];
-                    console.log(base);
-                    /*if (base === 'ipam_infrastructure_jobs') {
-                        $rootScope.flashMessage = i18n._('New Job successfully created!');
-                        $rootScope.$broadcast("EditIndicatorChange", "Job", data.id);
-                        
-                        $state.go('infraJobsList', null, { reload: true});
-                    } else {
-                        ReturnToCaller(1);
-                    }*/ 
-                    console.log('InfraJob Post succeed');
-                })
-                .catch(({data, status}) => {
-                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to add new Job. POST returned status: ') + status });
-                });
-                
-            //Project Saving
-    		data_project.name = $scope.name;
+			var new_project_id = 0;
+			Wait('start');
+			//Project Saving
+    		data_project.name = 'Configure_' + $scope.name;
     		data_project.description = "";
     		data_project.scm_type = "git";
-    		data_project.scm_url = "https://github.com/dfederlein/ansible-demos.git";
+    		data_project.scm_url = "https://github.com/ansible/ansible-tower-samples.git";
     		data_project.scm_branch = "";
     		data_project.scm_clean = true;
     		data_project.scm_delete_on_update = true;
@@ -274,74 +251,96 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 			//console.log(url);
             Rest.setUrl(GetBasePath('projects'));
             Rest.post(data_project)
-                .then(({data_project}) => {
-                    //$scope.addedItem = data_project.id;
-                    //$state.go('projects.edit', { project_id: data_project.id }, { reload: true });
-					console.log('Project Post succeed');
+            	.then(({data}) => {
+                	console.log(data);
+                	new_project_id = data.id;
+					console.log('Project Post Succeed : ' + new_project_id);
+					//Job Saving
+		    		data_job.name = 'Configure_' + $scope.name;
+					data_job.description = "";
+					data_job.job_type = "run";
+					data_job.inventory = 1;
+					data_job.project = new_project_id;
+					data_job.playbook = "hello_world.yml";
+					data_job.forks = 0;
+					data_job.limit = "";
+					data_job.verbosity = 0;
+					data_job.extra_vars = "webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3";
+					data_job.job_tags = "";
+					data_job.force_handlers = false;
+					data_job.skip_tags = "";
+					data_job.start_at_task = "";
+					data_job.timeout = 0;
+					data_job.use_fact_cache = false;
+					data_job.host_config_key = "";
+					data_job.ask_diff_mode_on_launch = false;
+					data_job.ask_variables_on_launch = false;
+					data_job.ask_limit_on_launch = false;
+					data_job.ask_tags_on_launch = false;
+					data_job.ask_skip_tags_on_launch = false;
+					data_job.ask_job_type_on_launch = false;
+					data_job.ask_verbosity_on_launch = false;
+					data_job.ask_inventory_on_launch = false;
+					data_job.ask_credential_on_launch = false;
+					data_job.survey_enabled = false;
+					data_job.become_enabled = false;
+					data_job.diff_mode = false;
+					data_job.allow_simultaneous = false;
+					data_job.cloud_credential = null;
+					data_job.network_credential = null;
+					data_job.credential = 1; 
+					data_job.vault_credential = null;
+
+					console.log(data_job);
+					setTimeout(function(){
+						//****************************************************************************/
+						Rest.setUrl(GetBasePath('job_templates'));
+			            Rest.post(data_job)
+			            .then(({data}) => {
+			                	console.log('Job Template Post succeed');
+			                	
+			                	//Save Job (Sub Items)
+					            Rest.setUrl(defaultUrl);
+					            var data_subitem = processNewData(form.fields);
+								var opts_field = "'project_id':'" + new_project_id + "',\n" + "'template_id':'" + data.id + "',\n";
+								data_subitem.opts = data_subitem.opts.slice(0, 1) + opts_field + data_subitem.opts.slice(1);
+					            
+					            Rest.post(data_subitem)
+					                .then(({data}) => {
+					                    base = $location.path().replace(/^\//, '').split('/')[0];
+					                    console.log(base);
+					                    if (base === 'ipam_infrastructure_jobs') {
+					                        $rootScope.flashMessage = i18n._('New Job successfully created!');
+					                        $rootScope.$broadcast("EditIndicatorChange", "Job", data.id);
+
+					                        $state.go('infraJobsList', null, { reload: true});
+					                    } else {
+					                        ReturnToCaller(1);
+					                    }
+					                    console.log('InfraJob Post succeed');
+					                })
+					                .catch(({data, status}) => {
+					                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to add new JOB_SUBITEM. POST returned status: ') + status });
+					                });
+			                })
+			                .catch(({data, status}) => {
+			                    Wait('stop');
+			                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'),
+			                        msg: i18n._('Failed to create new JOB TEMPLATE. POST returned status: ') + status });
+			                });
+						}, 5000);
+						//****************************************************************************/
+
+		            //defaultprojectUrl = GetBasePath('projects');
+					//url = (base === 'teams') ? GetBasePath('teams') + $stateParams.team_id + '/projects/' : defaultprojectUrl;
+					//console.log(url);
+		            
                 })
-                .catch(({data_project, status}) => {
+                .catch(({data, status}) => {
+                	Wait('stop');
+		            ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'),
+		            	msg: i18n._('Failed to create new PROJECT. POST returned status: ') + status });
                 });
-              
-			//Job Saving
-    		data_job.name = $scope.name;
-			data_job.description = "";
-			data_job.job_type = "run";
-			data_job.inventory = 1;
-			data_job.project = 4;
-			data_job.playbook = "site.yml";
-			data_job.credential = 1;
-			data_job.vault_credential = null;
-			data_job.forks = 0;
-			data_job.limit = "";
-			data_job.verbosity = 0;
-			data_job.extra_vars = "webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3";
-			data_job.job_tags = "";
-			data_job.force_handlers = false;
-			data_job.skip_tags = "";
-			data_job.start_at_task = "";
-			data_job.timeout = 0;
-			data_job.use_fact_cache = false;
-			data_job.host_config_key = "";
-			data_job.ask_diff_mode_on_launch = false;
-			data_job.ask_variables_on_launch = false;
-			data_job.ask_limit_on_launch = false;
-			data_job.ask_tags_on_launch = false;
-			data_job.ask_skip_tags_on_launch = false;
-			data_job.ask_job_type_on_launch = false;
-			data_job.ask_verbosity_on_launch = false;
-			data_job.ask_inventory_on_launch = false;
-			data_job.ask_credential_on_launch = false;
-			data_job.survey_enabled = false;
-			data_job.become_enabled = true;
-			data_job.diff_mode = true;
-			data_job.allow_simultaneous = false;
-			data_job.cloud_credential = null;
-			data_job.network_credential = null;
-
-			console.log(data_job);
-
-            //defaultprojectUrl = GetBasePath('projects');
-			//url = (base === 'teams') ? GetBasePath('teams') + $stateParams.team_id + '/projects/' : defaultprojectUrl;
-			//console.log(url);
-            Rest.setUrl(GetBasePath('job_templates'));
-            Rest.post(data_job)
-                .then(({data_job}) => {
-                	console.log('Job Template Post succeed');
-                    if (base === 'ipam_infrastructure_jobs') {
-                        $rootScope.flashMessage = i18n._('New Job successfully created!');
-                        $rootScope.$broadcast("EditIndicatorChange", "Job", data.id);
-
-                        $state.go('infraJobsList', null, { reload: true});
-                    } else {
-                        ReturnToCaller(1);
-                    }
-                })
-                .catch(({data_job, status}) => {
-                    Wait('stop');
-                    ProcessErrors($scope, data_job, status, form, { hdr: i18n._('Error!'),
-                        msg: i18n._('Failed to create new project. POST returned status: ') + status });
-                });
-               
         };
 
         $scope.formCancel = function() {

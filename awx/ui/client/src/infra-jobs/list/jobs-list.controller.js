@@ -17,7 +17,8 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
         	fk_model = $window.localStorage.getItem('fk_model'),
         	fk_type =  $window.localStorage.getItem('fk_type'),
         	fk_id =  $window.localStorage.getItem('fk_id'),
-        defaultUrl = GetBasePath('ipam_infrastructure_jobs');
+        	defaultUrl = GetBasePath('ipam_infrastructure_jobs');
+        var project_id, template_id;
         init();
 
         function init() {
@@ -98,31 +99,72 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
                 Wait('start');
                 var url = defaultUrl + id + '/';
                 Rest.setUrl(url);
-                Rest.destroy()
-                    .then(() => {
-                        let reloadListStateParams = null;
-						console.log('1');
-						
-                        if($scope.ipam_infrastructure_jobs.length === 1 && $state.params.job_search && !_.isEmpty($state.params.job_search.page) && $state.params.job_search.page !== '1') {
-                        	console.log('1-1');
-                            reloadListStateParams = _.cloneDeep($state.params);
-                            console.log('1-2');
-                            reloadListStateParams.job_search.page = (parseInt(reloadListStateParams.job_search.page)-1).toString();
-                        }
-						console.log('2');
-                        if (parseInt($state.params.job_id) === id) {
-                            $state.go('^', null, { reload: true });
-                        } else {
-                            $state.go('.', null, { reload: true });
-                        }
-                        console.log('3');
-                    })
-                    .catch(({data, status}) => {
-                        ProcessErrors($scope, data, status, null, {
-                            hdr: i18n._('Error!'),
-                            msg: i18n.sprintf(i18n._('Call to %s failed. DELETE returned status: '), url) + status
-                        });
-                    });
+                Rest.get(defaultUrl).then(({data}) => {
+                	console.log(data);
+                	project_id = data.opts.project_id;
+                	template_id = data.opts.template_id;
+                	console.log(project_id);
+					console.log(template_id);
+					Rest.setUrl(GetBasePath('projects') + project_id + '/');
+	                Rest.destroy()
+	                    .then(() => {
+	                    })
+	                    .catch(({data, status}) => {
+	                        ProcessErrors($scope, data, status, null, {
+	                            hdr: i18n._('Error!'),
+	                            msg: i18n.sprintf(i18n._('Call to %s failed. DELETE Related Project returned status: '), url) + status
+	                        });
+	                    });
+
+		            Rest.setUrl(GetBasePath('job_templates') + template_id + '/');
+	                Rest.destroy()
+	                    .then(() => {
+	                    })
+	                    .catch(({data, status}) => {
+	                        ProcessErrors($scope, data, status, null, {
+	                            hdr: i18n._('Error!'),
+	                            msg: i18n.sprintf(i18n._('Call to %s failed. DELETE Related JobTemplate returned status: '), url) + status
+	                        });
+	                    });
+	                    
+	                    
+	                Rest.setUrl(url);
+	                Rest.destroy()
+	                    .then(() => {
+	                        let reloadListStateParams = null;
+							console.log('1');
+							
+	                        if($scope.ipam_infrastructure_jobs.length === 1 && $state.params.job_search && !_.isEmpty($state.params.job_search.page) && $state.params.job_search.page !== '1') {
+	                        	console.log('1-1');
+	                            reloadListStateParams = _.cloneDeep($state.params);
+	                            console.log('1-2');
+	                            reloadListStateParams.job_search.page = (parseInt(reloadListStateParams.job_search.page)-1).toString();
+	                        }
+							console.log('2');
+	                        if (parseInt($state.params.job_id) === id) {
+	                            $state.go('^', null, { reload: true });
+	                        } else {
+	                            $state.go('.', null, { reload: true });
+	                        }
+	                        console.log('3');
+	                    })
+	                    .catch(({data, status}) => {
+	                        ProcessErrors($scope, data, status, null, {
+	                            hdr: i18n._('Error!'),
+	                            msg: i18n.sprintf(i18n._('Call to %s failed. DELETE returned status: '), url) + status
+	                        });
+	                    });
+                })
+	            .catch(({data, status}) => {
+	                ProcessErrors($scope, data, status, null, {
+	                    hdr: i18n._('Error!'),
+	                    msg: i18n.sprintf(i18n._('Failed to retrieve App: %s. GET status: '), $stateParams.id) + status
+	                });
+	            });
+
+
+				
+	            
             };
 
             Prompt({
