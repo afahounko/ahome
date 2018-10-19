@@ -59,7 +59,17 @@ fields:
     type: 'select'
     defaultText: 'Choose a Datacenter'
     ngModel: 'datacenter'
+    ngChange: 'datacenterChange()'
     ngOptions: 'item as item.label for item in datacenter_type_options'
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 2'
+
+  ipaddress:
+    label: 'IP Address'
+    type: 'select'
+    defaultText: 'Choose a IP Address'
+    ngModel: 'ipaddress'
+    ngOptions: 'item as item.label for item in ipaddress_type_options'
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 2'
 

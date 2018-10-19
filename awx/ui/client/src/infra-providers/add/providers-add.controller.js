@@ -12,10 +12,10 @@ const user_type_options = [
  { type: 'system_administrator', label: N_('System Administrator') },
 ];
 
-export default ['$window', '$scope', '$rootScope', 'ProviderForm', 'GenerateForm', 'Rest','ParseTypeChange',
+export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm', 'GenerateForm', 'Rest','ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath',
     'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString', 
-    function($window, $scope, $rootScope, ProviderForm, GenerateForm, Rest, ParseTypeChange, Alert,
+    function($window, $scope, $rootScope, $stateParams, ProviderForm, GenerateForm, Rest, ParseTypeChange, Alert,
     ProcessErrors, ReturnToCaller, GetBasePath, Wait, CreateSelect2, 
     $state, $location, i18n, ParseVariableString) {
 
@@ -96,13 +96,49 @@ export default ['$window', '$scope', '$rootScope', 'ProviderForm', 'GenerateForm
             panel[0].style.width = "60%";
 
         }
+
+        $scope.datacenterChange = function() {
+            // When an scm_type is set, path is not required
+            console.log($scope.datacenter);
+	        var ipaddress_options = [];
+			var ipaddressLists = [];
+	    	Rest.setUrl(GetBasePath('ipam_ip_addresses'));
+	        Rest.get().then(({data}) => {
+	        	ipaddressLists = data.results;
+	        	for (var i = 0; i < ipaddressLists.length; i++) {
+	        		console.log(ipaddressLists[i].address);
+	        		if(ipaddressLists[i].datacenter === $scope.datacenter.value)
+	        		{
+	        			ipaddress_options.push({label:ipaddressLists[i].address, value:ipaddressLists[i].id});
+	        		}
+	        	}
+	        	$scope.ipaddress_type_options = ipaddress_options;l
+	            for (var i = 0; i < ipaddress_options.length; i++) {
+	                if (ipaddress_options[i].value === ipaddress_value) {
+	                    $scope.ipaddress = ipaddress_options[i];
+	                    break;
+	                }
+	            }
+	        })
+	    	.catch(({data, status}) => {
+	        	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get IpAddress. Get returned status: ') + status });
+			});
+			
+			CreateSelect2({
+	            element: '#' + id_type + '_ipaddress',
+	            multiple: false,
+	        }); 
+        };
+
 		var callback = function() {
             // Make sure the form controller knows there was a change
             $scope[form.name + '_form'].$setDirty();
         };
+
         $scope.toggleForm = function(key) {
             $scope[key] = !$scope[key];
         };
+
 		function getVars(str){
             // Quick function to test if the host vars are a json-object-string,
             // by testing if they can be converted to a JSON object w/o error.
@@ -148,7 +184,7 @@ export default ['$window', '$scope', '$rootScope', 'ProviderForm', 'GenerateForm
 					var data = "{";
 					for (fld in form.fields) {
 						
-						if(fld == "datacenter" || fld == "credential")
+						if(fld == "datacenter" || fld == "credential" || fld == "ipaddress")
 						{
 							data += "'" + fld + "':";
 			            	if($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";

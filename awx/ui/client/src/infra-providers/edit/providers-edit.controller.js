@@ -6,10 +6,10 @@
 
 import { N_ } from "../../i18n";
 
-export default ['$window', '$scope', '$rootScope', 'ProviderForm', 'GenerateForm', 'Rest','ParseTypeChange',
+export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm', 'GenerateForm', 'Rest','ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath',
     'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString',
-    function($window, $scope, $rootScope, ProviderForm, GenerateForm, Rest, ParseTypeChange, Alert,
+    function($window, $scope, $rootScope, $stateParams, ProviderForm, GenerateForm, Rest, ParseTypeChange, Alert,
     ProcessErrors, ReturnToCaller, GetBasePath, Wait, CreateSelect2, 
     $state, $location, i18n, ParseVariableString) {
 
@@ -43,7 +43,9 @@ export default ['$window', '$scope', '$rootScope', 'ProviderForm', 'GenerateForm
                 	}
                 }
                 var datacenter_value = data.opts.datacenter;
+                var ipaddress_value = data.opts.ipaddress;
                 var credential_value = data.opts.credential;
+                
                 id_type = data.opts.id_type;
                 console.log("ID_TYPE " + id_type);
 
@@ -78,6 +80,29 @@ export default ['$window', '$scope', '$rootScope', 'ProviderForm', 'GenerateForm
 		        	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get datacenters. Get returned status: ') + status });
 				});
 
+		        var ipaddress_options = [];
+				var ipaddressLists = [];
+		    	Rest.setUrl(GetBasePath('ipam_ip_addresses'));
+		        Rest.get().then(({data}) => {
+		        	console.log(ipaddress_value);
+		        	ipaddressLists = data.results;
+		        	for (var i = 0; i < ipaddressLists.length; i++) {
+		        		ipaddress_options.push({label:ipaddressLists[i].address, value:ipaddressLists[i].id});
+		        	}
+		        	$scope.ipaddress_type_options = ipaddress_options;
+		            for (var i = 0; i < ipaddress_options.length; i++) {
+		            	console.log(''+ipaddress_options[i].value);
+		                if ((''+ipaddress_options[i].value) === ipaddress_value) {
+		                    $scope.ipaddress = ipaddress_options[i];
+		                    break;
+		                }
+		            }
+		            if(ipaddress_value == "") $scope.ipaddress = null;
+		        })
+		    	.catch(({data, status}) => {
+		        	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get ipaddress. Get returned status: ') + status });
+				});
+
 				var credential_options = [];
 				Rest.setUrl(GetBasePath('credentials'));
 		        Rest.get().then(({data}) => {
@@ -101,7 +126,10 @@ export default ['$window', '$scope', '$rootScope', 'ProviderForm', 'GenerateForm
 		            element: '#' + id_type + '_datacenter',
 		            multiple: false,
 		        }); 
-
+		        CreateSelect2({
+		            element: '#' + id_type + '_ipaddress',
+		            multiple: false,
+		        }); 
 		        CreateSelect2({
 		            element: '#' + id_type + '_credential',
 		            multiple: false,
@@ -123,6 +151,41 @@ export default ['$window', '$scope', '$rootScope', 'ProviderForm', 'GenerateForm
             
             Wait('stop');
         }
+        
+
+        $scope.datacenterChange = function() {
+            // When an scm_type is set, path is not required
+            console.log($scope.datacenter);
+	        var ipaddress_options = [];
+			var ipaddressLists = [];
+	    	Rest.setUrl(GetBasePath('ipam_ip_addresses'));
+	        Rest.get().then(({data}) => {
+	        	ipaddressLists = data.results;
+	        	for (var i = 0; i < ipaddressLists.length; i++) {
+	        		console.log(ipaddressLists[i].address);
+	        		if(ipaddressLists[i].datacenter === $scope.datacenter.value)
+	        		{
+	        			ipaddress_options.push({label:ipaddressLists[i].address, value:ipaddressLists[i].id});
+	        		}
+	        	}
+	        	$scope.ipaddress_type_options = ipaddress_options;l
+	            for (var i = 0; i < ipaddress_options.length; i++) {
+	                if (ipaddress_options[i].value === ipaddress_value) {
+	                    $scope.ipaddress = ipaddress_options[i];
+	                    break;
+	                }
+	            }
+	        })
+	    	.catch(({data, status}) => {
+	        	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get IpAddress. Get returned status: ') + status });
+			});
+			
+			CreateSelect2({
+	            element: '#' + id_type + '_ipaddress',
+	            multiple: false,
+	        }); 
+        };
+
         $scope.toggleForm = function(key) {
             $scope[key] = !$scope[key];
         };
