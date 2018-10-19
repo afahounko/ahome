@@ -22,7 +22,7 @@ wizards:
       name: 'Variable'
       type: 'collection'
       title: 'Variable'
-    
+
     relation: 
       index: 2
       name: 'Relation'

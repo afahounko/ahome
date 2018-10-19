@@ -28,6 +28,7 @@ function atLaunchTemplateCtrl (
         };
 
     vm.startLaunchTemplate = () => {
+    	console.log(vm);
         if (vm.template.type === 'job_template') {
             const selectedJobTemplate = jobTemplate.create();
             const preLaunchPromises = [

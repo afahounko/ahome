@@ -7,10 +7,10 @@
 import { N_ } from "../../i18n";
 
 export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobList', 'Prompt',
-    'ProcessErrors', 'GetBasePath', 'Wait', '$state', '$filter',
+    'ProcessErrors', 'GetBasePath', 'Wait', '$state', '$filter', 'JobTemplateModel', 'WorkflowJobTemplateModel', 'PromptService',
     'rbacUiControlService', 'Dataset', 'i18n', 
     function($window, $scope, $rootScope, $stateParams, Rest, JobList, Prompt,
-    ProcessErrors, GetBasePath, Wait, $state, $filter, rbacUiControlService,
+    ProcessErrors, GetBasePath, Wait, $state, $filter, JobTemplate, WorkflowTemplate, PromptService, rbacUiControlService,
     Dataset, i18n) {
     	
         var list = JobList,
@@ -23,18 +23,16 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
 
         function init() {
         	var job, cnt;
-			console.log("Init Job");
-			console.log($scope.ipam_infrastructure_jobs);
-            $scope.canAdd = false;
-
+			$scope.canAdd = false;
             $rootScope.infraJob = fk_model.toUpperCase() + " - " + fk_type.toUpperCase() + " - " + "INFRA JOB";
-            console.log(fk_model);
-        	console.log(fk_type);
-        	console.log(fk_id);
+            
             rbacUiControlService.canAdd('ipam_infrastructure_jobs')
                 .then(function(params) {
                     $scope.canAdd = params.canAdd;
                 });
+	        $scope.$watchCollection(list.name, function(){
+	            _.forEach($scope[list.name], processJobRow);
+	        });
             // search init
             $scope.list = list;
             $scope[`${list.iterator}_dataset`] = Dataset.data;
@@ -62,10 +60,37 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
             
 			$scope.paramCategory = fk_model + '.' + fk_type
             console.log($scope.paramCategory);
-            
-            
         }
-        
+
+	    function processJobRow(job) {
+	    	console.log('ProcessJobRow');
+	    	console.log(job);
+			defaultUrl = GetBasePath('ipam_infrastructure_jobs') + job.id;
+            Wait('start');
+            Rest.setUrl(defaultUrl);
+            Rest.get(defaultUrl).then(({data}) => {
+            	var template_id = data.opts.template_id;
+            	Rest.setUrl(GetBasePath('job_templates') + template_id);
+            	Rest.get(defaultUrl).then(({data}) => {
+            		console.log(data);
+			        job.job_status = data.summary_fields.last_job.status;
+	 			})
+	            .catch(({data, status}) => {
+	                ProcessErrors($scope, data, status, null, {
+	                    hdr: i18n._('Error!'),
+	                    msg: i18n.sprintf(i18n._('Failed to retrieve Template: %s. GET status: '), $stateParams.id) + status
+	                });
+	            });
+ 			})
+            .catch(({data, status}) => {
+                ProcessErrors($scope, data, status, null, {
+                    hdr: i18n._('Error!'),
+                    msg: i18n.sprintf(i18n._('Failed to retrieve Job: %s. GET status: '), $stateParams.id) + status
+                });
+            });
+            
+	        console.log(inventory);
+	    }
         $scope.BackTo = function() {
         	var back_addr = 'infra' + fk_model.charAt(0).toUpperCase() + fk_model.substr(1).toLowerCase() + 'List';
         	console.log(back_addr);
@@ -79,11 +104,62 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
             $state.go('infraJobsList.add_' + param);
         };
  
-        $scope.launchJob= function() {
-        	/*console.log("stateGO");
-            console.log('infraJobsList.edit_' + this.job.related.opts.id_type);
-            $window.localStorage.setItem('form_id', this.job.related.opts.id_type);
-            $state.go('infraJobsList.edit_' + this.job.related.opts.id_type, { job_id: this.job.id });*/
+        $scope.launchJob= function(job_id) {
+        	defaultUrl = GetBasePath('ipam_infrastructure_jobs') + job_id;
+            Wait('start');
+            Rest.setUrl(defaultUrl);
+            Rest.get(defaultUrl).then(({data}) => {
+            	var template_id = data.opts.template_id;
+            	console.log(template_id);
+            	const jobTemplate = new JobTemplate();
+            	const selectedJobTemplate = jobTemplate.create();
+	            const preLaunchPromises = [
+	                selectedJobTemplate.getLaunch(template_id),
+	                selectedJobTemplate.optionsLaunch(template_id),
+	            ];
+				
+	            Promise.all(preLaunchPromises)
+	                .then(([launchData, launchOptions]) => {
+	                    if (selectedJobTemplate.canLaunchWithoutPrompt()) {
+	                        selectedJobTemplate
+	                            .postLaunch({ id: template_id })
+	                            .then(({ data }) => {
+	                                $state.go('output', { id: data.job, type: 'playbook' }, { reload: true });
+	                            });
+	                    } else {
+	                        const promptData = {
+	                            launchConf: launchData.data,
+	                            launchOptions: launchOptions.data,
+	                            template: template_id,
+	                            templateType: 'job_template',
+	                            prompts: PromptService.processPromptValues({
+	                                launchConf: launchData.data,
+	                                launchOptions: launchOptions.data
+	                            }),
+	                            triggerModalOpen: true
+	                        };
+
+	                        if (launchData.data.survey_enabled) {
+	                            selectedJobTemplate.getSurveyQuestions(template_id)
+	                                .then(({ data }) => {
+	                                    const processed = PromptService.processSurveyQuestions({
+	                                        surveyQuestions: data.spec
+	                                    });
+	                                    promptData.surveyQuestions = processed.surveyQuestions;
+	                                    //vm.promptData = promptData;
+	                                });
+	                        } else {
+	                            //vm.promptData = promptData;
+	                        }
+	                    }
+	                });
+ 			})
+            .catch(({data, status}) => {
+                ProcessErrors($scope, data, status, null, {
+                    hdr: i18n._('Error!'),
+                    msg: i18n.sprintf(i18n._('Failed to retrieve Job: %s. GET status: '), $stateParams.id) + status
+                });
+            });
         };
 
         $scope.editJob= function() {

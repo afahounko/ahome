@@ -29,7 +29,7 @@ export default ['i18n', function(i18n) {
 				awToolTip: 'Update Succeed',
                 dataTipWatch: 'project.statusTip',
                 dataPlacement: 'right',
-                icon: "icon-job-success",
+                icon: "{{ 'icon-job-' + job.job_status }}",
                 columnClass: "List-staticColumn--smallStatus",
                 nosort: true,
                 excludeModal: true
