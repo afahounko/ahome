@@ -57,7 +57,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
 
             $rootScope.flashMessage = null;
             $scope.selected = [];
-            
+
 			$scope.paramCategory = fk_model + '.' + fk_type
             console.log($scope.paramCategory);
         }
@@ -65,21 +65,27 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
 	    function processJobRow(job) {
 	    	console.log('ProcessJobRow');
 	    	console.log(job);
-			defaultUrl = GetBasePath('ipam_infrastructure_jobs') + job.id;
             Wait('start');
-            Rest.setUrl(defaultUrl);
-            Rest.get(defaultUrl).then(({data}) => {
+            Rest.setUrl(GetBasePath('ipam_infrastructure_jobs') + job.id);
+            Rest.get(GetBasePath('ipam_infrastructure_jobs') + job.id).then(({data}) => {
             	var template_id = data.opts.template_id;
             	Rest.setUrl(GetBasePath('job_templates') + template_id);
-            	Rest.get(defaultUrl).then(({data}) => {
+            	Rest.get(GetBasePath('job_templates') + template_id).then(({data}) => {
             		console.log(data);
+            		job.tool_tip = i18n._('Most recent job success. Click to view jobs.');
 			        job.job_status = data.summary_fields.last_job.status;
+			        
 	 			})
 	            .catch(({data, status}) => {
-	                ProcessErrors($scope, data, status, null, {
+	            	job.tool_tip = i18n._('Most recent job failed. Click to view jobs.');;
+	            	job.job_status = 'pending';
+	            	
+	                /*ProcessErrors($scope, data, status, null, {
 	                    hdr: i18n._('Error!'),
-	                    msg: i18n.sprintf(i18n._('Failed to retrieve Template: %s. GET status: '), $stateParams.id) + status
+	                    msg: i18n.sprintf(i18n._('Failed to retrieve Template Status'), $stateParams.id) + status
 	                });
+	                //If this Template is not launched error should be occured.
+	                */
 	            });
  			})
             .catch(({data, status}) => {
@@ -88,8 +94,6 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
                     msg: i18n.sprintf(i18n._('Failed to retrieve Job: %s. GET status: '), $stateParams.id) + status
                 });
             });
-            
-	        console.log(inventory);
 	    }
         $scope.BackTo = function() {
         	var back_addr = 'infra' + fk_model.charAt(0).toUpperCase() + fk_model.substr(1).toLowerCase() + 'List';
@@ -105,10 +109,9 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
         };
  
         $scope.launchJob= function(job_id) {
-        	defaultUrl = GetBasePath('ipam_infrastructure_jobs') + job_id;
             Wait('start');
-            Rest.setUrl(defaultUrl);
-            Rest.get(defaultUrl).then(({data}) => {
+            Rest.setUrl(GetBasePath('ipam_infrastructure_jobs') + job_id);
+            Rest.get(GetBasePath('ipam_infrastructure_jobs') + job_id).then(({data}) => {
             	var template_id = data.opts.template_id;
             	console.log(template_id);
             	const jobTemplate = new JobTemplate();
@@ -173,8 +176,8 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
             var action = function() {
                 $('#prompt-modal').modal('hide');
                 Wait('start');
-                var url = defaultUrl + id + '/';
-                Rest.setUrl(url);
+                defaultUrl = GetBasePath('ipam_infrastructure_jobs') + id;
+                Rest.setUrl(defaultUrl);
                 Rest.get(defaultUrl).then(({data}) => {
                 	console.log(data);
                 	project_id = data.opts.project_id;
@@ -204,25 +207,20 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
 	                    });
 	                    
 	                    
-	                Rest.setUrl(url);
+	                Rest.setUrl(defaultUrl);
 	                Rest.destroy()
 	                    .then(() => {
 	                        let reloadListStateParams = null;
-							console.log('1');
 							
 	                        if($scope.ipam_infrastructure_jobs.length === 1 && $state.params.job_search && !_.isEmpty($state.params.job_search.page) && $state.params.job_search.page !== '1') {
-	                        	console.log('1-1');
 	                            reloadListStateParams = _.cloneDeep($state.params);
-	                            console.log('1-2');
 	                            reloadListStateParams.job_search.page = (parseInt(reloadListStateParams.job_search.page)-1).toString();
 	                        }
-							console.log('2');
 	                        if (parseInt($state.params.job_id) === id) {
 	                            $state.go('^', null, { reload: true });
 	                        } else {
 	                            $state.go('.', null, { reload: true });
 	                        }
-	                        console.log('3');
 	                    })
 	                    .catch(({data, status}) => {
 	                        ProcessErrors($scope, data, status, null, {
@@ -237,10 +235,6 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
 	                    msg: i18n.sprintf(i18n._('Failed to retrieve App: %s. GET status: '), $stateParams.id) + status
 	                });
 	            });
-
-
-				
-	            
             };
 
             Prompt({
