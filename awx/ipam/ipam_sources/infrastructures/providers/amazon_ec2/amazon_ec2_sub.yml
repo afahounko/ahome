@@ -1,23 +1,21 @@
 
 ---
-name: Amazon EC2 virtual machine
+name: AMAZON EC2 SUB
 group: Cloud
 version: 1.0
 description: |
-     Amazon EC2 virtual machine
+     AMAZON EC2 SUB
 
 hosts: all
 
 
-addTitle: 'NEW AMAZON SUBITEM'
+addTitle: 'NEW AMAZON EC2 SUB ITEM'
 editTitle: '{{ name }}'
-name: 'amazon_ec2_sub'
-title: 'Amazon EC2 Virtual Machine'
+name: 'amazon_ec2_sb'
+title: 'AMAZON EC2 SUB'
 basePath: 'ipam_infrastructure_jobs'
 stateTree: 'infraJobsList.providers.amazon_ec2_sub'
-#basePath: 'ipam_providers'
-#stateTree: 'infraProviders'
-breadcrumbName: 'AMAZON SUBITEM'
+breadcrumbName: 'AMAZON EC2 SUB'
 showActions: true
 launchclick: 'addNew("amazon_ec2_sub")'
 

@@ -43,6 +43,7 @@ export default ['templateUrl', '$window', function(templateUrl, $window) {
 
                             let instanceGroupList = _.cloneDeep(InstanceGroupList);
 
+							console.log($scope.instance_groups);
                             instanceGroupList.listTitle = false;
                             instanceGroupList.well = false;
                             instanceGroupList.multiSelect = true;
@@ -54,6 +55,8 @@ export default ['templateUrl', '$window', function(templateUrl, $window) {
                             instanceGroupList.fields.name.columnClass = 'col-md-11 col-sm-11 col-xs-11';
                             delete instanceGroupList.fields.consumed_capacity;
                             delete instanceGroupList.fields.jobs_running;
+                            
+                            console.log(instanceGroupList);
 
                             let html = `${GenerateList.build({
                                 list: instanceGroupList,

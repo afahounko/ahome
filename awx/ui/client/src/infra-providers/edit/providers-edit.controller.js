@@ -224,22 +224,21 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			}
 			else if (clickID == 2) {
 				 
-				if($scope.tabId < 3)
+				if($scope.tabId < 4)
 				{
 					$scope.tabId = $scope.tabId + 1;
 				}
-				if($scope.tabId == 2)
+				if($scope.tabId == 1)
 				{
-
-					//$scope.opts = getVars(data);
+					$scope.opts = "---";
 				}
-				if($scope.tabId == 3)
+				if($scope.tabId == 4)
 				{
 					var fld;
-					var data = "{\n";
+					var data = "{";
 					for (fld in form.fields) {
 						
-						if(fld == "datacenter" || fld == "credential")
+						if(fld == "datacenter" || fld == "credential" || fld == "ipaddress")
 						{
 							data += "'" + fld + "':";
 			            	if($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";
@@ -253,18 +252,13 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			            	if($scope[fld] != undefined) data += "'" + $scope[fld] + "'";
 			            	else data += "''";
 			            	data += ",\n"; 
-			            	/*
-			                if (form.fields[fld].realName) {
-			                    data = data[form.fields[fld].realName] = $scope[fld];
-			                }else {
-			                    data[fld] = $scope[fld]; 
-			                }*/
 			            }
 		            }
 		            data += "'id_type':'" + id_type + "'\n";
 		        	data += "}";
 		            $scope.opts = ParseVariableString(data);
 					$scope.parseTypeOpts = 'yaml';
+					console.log(form);
 			        ParseTypeChange({
 			            scope: $scope,
 			            field_id: id_type + '_opts',
@@ -279,16 +273,36 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 				$scope.status1 = "active";
 				$scope.status2 = "";
 				$scope.status3 = "";
+				$scope.status4 = "";
+				$scope.status5 = "";
 			}
 			else if ($scope.tabId == 2) {
 				$scope.status1 = "complete";
 				$scope.status2 = "active";
 				$scope.status3 = "";
+				$scope.status4 = "";
+				$scope.status5 = "";
 			}
 			else if ($scope.tabId == 3) {
 				$scope.status1 = "complete";
 				$scope.status2 = "complete";
 				$scope.status3 = "active";
+				$scope.status4 = "";
+				$scope.status5 = "";
+			}
+			else if ($scope.tabId == 4) {
+				$scope.status1 = "complete";
+				$scope.status2 = "complete";
+				$scope.status3 = "complete";
+				$scope.status4 = "active";
+				$scope.status5 = "";
+			}
+			else if ($scope.tabId == 5) {
+				$scope.status1 = "complete";
+				$scope.status2 = "complete";
+				$scope.status3 = "complete";
+				$scope.status4 = "complete";
+				$scope.status5 = "active";
 			}
 		};
 

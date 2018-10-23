@@ -94,6 +94,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
             var panel = element.getElementsByClassName("Panel ng-scope");
             panel[0].classList.add("modal-dialog");
             panel[0].style.width = "60%";
+            panel[0].style.height = "80%";
 
         }
 
@@ -162,7 +163,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
                 return str;
             }
         }
-        
+
 		$scope.WizardClick = function (clickID) {
 			if (clickID == 1) {
 				if($scope.tabId > 1)
@@ -170,7 +171,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			}
 			else if (clickID == 2) {
 				 
-				if($scope.tabId < 3)
+				if($scope.tabId < 4)
 				{
 					$scope.tabId = $scope.tabId + 1;
 				}
@@ -178,7 +179,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 				{
 					$scope.opts = "---";
 				}
-				if($scope.tabId == 3)
+				if($scope.tabId == 4)
 				{
 					var fld;
 					var data = "{";
@@ -219,16 +220,36 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 				$scope.status1 = "active";
 				$scope.status2 = "";
 				$scope.status3 = "";
+				$scope.status4 = "";
+				$scope.status5 = "";
 			}
 			else if ($scope.tabId == 2) {
 				$scope.status1 = "complete";
 				$scope.status2 = "active";
 				$scope.status3 = "";
+				$scope.status4 = "";
+				$scope.status5 = "";
 			}
 			else if ($scope.tabId == 3) {
 				$scope.status1 = "complete";
 				$scope.status2 = "complete";
 				$scope.status3 = "active";
+				$scope.status4 = "";
+				$scope.status5 = "";
+			}
+			else if ($scope.tabId == 4) {
+				$scope.status1 = "complete";
+				$scope.status2 = "complete";
+				$scope.status3 = "complete";
+				$scope.status4 = "active";
+				$scope.status5 = "";
+			}
+			else if ($scope.tabId == 5) {
+				$scope.status1 = "complete";
+				$scope.status2 = "complete";
+				$scope.status3 = "complete";
+				$scope.status4 = "complete";
+				$scope.status5 = "active";
 			}
 		};
 

@@ -73,6 +73,8 @@ function HostsList($scope, HostsList, $rootScope, GetBasePath,
         $state.go('hosts.edit.insights', {host_id:id});
     };
     $scope.toggleHost = function(event, host) {
+    	console.log(event);
+    	console.log(host);
         try {
             $(event.target).tooltip('hide');
         } catch (e) {
