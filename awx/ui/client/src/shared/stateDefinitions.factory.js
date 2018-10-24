@@ -1003,6 +1003,7 @@ export default ['$rootScope', '$injector', '$stateExtender', '$log', 'i18n',
                     // aren't set as default params out of the gate, then smart
                     // search will think they need to be set as search tags.
                     var params;
+                    var select_type;
                     if (field.sourceModel === "organization") {
                         params = {
                             page_size: '5',

@@ -17,6 +17,7 @@ stateTree: 'infraProviders'
 breadcrumbName: 'INFRA PROVIDER'
 showActions: true
 launchclick: 'addNew("amazon_ec2")'
+steps: 4
 
 wizards: 
     basic: 
@@ -106,18 +107,6 @@ fields:
     control: '<instance-groups-multiselect instance-groups="instance_groups" field-is-disabled="!(inventory_obj.summary_fields.user_capabilities.edit || canAdd)"></instance-groups-multiselect>'
     ngShow: 'tabId == 2'
 
-  inventory_hostss:
-    label: 'Inventory Host'
-    type: 'custom'
-    sourceModel: 'host'
-    basePath: 'hosts'
-    awPopOver: "<p> Select the Inventory Hosts for this Inventory to run on. </p>"
-    dataTitle: 'Inventory Host'
-    dataPlacement: 'right'
-    dataContainer: 'body'
-    control: '<instance-groups-multiselect instance-groups="instance_groups" field-is-disabled="!(inventory_obj.summary_fields.user_capabilities.edit || canAdd)"></instance-groups-multiselect>'
-    ngShow: 'tabId == 2'
-
   inventory_host:
      label: 'Inventory Host Single Select'
      type: 'lookup'
@@ -129,18 +118,18 @@ fields:
      required: true
      dataContainer: 'body'
      dataPlacement: 'right'
-     ngShow: 'tabId == 3'##
+     ngShow: 'tabId == 3'
 
   inventory_hosts:
      label: 'Inventory Host'
      type: 'custom'
-     sourceModel: 'host'
+     sourceModel: 'hosts'
      basePath: 'hosts'
      awPopOver: "<p> Select the Inventory Hosts for this Inventory to run on. </p>"
      dataTitle: 'Inventory Host'
      dataPlacement: 'right'
      dataContainer: 'body'
-     control: '<multiselect-template multiselect-template="selectedVars"></multiselect-template>'
+     control: '<inventory-hosts-multiselect  bind="inventory_hosts"></inventory-hosts-multiselect>'
      ngShow: 'tabId == 3'
 
   opts: 

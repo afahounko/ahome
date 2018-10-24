@@ -39,15 +39,15 @@ export default ['i18n', function(i18n) {
             },
 		    type: {
                 label: i18n._('Type'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
+                columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
 			version: {
                 label: i18n._('Version'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
+                columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
 			lastupdated: {
                 label: i18n._('Last Updated'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
+                columnClass: 'col-md-5 col-sm-5 hidden-xs'
             },
         },
 /*
@@ -70,9 +70,25 @@ export default ['i18n', function(i18n) {
             launch: {
                 label: i18n._('Launch'),
                 icon: 'icon-launch',
-               	ngClick: "launchJob(job.id)",
+               	ngClick: "launchJob(job.id,'template_id')",
                 "class": 'btn-xs btn-default',
                 awToolTip: i18n._('Launch Job'),
+                dataPlacement: 'top',
+            },
+		    poweroff: {
+                label: i18n._('Launch Poweroff Job Template'),
+                iconClass: 'fa fa-power-off',
+               	ngClick: "launchJob(job.id,'poweroff_id')",
+                "class": 'btn-xs btn-default',
+                awToolTip: i18n._('Stop Job'),
+                dataPlacement: 'top',
+            },
+			remove: {
+                label: i18n._('Launch Remove Job Template'),
+                iconClass: 'fa fa-remove',
+               	ngClick: "launchJob(job.id,'remove_id')",
+                "class": 'btn-xs btn-default',
+                awToolTip: i18n._('Remove Job'),
                 dataPlacement: 'top',
             },
             edit: {

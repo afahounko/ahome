@@ -18,7 +18,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
         	fk_type =  $window.localStorage.getItem('fk_type'),
         	fk_id =  $window.localStorage.getItem('fk_id'),
         	defaultUrl = GetBasePath('ipam_infrastructure_jobs');
-        var project_id, template_id;
+        var project_id, template_id, poweroff_id, remove_id;
         init();
 
         function init() {
@@ -61,7 +61,8 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
 			$scope.paramCategory = fk_model + '.' + fk_type
             console.log($scope.paramCategory);
         }
-
+		
+		//This function is for Getting Job Template's status
 	    function processJobRow(job) {
 	    	console.log('ProcessJobRow');
 	    	console.log(job);
@@ -108,24 +109,25 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
             $state.go('infraJobsList.add_' + param);
         };
  
-        $scope.launchJob= function(job_id) {
+        $scope.launchJob= function(job_id, launch_type) {
             Wait('start');
             Rest.setUrl(GetBasePath('ipam_infrastructure_jobs') + job_id);
             Rest.get(GetBasePath('ipam_infrastructure_jobs') + job_id).then(({data}) => {
-            	var template_id = data.opts.template_id;
+            	
+            	var job_template_id = data.opts[launch_type];
             	console.log(template_id);
             	const jobTemplate = new JobTemplate();
             	const selectedJobTemplate = jobTemplate.create();
 	            const preLaunchPromises = [
-	                selectedJobTemplate.getLaunch(template_id),
-	                selectedJobTemplate.optionsLaunch(template_id),
+	                selectedJobTemplate.getLaunch(job_template_id),
+	                selectedJobTemplate.optionsLaunch(job_template_id),
 	            ];
 				
 	            Promise.all(preLaunchPromises)
 	                .then(([launchData, launchOptions]) => {
 	                    if (selectedJobTemplate.canLaunchWithoutPrompt()) {
 	                        selectedJobTemplate
-	                            .postLaunch({ id: template_id })
+	                            .postLaunch({ id: job_template_id })
 	                            .then(({ data }) => {
 	                                $state.go('output', { id: data.job, type: 'playbook' }, { reload: true });
 	                            });
@@ -133,7 +135,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
 	                        const promptData = {
 	                            launchConf: launchData.data,
 	                            launchOptions: launchOptions.data,
-	                            template: template_id,
+	                            template: job_template_id,
 	                            templateType: 'job_template',
 	                            prompts: PromptService.processPromptValues({
 	                                launchConf: launchData.data,
@@ -143,7 +145,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
 	                        };
 
 	                        if (launchData.data.survey_enabled) {
-	                            selectedJobTemplate.getSurveyQuestions(template_id)
+	                            selectedJobTemplate.getSurveyQuestions(job_template_id)
 	                                .then(({ data }) => {
 	                                    const processed = PromptService.processSurveyQuestions({
 	                                        surveyQuestions: data.spec
@@ -182,6 +184,8 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
                 	console.log(data);
                 	project_id = data.opts.project_id;
                 	template_id = data.opts.template_id;
+                	poweroff_id = data.opts.poweroff_id;
+                	remove_id = data.opts.remove_id;
                 	console.log(project_id);
 					console.log(template_id);
 					Rest.setUrl(GetBasePath('projects') + project_id + '/');
@@ -189,10 +193,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
 	                    .then(() => {
 	                    })
 	                    .catch(({data, status}) => {
-	                        ProcessErrors($scope, data, status, null, {
-	                            hdr: i18n._('Error!'),
-	                            msg: i18n.sprintf(i18n._('Call to %s failed. DELETE Related Project returned status: '), url) + status
-	                        });
+	                        console.log('delete Project failed');
 	                    });
 
 		            Rest.setUrl(GetBasePath('job_templates') + template_id + '/');
@@ -200,12 +201,24 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
 	                    .then(() => {
 	                    })
 	                    .catch(({data, status}) => {
-	                        ProcessErrors($scope, data, status, null, {
-	                            hdr: i18n._('Error!'),
-	                            msg: i18n.sprintf(i18n._('Call to %s failed. DELETE Related JobTemplate returned status: '), url) + status
-	                        });
+	                        console.log('delete JobTemplate + templateid failed');
 	                    });
 	                    
+		            Rest.setUrl(GetBasePath('job_templates') + poweroff_id + '/');
+	                Rest.destroy()
+	                    .then(() => {
+	                    })
+	                    .catch(({data, status}) => {
+	                        console.log('delete JobTemplate + poweroff_id failed');
+	                    });
+	                    
+		            Rest.setUrl(GetBasePath('job_templates') + remove_id + '/');
+	                Rest.destroy()
+	                    .then(() => {
+	                    })
+	                    .catch(({data, status}) => {
+	                        console.log('delete JobTemplate + remove_id failed');
+	                    });
 	                    
 	                Rest.setUrl(defaultUrl);
 	                Rest.destroy()

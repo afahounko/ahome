@@ -1432,7 +1432,6 @@ export default
                                             text: field.subCheckbox.text || ''
                                         };
                                     }
-
                                     html += label(labelOptions);
                                     html += "<div ";
                                     html += (horizontal) ? "class=\"" + getFieldWidth() + "\"" : "";

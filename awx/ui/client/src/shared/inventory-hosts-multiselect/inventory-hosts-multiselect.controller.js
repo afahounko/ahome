@@ -4,13 +4,13 @@ export default ['$scope',
 		console.log($scope);
         $scope.multiselectTags = [];
 
-        $scope.$watch('selectedVars', function() {
-            $scope.multiselectTags = $scope.selectedVars;
+        $scope.$watch('inventory_hosts', function() {
+            $scope.multiselectTags = $scope.inventory_hosts;
             console.log($scope.multiselectTags);
         }, true);
 
         $scope.deleteTag = function(tag){
-            _.remove($scope.selectedVars, {id: tag.id});
+            _.remove($scope.inventory_hosts, {id: tag.id});
         };
     }
 ];

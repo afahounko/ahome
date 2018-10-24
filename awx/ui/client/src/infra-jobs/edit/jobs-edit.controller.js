@@ -21,7 +21,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'JobForm', 'G
         	id_type = $window.localStorage.getItem('form_id'),
             form = JobForm[id_type],
             defaultUrl = GetBasePath('ipam_infrastructure_jobs') + id;
-        var project_id, template_id;
+        var project_id, template_id, poweroff_id, remove_id;
         console.log($stateParams);
         console.log(JobForm);
         console.log(form);
@@ -35,6 +35,9 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'JobForm', 'G
                 $scope.job_id = id;
                 project_id = data.opts.project_id;
                 template_id = data.opts.template_id;
+                poweroff_id = data.opts.poweroff_id;
+                remove_id = data.opts.remove_id;
+                
 		        $scope.tabId = 1;
                 $scope.status1 = "active";
                 for (itm in data.opts)
@@ -221,7 +224,9 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'JobForm', 'G
 		            data += "'fk_id':'" + fk_id + "',\n";
 		            data += "'scm_type':'',\n";
 		            data += "'project_id':'" + project_id + "',\n";
-		            data += "'template_id':'" + template_id + "'\n";
+		            data += "'template_id':'" + template_id + "',\n";
+					data += "'poweroff_id':'" + poweroff_id + "',\n";
+		            data += "'remove_id':'" + remove_id + "'\n";
 		        	data += "}";
 		        	console.log(data);
 		            $scope.opts = ParseVariableString(data);

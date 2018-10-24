@@ -94,7 +94,6 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
             var panel = element.getElementsByClassName("Panel ng-scope");
             panel[0].classList.add("modal-dialog");
             panel[0].style.width = "60%";
-            panel[0].style.height = "80%";
 
         }
 
@@ -179,9 +178,9 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 				{
 					$scope.opts = "---";
 				}
-				if($scope.tabId == 4)
+				if((form.steps && $scope.tabId == form.steps) || (!form.steps && $scope.tabId == 3))
 				{
-					var fld;
+					var fld, subid;
 					var data = "{";
 					for (fld in form.fields) {
 						
@@ -193,19 +192,35 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			            	data += ",\n"; 
 			            	continue;
 						}
+						if(fld == "inventory_hosts" || fld == "instance_groups")
+						{
+							data += "'" + fld + "':";
+							if($scope[fld] != undefined)
+							{
+								data += "'"
+								for(subid in $scope[fld]){
+									data += $scope[fld][subid].name + ',';
+								}
+								data += "',"; 
+							}
+							else data += "'',";
+							data+= "\n";
+							continue;
+						}
 		            	if(fld != "opts")
 		            	{
 			            	data += "'" + fld + "':";
 			            	if($scope[fld] != undefined) data += "'" + $scope[fld] + "'";
 			            	else data += "''";
 			            	data += ",\n"; 
+			            	
 			            }
 		            }
 		            data += "'id_type':'" + id_type + "'\n";
 		        	data += "}";
+		        	console.log(data);
 		            $scope.opts = ParseVariableString(data);
 					$scope.parseTypeOpts = 'yaml';
-					console.log(form);
 			        ParseTypeChange({
 			            scope: $scope,
 			            field_id: id_type + '_opts',
@@ -243,6 +258,9 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 				$scope.status3 = "complete";
 				$scope.status4 = "active";
 				$scope.status5 = "";
+				console.log('scope is ');
+				console.log($scope);
+				
 			}
 			else if ($scope.tabId == 5) {
 				$scope.status1 = "complete";
@@ -269,25 +287,69 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
         };
         // Save
         $scope.formSave = function() {
-            var fld, data = {};
-            Rest.setUrl(defaultUrl);
-            var data = processNewData(form.fields);
-            Wait('start');
-            Rest.post(data)
-                .then(({data}) => {
-                    var base = $location.path().replace(/^\//, '').split('/')[0];
-                    if (base === 'ipam_providers') {
-                        $rootScope.flashMessage = i18n._('New Provider successfully created!');
-                        $rootScope.$broadcast("EditIndicatorChange", "Provider", data.id);
-                        
-                         $state.go('infraProvidersList', null, { reload: true });
-                    } else {
-                        ReturnToCaller(1);
-                    }
-                })
-                .catch(({data, status}) => {
-                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to add new Provider. POST returned status: ') + status });
-                });
+            var fld, data = {}, credential_data = {};
+            
+            if(id_type == "vmware_vcenter")
+            {
+            	Rest.setUrl(GetBasePath('credentials'));
+	            credential_data.name = $scope.name;
+	            credential_data.description = $scope.description;
+	            credential_data.user = 1;   // only for user type
+	            credential_data.credential_type = 7;   // for now it is for Vmwarevcenter	            
+	        	credential_data.inputs = {};
+	        	credential_data.inputs.host = $scope.host;
+	        	credential_data.inputs.username = $scope.username;
+	        	credential_data.inputs.password = $scope.password;
+
+	            Wait('start');
+	            Rest.post(credential_data)
+	                .then(({data}) => {
+	                	console.log('credential successfully created!!!');
+	                	Rest.setUrl(defaultUrl);
+			            var data_subitem = processNewData(form.fields);
+			            var opts_field = "'credential_id':'" + data.id + "',\n";
+						data_subitem.opts = data_subitem.opts.slice(0, 1) + opts_field + data_subitem.opts.slice(1);
+			            Rest.post(data_subitem)
+			                .then(({data}) => {
+			                    var base = $location.path().replace(/^\//, '').split('/')[0];
+			                    if (base === 'ipam_providers') {
+			                        $rootScope.flashMessage = i18n._('New Provider successfully created!');
+			                        $rootScope.$broadcast("EditIndicatorChange", "Provider", data.id);
+			                        
+			                        $state.go('infraProvidersList', null, { reload: true });
+			                    } else {
+			                        ReturnToCaller(1);
+			                    }
+			                })
+			                .catch(({data, status}) => {
+			                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to add new Provider. POST returned status: ') + status });
+			                });
+	                })
+	                .catch(({data, status}) => {
+	                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to add new Provider. POST returned status: ') + status });
+	                });
+            }
+            else
+            {
+	            Rest.setUrl(defaultUrl);
+	            var data = processNewData(form.fields);
+	            Wait('start');
+	            Rest.post(data)
+	                .then(({data}) => {
+	                    var base = $location.path().replace(/^\//, '').split('/')[0];
+	                    if (base === 'ipam_providers') {
+	                        $rootScope.flashMessage = i18n._('New Provider successfully created!');
+	                        $rootScope.$broadcast("EditIndicatorChange", "Provider", data.id);
+	                        
+	                        $state.go('infraProvidersList', null, { reload: true });
+	                    } else {
+	                        ReturnToCaller(1);
+	                    }
+	                })
+	                .catch(({data, status}) => {
+	                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to add new Provider. POST returned status: ') + status });
+	                });
+	        }
         };
 
         $scope.formCancel = function() {

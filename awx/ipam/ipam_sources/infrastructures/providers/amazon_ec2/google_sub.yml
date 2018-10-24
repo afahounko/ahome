@@ -1,33 +1,23 @@
+
 ---
-name: VmWare virtual machine
+name: GOOGLE SUB
 group: Cloud
 version: 1.0
 description: |
-     VmWare virtual machine
+     GOOGLE SUB
 
 hosts: all
 
 
-label_prefix: ''
-url: 'https://github.com/afahounko'
-project: 'https://github.com/ansible/ansible-tower-samples.git'
-playbook: 'hello_world.yml'
-playbook_poweroff: 'hello_world.yml'
-playbook_remove: 'hello_world.yml'
-
-
-
-addTitle: 'NEW VMWARE VM'
+addTitle: 'NEW GOOGLE SUB ITEM'
 editTitle: '{{ name }}'
-name: 'vmware_virtual_machine'
-title: 'VMWare Virtual Machine'
+name: 'google_sub'
+title: 'GOOGLE SUB'
 basePath: 'ipam_infrastructure_jobs'
-stateTree: 'infraJobsList.providers.vmware_vcenter'
-#basePath: 'ipam_providers'
-#stateTree: 'infraProviders'
-breadcrumbName: 'VMWARE VIRTUAL MACHINE'
+stateTree: 'infraJobsList.providers.google_sub'
+breadcrumbName: 'GOOGLE SUB'
 showActions: true
-launchclick: 'addNew("vmware_virtual_machine")'
+launchclick: 'addNew("google_sub")'
 
 wizards: 
     basic: 

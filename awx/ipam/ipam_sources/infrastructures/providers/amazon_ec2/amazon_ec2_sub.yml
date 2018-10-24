@@ -11,7 +11,7 @@ hosts: all
 
 addTitle: 'NEW AMAZON EC2 SUB ITEM'
 editTitle: '{{ name }}'
-name: 'amazon_ec2_sb'
+name: 'amazon_ec2_sub'
 title: 'AMAZON EC2 SUB'
 basePath: 'ipam_infrastructure_jobs'
 stateTree: 'infraJobsList.providers.amazon_ec2_sub'

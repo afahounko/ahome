@@ -1,7 +1,7 @@
 export default ['i18n', function(i18n) {
     return {
     	name: 'multiselectLists',
-		basePath: 'multiselectLists',
+		basePath: 'hosts',
     	iterator: 'multiselect',
 		editTitle: i18n._('MULTIPLE SELECT'),
         listTitle: i18n._('MULTIPLE SELECT'),

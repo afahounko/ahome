@@ -73,30 +73,56 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'ProviderList', 'Prom
         $scope.deleteProvider = function(id, name) {
             var action = function() {
                 $('#prompt-modal').modal('hide');
+                
                 Wait('start');
-                var url = defaultUrl + id + '/';
-                Rest.setUrl(url);
-                Rest.destroy()
-                    .then(() => {
-                        let reloadListStateParams = null;
+                
+                Rest.setUrl(defaultUrl + id);
+                Rest.get(defaultUrl).then(({data}) => {
+                		if(data.opts.credential_id){
+                			Rest.setUrl(GetBasePath('credentials') + data.opts.credential_id + '/');
+			                Rest.destroy()
+			                    .then(() => {
+			                        console.log('related credential deleted successfully');
+			                    })
+			                    .catch(({data, status}) => {
+			                        ProcessErrors($scope, data, status, null, {
+			                            hdr: i18n._('Error!'),
+			                            msg: i18n.sprintf(i18n._('Call to %s failed. DELETE CREDENTIAL returned status: '), url) + status
+			                        });
+			                    });
+                		}
+	                	var url = defaultUrl + id + '/';
+		                Rest.setUrl(url);
+		                Rest.destroy()
+		                    .then(() => {
+		                        let reloadListStateParams = null;
 
-                        if($scope.ipam_providers.length === 1 && $state.params.provider_search && !_.isEmpty($state.params.provider_search.page) && $state.params.provider_search.page !== '1') {
-                            reloadListStateParams = _.cloneDeep($state.params);
-                            reloadListStateParams.provider_search.page = (parseInt(reloadListStateParams.provider_search.page)-1).toString();
-                        }
+		                        if($scope.ipam_providers.length === 1 && $state.params.provider_search && !_.isEmpty($state.params.provider_search.page) && $state.params.provider_search.page !== '1') {
+		                            reloadListStateParams = _.cloneDeep($state.params);
+		                            reloadListStateParams.provider_search.page = (parseInt(reloadListStateParams.provider_search.page)-1).toString();
+		                        }
 
-                        if (parseInt($state.params.provider_id) === id) {
-                            $state.go('^', null, { reload: true });
-                        } else {
-                            $state.go('.', null, { reload: true });
-                        }
-                    })
+		                        if (parseInt($state.params.provider_id) === id) {
+		                            $state.go('^', null, { reload: true });
+		                        } else {
+		                            $state.go('.', null, { reload: true });
+		                        }
+		                    })
+		                    .catch(({data, status}) => {
+		                        ProcessErrors($scope, data, status, null, {
+		                            hdr: i18n._('Error!'),
+		                            msg: i18n.sprintf(i18n._('Call to %s failed. DELETE returned status: '), url) + status
+		                        });
+		                    });
+                	})
                     .catch(({data, status}) => {
                         ProcessErrors($scope, data, status, null, {
                             hdr: i18n._('Error!'),
                             msg: i18n.sprintf(i18n._('Call to %s failed. DELETE returned status: '), url) + status
                         });
                     });
+                
+                
             };
 
             Prompt({

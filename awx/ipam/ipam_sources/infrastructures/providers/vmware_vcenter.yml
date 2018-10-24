@@ -28,24 +28,32 @@ stateTree: 'infraProviders'
 breadcrumbName: 'INFRA PROVIDER'
 showActions: true
 launchclick: 'addNew("vmware_vcenter")'
+steps: 4
 
 wizards: 
     basic: 
       index: 1
       name: 'Variable'
       type: 'collection'
-      title: 'Variable'
-    
+      title: 'Informations'
+
     relation: 
       index: 2
-      name: 'Relation'
+      name: 'Credentials'
       type: 'collection'
-      title: Relation
-    opts:
+      title: 'Credentials'
+
+    inventory:
       index: 3
+      name: 'Inventory'
+      type: 'collection'
+      title: Inventory
+
+    opts:
+      index: 4
       name: 'Option'
       type: 'collection'
-      title: 'Option'
+      title: 'Options'
 
 fields:
   name: 
@@ -61,29 +69,38 @@ fields:
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 1'
 
-  token:
-    label: 'Token'
+  host:
+    label: VCenter Host
     type: 'text'
-    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
-    ngShow: 'tabId == 1'
-
-  datacenter: 
-    label: 'Datacenter'
-    type: 'select'
-    defaultText: 'Choose a Datacenter'
-    ngModel: 'datacenter'
-    ngOptions: 'item as item.label for item in datacenter_type_options'
-    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    dataTitle: 'Choose a Credential'
+    awPopOverWatch: 'Enter the hostname or IP address that corresponds to your VMware vCenter.'
+    required: true
     ngShow: 'tabId == 2'
 
-  credential: 
-    label: Credential
-    type: 'select'
-    defaultText: 'Choose a Credential'
-    ngModel: 'credential'
-    ngOptions: 'item as item.label for item in credential_type_options'
-    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+  username: 
+    label: 'Username'
+    type: 'text'
+    required: true
     ngShow: 'tabId == 2'
+
+  password: 
+    label: 'Password'
+    type: 'sensitive'
+    hasShowInputButton: true
+    required: true
+    ngShow: 'tabId == 2'
+
+  inventory_hosts:
+     label: 'Inventory Host'
+     type: 'custom'
+     sourceModel: 'hosts'
+     basePath: 'hosts'
+     awPopOver: "<p> Select the Inventory Hosts for this Inventory to run on. </p>"
+     dataTitle: 'Inventory Host'
+     dataPlacement: 'right'
+     dataContainer: 'body'
+     control: '<inventory-hosts-multiselect  bind="inventory_hosts"></inventory-hosts-multiselect>'
+     ngShow: 'tabId == 3'
 
   opts: 
     label: Input Opts'
@@ -98,7 +115,7 @@ fields:
     dataPlacement: 'right'
     dataContainer: "body"
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
-    ngShow: 'tabId == 3'
+    ngShow: 'tabId == 4'
 
 buttons: 
   wizardcancel:
@@ -111,10 +128,10 @@ buttons:
 
   next:
     ngClick: 'WizardClick(2)'
-    ngShow: 'tabId < 3'
+    ngShow: 'tabId < 4'
 
   save:
     title: 'Finish'
     ngClick: 'formSave()'
-    ngShow: 'tabId == 3'
+    ngShow: 'tabId == 4'
     ngDisabled: true

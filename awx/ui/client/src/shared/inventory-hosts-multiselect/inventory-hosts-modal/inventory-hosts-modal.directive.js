@@ -2,23 +2,23 @@ export default ['templateUrl', '$window', function(templateUrl, $window) {
     return {
         restrict: 'E',
         scope: {
-            selectedVars: '='
+            inventory_hosts: '=?bind'
         },
-        templateUrl: templateUrl('shared/multiselect-template/multiselect-template-modal/multiselect-template-modal'),
+        templateUrl: templateUrl('shared/inventory-hosts-multiselect/inventory-hosts-modal/inventory-hosts-modal'),
 
         link: function(scope, element) {
 			console.log('Multi Modal link function');
-            $('#multiselect-template-modal').on('hidden.bs.modal', function () {
-                $('#multiselect-template-modal').off('hidden.bs.modal');
+            $('#inventory-hosts-modal').on('hidden.bs.modal', function () {
+                $('#inventory-hosts-modal').off('hidden.bs.modal');
                 $(element).remove();
             });
 
             scope.showModal = function() {
-                $('#multiselect-template-modal').modal('show');
+                $('#inventory-hosts-modal').modal('show');
             };
 
             scope.destroyModal = function() {
-                $('#multiselect-template-modal').modal('hide');
+                $('#inventory-hosts-modal').modal('hide');
             };
         },
 
@@ -27,13 +27,13 @@ export default ['templateUrl', '$window', function(templateUrl, $window) {
             function init() {
 
 					let multiselectList = _.cloneDeep(MultiselectList);
-
+					console.log('inventory-hosts-modal-dialog');
                     $scope.multiselect_queryset = {
                         order_by: 'name',
                         page_size: 5
                     };
 
-                    $scope.instance_group_default_params = {
+                    $scope.multiselect_default_params = {
                         order_by: 'name',
                         page_size: 5
                     };
@@ -50,7 +50,7 @@ export default ['templateUrl', '$window', function(templateUrl, $window) {
                                 selectedRows: 'igTags',
                                 availableRows: 'multiselectLists'
                             };
-                            multiselectList.fields.name.ngClick = "linkoutInstanceGroup(instance_group)";
+                            //multiselectList.fields.name.ngClick = "linkoutInstanceGroup(instance_group)";
 
                             console.log(multiselectList);
 
@@ -60,9 +60,9 @@ export default ['templateUrl', '$window', function(templateUrl, $window) {
                             })}`;
 
                             $scope.list = multiselectList;
-                            $('#multiselect-template-modal-body').append($compile(html)($scope));
+                            $('#inventory-hosts-modal-body').append($compile(html)($scope));
 
-                            if ($scope.selectedVars) {
+                            if ($scope.inventory_hosts) {
                                 $scope.multiselectLists.map( (item) => {
                                     isSelected(item);
                                 });
@@ -80,13 +80,12 @@ export default ['templateUrl', '$window', function(templateUrl, $window) {
                             });
                         });
                     });
-
             }
 
             init();
 
             function isSelected(item) {
-                if(_.find($scope.selectedVars, {id: item.id})){
+                if(_.find($scope.inventory_hosts, {id: item.id})){
                     item.isSelected = true;
                     if (!$scope.igTags) {
                         $scope.igTags = [];
@@ -108,17 +107,17 @@ export default ['templateUrl', '$window', function(templateUrl, $window) {
                 }
             });
 
-            $scope.linkoutInstanceGroup = function(param) {
-                $window.open('/#/instance_groups/' + param.id + '/instances','_blank');
-            };
+//            $scope.linkoutInstanceGroup = function(param) {
+//                $window.open('/#/instance_groups/' + param.id + '/instances','_blank');
+//		    };
 
             $scope.cancelForm = function() {
                 $scope.destroyModal();
             };
 
             $scope.saveForm = function() {
-                $scope.selectedVars = $scope.igTags;
-                console.log($scope.selectedVars);
+                $scope.inventory_hosts = $scope.igTags;
+                console.log($scope.inventory_hosts);
                 $scope.destroyModal();
             };
         }]
