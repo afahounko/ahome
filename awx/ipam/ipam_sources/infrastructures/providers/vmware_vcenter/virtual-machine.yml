@@ -7,13 +7,12 @@ description: |
 
 hosts: all
 
-
 project:
     name_prefix: 'Configure_'
     description: ''
-    scm_type: "git"
+    scm_type: 'git'
     scm_branch: ''
-    scm_url: 'https://github.com/ansible/ansible-tower-samples.git'
+    scm_url: 'https://git.afahounko.com/caas/vmware.git'
     scm_clean: true
     scm_delete_on_update: true
     credential: null
@@ -24,7 +23,7 @@ project:
 
 configure_job:
     name_prefix: 'Configure_'
-    playbook: 'hello_world.yml'
+    playbook: 'create_vm.yml'
     description: ''
     job_type: "run"
     inventory: 1
@@ -59,7 +58,7 @@ configure_job:
 
 poweroff_job:
     name_prefix: 'Poweroff_'
-    playbook: 'hello_world.yml'
+    playbook: 'destroy_vm.yml'
     description: ''
     job_type: "run"
     inventory: 1
@@ -94,7 +93,7 @@ poweroff_job:
 
 remove_job:
     name_prefix: 'Remove_'
-    playbook: 'hello_world.yml'
+    playbook: 'remove_vm.yml'
     description: ''
     job_type: "run"
     inventory: 1
@@ -186,14 +185,14 @@ fields:
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 2'
 
-  credential:
+  multiCredential:
     label: 'Credential'
     type: 'custom'
-    control: `<multi-credential credentials="credentials" prompt="ask_credential_on_launch" credential-not-present="credentialNotPresent" selected-credentials="multiCredential.selectedCredentials" credential-types="multiCredential.credentialTypes" field-is-disabled="!(job_template_obj.summary_fields.user_capabilities.edit || canAddJobTemplate)"> </multi-credential>`
-    awPopOver: 'Select credentials that allow Tower to access the nodes this job will be ran against. You can only select one credential of each type. For machine credentials (SSH) checking  "Prompt on launch" without selecting credentials will require you to select a machine credential at run time. If you select credentials and check "Prompt on launch" the selected credential(s) become the defaults that can be updated at run time.'
+    control: '<multi-credential credentials="credentials" prompt="ask_credential_on_launch" credential-not-present="credentialNotPresent" selected-credentials="multiCredential.selectedCredentials" credential-types="multiCredential.credentialTypes"> </multi-credential>'
+    awPopOver: 'Select credentials that allow Tower to access the nodes this job will be ran against. You can only select one credential of each type. For machine credentials (SSH) checking  "Prompt on launch" without selecting credentials will require you to select a machine credential at run time. If you select credentials and check <Prompt on launch> the selected credential(s) become the defaults that can be updated at run time.'
     dataTitle: 'Credentials'
     dataPlacement: 'right'
-    dataContainer: "body"
+    dataContainer: 'body'
     subCheckbox:
       variable: 'ask_credential_on_launch'
       text: 'Prompt on launch'

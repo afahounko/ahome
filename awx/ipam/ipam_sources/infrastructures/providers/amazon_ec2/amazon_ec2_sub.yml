@@ -9,8 +9,8 @@ description: |
 hosts: all
 
 project_url: 'https://github.com/ansible/ansible-tower-samples.git'
-configure_label_prefix: 'Configure_'
 
+configure_label_prefix: 'Configure_'
 configure_playbook: 'hello_world.yml'
 
 poweroff_label_prefix: 'PowerOff_'

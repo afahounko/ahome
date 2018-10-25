@@ -13,10 +13,10 @@ const user_type_options = [
 ];
 
 export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'Rest','ParseTypeChange',
-    'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath',
+    'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath', 'MultiCredentialService',
     'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString',
     function($window, $scope, $rootScope, JobForm, GenerateForm, Rest, ParseTypeChange, Alert,
-    ProcessErrors, ReturnToCaller, GetBasePath, Wait, CreateSelect2,
+    ProcessErrors, ReturnToCaller, GetBasePath, MultiCredentialService, Wait, CreateSelect2,
     $state, $location, i18n, ParseVariableString) {
 
         var defaultUrl = GetBasePath('ipam_infrastructure_jobs'),
@@ -24,7 +24,8 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
         	fk_type =  $window.localStorage.getItem('fk_type'),
         	fk_id =  $window.localStorage.getItem('fk_id'),
         	id_type = $window.localStorage.getItem('form_id'),
-            form = JobForm[id_type];
+            form = JobForm[id_type],
+        	mcredentials = [];
 
         init();
 
@@ -94,6 +95,14 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 	            element: '#' + id_type + '_credential',
 	            multiple: false,
 	        });
+	       	//for multi credential 2018/10/25
+            MultiCredentialService.getCredentialTypes()
+            .then(({ data }) => {
+                $scope.multiCredential = {
+                    credentialTypes: data.results,
+                    selectedCredentials: []
+                };
+            });
             // change to modal dialog
 
             var element = document.getElementById("modaldlg");
@@ -154,8 +163,9 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 				}
 				if($scope.tabId == 3)
 				{
-					var fld;
+					var fld, subid;
 					var data = "{";
+					console.log($scope);
 					for (fld in form.fields) {
 						
 						if(fld == "datacenter" || fld == "credential")
@@ -165,6 +175,27 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 			            	else data += "''";
 			            	data += ",\n"; 
 			            	continue;
+						}
+						if(fld == "multiCredential")
+						{
+							mcredentials = [];
+							data += "'" + fld + "':";
+							if($scope[fld]['selectedCredentials'] != undefined)
+							{
+								data += "'"
+								for(subid in $scope[fld]['selectedCredentials']){
+									var cred = {};
+									console.log($scope[fld]['selectedCredentials'][subid]);
+									cred.id = $scope[fld]['selectedCredentials'][subid].id;
+									data += $scope[fld]['selectedCredentials'][subid].id + ',';
+									mcredentials.push(cred);
+								}
+								data += "',"; 
+							}
+							else data += "'',";
+							data+= "\n";
+							console.log(mcredentials);
+							continue;
 						}
 		            	if(fld != "opts")
 		            	{
@@ -283,6 +314,14 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 					            .then(({data}) => {
 					            	
 					            	poweroff_id = data.id;
+					            	//Add multi credentials for poweroff
+					            	Rest.setUrl(GetBasePath('job_templates') + data.id + '/credentials/');
+					            	console.log(mcredentials);
+					            	for(var fld in mcredentials)
+					            	{
+						            	Rest.post(mcredentials[fld]);
+					            	}
+						            
 					            	//************************************ Save Remove_JobTemplate **********************************
 									data_job = form.remove_job;
 									data_job.name = data_job.name_prefix + $scope.name;
@@ -293,6 +332,14 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 							            .then(({data}) => {
 							            	
 							            	remove_id = data.id;
+							            	//Add multi credentials for poweroff
+							            	Rest.setUrl(GetBasePath('job_templates') + data.id + '/credentials/');
+							            	console.log(mcredentials);
+							            	for(var fld in mcredentials)
+							            	{
+								            	Rest.post(mcredentials[fld]);
+							            	}
+							            	
 							            	//************************************ Save Configure_JobTemplate **********************************
 											data_job = form.configure_job;
 											data_job.name = data_job.name_prefix + $scope.name;
@@ -303,6 +350,14 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 								            .then(({data}) => {
 							                	console.log('Job Template Post succeed');
 							                	
+							                	//Add multi credentials for Configure Job
+							                	Rest.setUrl(GetBasePath('job_templates') + data.id + '/credentials/');
+								            	console.log(mcredentials);
+								            	for(var fld in mcredentials)
+								            	{
+									            	Rest.post(mcredentials[fld]);
+								            	}
+
 							                	//Save Job (Sub Items)
 									            Rest.setUrl(defaultUrl);
 									            var data_subitem = processNewData(form.fields);
@@ -345,7 +400,7 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 				                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'),
 				                        msg: i18n._('Failed to create new POWER OFF JOB TEMPLATE. POST returned status: ') + status });
 				                });
-							}, 10000);
+							}, 15000);
 							//****************************************************************************/
 
 			            //defaultprojectUrl = GetBasePath('projects');
