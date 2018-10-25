@@ -8,6 +8,16 @@ description: |
 
 hosts: all
 
+project_url: 'https://github.com/ansible/ansible-tower-samples.git'
+configure_label_prefix: 'Configure_'
+
+configure_playbook: 'hello_world.yml'
+
+poweroff_label_prefix: 'PowerOff_'
+poweroff_playbook: 'hello_world.yml'
+
+remove_label_prefix: 'Remove_'
+remove_playbook: 'hello_world.yml'
 
 addTitle: 'NEW AMAZON EC2 SUB ITEM'
 editTitle: '{{ name }}'

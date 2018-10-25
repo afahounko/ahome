@@ -103,13 +103,16 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
             panel[0].style.width = "60%";
 
         }
+
 		var callback = function() {
             // Make sure the form controller knows there was a change
             $scope[form.name + '_form'].$setDirty();
         };
+
         $scope.toggleForm = function(key) {
             $scope[key] = !$scope[key];
         };
+
 		function getVars(str){
             // Quick function to test if the host vars are a json-object-string,
             // by testing if they can be converted to a JSON object w/o error.
@@ -231,10 +234,10 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 			var new_project_id = 0, poweroff_id = 0, remove_id = 0;
 			Wait('start');
 			//Project Saving
-    		data_project.name = 'Configure_' + $scope.name;
+    		data_project.name = form.configure_label_prefix + $scope.name;
     		data_project.description = "";
     		data_project.scm_type = "git";
-    		data_project.scm_url = "https://github.com/ansible/ansible-tower-samples.git";
+    		data_project.scm_url = form.configure_project;
     		data_project.scm_branch = "";
     		data_project.scm_clean = true;
     		data_project.scm_delete_on_update = true;
@@ -255,118 +258,127 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
                 	console.log(data);
                 	new_project_id = data.id;
 					console.log('Project Post Succeed : ' + new_project_id);
-					//Job Saving
-		    		data_job.project = new_project_id;
-					data_job.description = "";
-					data_job.job_type = "run";
-					data_job.inventory = 1;
-					data_job.playbook = "hello_world.yml";
-					data_job.forks = 0;
-					data_job.limit = "";
-					data_job.verbosity = 0;
-					data_job.extra_vars = "webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3";
-					data_job.job_tags = "";
-					data_job.force_handlers = false;
-					data_job.skip_tags = "";
-					data_job.start_at_task = "";
-					data_job.timeout = 0;
-					data_job.use_fact_cache = false;
-					data_job.host_config_key = "";
-					data_job.ask_diff_mode_on_launch = false;
-					data_job.ask_variables_on_launch = false;
-					data_job.ask_limit_on_launch = false;
-					data_job.ask_tags_on_launch = false;
-					data_job.ask_skip_tags_on_launch = false;
-					data_job.ask_job_type_on_launch = false;
-					data_job.ask_verbosity_on_launch = false;
-					data_job.ask_inventory_on_launch = false;
-					data_job.ask_credential_on_launch = false;
-					data_job.survey_enabled = false;
-					data_job.become_enabled = false;
-					data_job.diff_mode = false;
-					data_job.allow_simultaneous = false;
-					data_job.cloud_credential = null;
-					data_job.network_credential = null;
-					data_job.credential = 1; 
-					data_job.vault_credential = null;
-
-					console.log(data_job);
 					
+					//Check if the data_project created successfully or not.
+					//Rest.get().then(({data}) => {
+			        	//Job Saving
+			    		data_job.project = new_project_id;
+			    		data_job.playbook = form.configure_playbook;
+						data_job.description = "";
+						data_job.job_type = "run";
+						data_job.inventory = 1;
+						data_job.forks = 0;
+						data_job.limit = "";
+						data_job.verbosity = 0;
+						data_job.extra_vars = "webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3";
+						data_job.job_tags = "";
+						data_job.force_handlers = false;
+						data_job.skip_tags = "";
+						data_job.start_at_task = "";
+						data_job.timeout = 0;
+						data_job.use_fact_cache = false;
+						data_job.host_config_key = "";
+						data_job.ask_diff_mode_on_launch = false;
+						data_job.ask_variables_on_launch = false;
+						data_job.ask_limit_on_launch = false;
+						data_job.ask_tags_on_launch = false;
+						data_job.ask_skip_tags_on_launch = false;
+						data_job.ask_job_type_on_launch = false;
+						data_job.ask_verbosity_on_launch = false;
+						data_job.ask_inventory_on_launch = false;
+						data_job.ask_credential_on_launch = false;
+						data_job.survey_enabled = false;
+						data_job.become_enabled = false;
+						data_job.diff_mode = false;
+						data_job.allow_simultaneous = false;
+						data_job.cloud_credential = null;
+						data_job.network_credential = null;
+						data_job.credential = 1; 
+						data_job.vault_credential = null;
 
-					//Run this function after 5s delay
-					setTimeout(function(){
-						
-						//**************************** Make Job_Template named Prefix as "Poweroff_" and "Remove_" ************
-						
-						//************************************ Save Poweroff_JobTemplate **********************************
-						data_job.name = 'Poweroff_' + $scope.name;
-						Rest.setUrl(GetBasePath('job_templates'));
-			            Rest.post(data_job)
-				            .then(({data}) => {
-				            	
-				            	poweroff_id = data.id;
-				            	//************************************ Save Remove_JobTemplate **********************************
-				            	data_job.name = 'Remove_' + $scope.name;
-								Rest.setUrl(GetBasePath('job_templates'));
-					            Rest.post(data_job)
-						            .then(({data}) => {
-						            	
-						            	remove_id = data.id;
-						            	//************************************ Save Configure_JobTemplate **********************************
-										data_job.name = 'Configure_' + $scope.name;
-										Rest.setUrl(GetBasePath('job_templates'));
-							            Rest.post(data_job)
+						console.log(data_job);
+
+						//Run this function after 5s delay
+						setTimeout(function(){
+
+							//**************************** Make Job_Template named Prefix as "Poweroff_" and "Remove_" ************
+
+							//************************************ Save Poweroff_JobTemplate **********************************
+							data_job.name = form.poweroff_label_prefix + $scope.name;
+							data_job.playbook = form.poweroff_playbook;
+							Rest.setUrl(GetBasePath('job_templates'));
+				            Rest.post(data_job)
+					            .then(({data}) => {
+					            	
+					            	poweroff_id = data.id;
+					            	//************************************ Save Remove_JobTemplate **********************************
+					            	data_job.name = form.remove_label_prefix + $scope.name;
+									data_job.playbook = form.remove_playbook;
+									Rest.setUrl(GetBasePath('job_templates'));
+						            Rest.post(data_job)
 							            .then(({data}) => {
-						                	console.log('Job Template Post succeed');
-						                	
-						                	//Save Job (Sub Items)
-								            Rest.setUrl(defaultUrl);
-								            var data_subitem = processNewData(form.fields);
-											var opts_field = "'project_id':'" + new_project_id + "',\n" + "'poweroff_id':'" + poweroff_id + "',\n" + "'remove_id':'" + remove_id + "',\n" + "'template_id':'" + data.id + "',\n";
-											data_subitem.opts = data_subitem.opts.slice(0, 1) + opts_field + data_subitem.opts.slice(1);
-								            
-								            Rest.post(data_subitem)
-								                .then(({data}) => {
-								                    base = $location.path().replace(/^\//, '').split('/')[0];
-								                    console.log(base);
-								                    if (base === 'ipam_infrastructure_jobs') {
-								                        $rootScope.flashMessage = i18n._('New Job successfully created!');
-								                        $rootScope.$broadcast("EditIndicatorChange", "Job", data.id);
+							            	
+							            	remove_id = data.id;
+							            	//************************************ Save Configure_JobTemplate **********************************
+											data_job.name = form.configure_label_prefix + $scope.name;
+											data_job.playbook = form.configure_playbook;
+											Rest.setUrl(GetBasePath('job_templates'));
+								            Rest.post(data_job)
+								            .then(({data}) => {
+							                	console.log('Job Template Post succeed');
+							                	
+							                	//Save Job (Sub Items)
+									            Rest.setUrl(defaultUrl);
+									            var data_subitem = processNewData(form.fields);
+												var opts_field = "'project_id':'" + new_project_id + "',\n" + "'poweroff_id':'" + poweroff_id + "',\n" + "'remove_id':'" + remove_id + "',\n" + "'template_id':'" + data.id + "',\n";
+												data_subitem.opts = data_subitem.opts.slice(0, 1) + opts_field + data_subitem.opts.slice(1);
+									            
+									            Rest.post(data_subitem)
+									                .then(({data}) => {
+									                    base = $location.path().replace(/^\//, '').split('/')[0];
+									                    console.log(base);
+									                    if (base === 'ipam_infrastructure_jobs') {
+									                        $rootScope.flashMessage = i18n._('New Job successfully created!');
+									                        $rootScope.$broadcast("EditIndicatorChange", "Job", data.id);
 
-								                        $state.go('infraJobsList', null, { reload: true});
-								                    } else {
-								                        ReturnToCaller(1);
-								                    }
-								                    console.log('InfraJob Post succeed');
+									                        $state.go('infraJobsList', null, { reload: true});
+									                    } else {
+									                        ReturnToCaller(1);
+									                    }
+									                    console.log('InfraJob Post succeed');
+									                })
+									                .catch(({data, status}) => {
+									                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to add new JOB_SUBITEM. POST returned status: ') + status });
+									                });
 								                })
 								                .catch(({data, status}) => {
-								                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to add new JOB_SUBITEM. POST returned status: ') + status });
+								                    Wait('stop');
+								                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'),
+								                        msg: i18n._('Failed to create new JOB TEMPLATE. POST returned status: ') + status });
 								                });
-							                })
-							                .catch(({data, status}) => {
-							                    Wait('stop');
-							                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'),
-							                        msg: i18n._('Failed to create new JOB TEMPLATE. POST returned status: ') + status });
-							                });
-									})
-					                .catch(({data, status}) => {
-					                    Wait('stop');
-					                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'),
-					                        msg: i18n._('Failed to create new REMOVE JOB TEMPLATE. POST returned status: ') + status });
-					                });
-					                
-							})
-			                .catch(({data, status}) => {
-			                    Wait('stop');
-			                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'),
-			                        msg: i18n._('Failed to create new POWER OFF JOB TEMPLATE. POST returned status: ') + status });
-			                });
-						}, 5000);
-						//****************************************************************************/
+										})
+						                .catch(({data, status}) => {
+						                    Wait('stop');
+						                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'),
+						                        msg: i18n._('Failed to create new REMOVE JOB TEMPLATE. POST returned status: ') + status });
+						                });
+						                
+								})
+				                .catch(({data, status}) => {
+				                    Wait('stop');
+				                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'),
+				                        msg: i18n._('Failed to create new POWER OFF JOB TEMPLATE. POST returned status: ') + status });
+				                });
+							}, 10000);
+							//****************************************************************************/
 
-		            //defaultprojectUrl = GetBasePath('projects');
-					//url = (base === 'teams') ? GetBasePath('teams') + $stateParams.team_id + '/projects/' : defaultprojectUrl;
-					//console.log(url);
+			            //defaultprojectUrl = GetBasePath('projects');
+						//url = (base === 'teams') ? GetBasePath('teams') + $stateParams.team_id + '/projects/' : defaultprojectUrl;
+						//console.log(url);
+			        //})
+			    	//.catch(({data, status}) => {
+			        //	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to Get Project ID. Get returned status: ') + status });
+					//});
 		            
                 })
                 .catch(({data, status}) => {

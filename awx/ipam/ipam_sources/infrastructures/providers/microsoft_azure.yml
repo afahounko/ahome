@@ -14,10 +14,16 @@ url: 'https://github.com/afahounko'
 project: 'https://github.com/ansible/ansible-tower-samples.git'
 playbook: 'local.yml'
 
-subitem_label_prefix: 'Configure'
-subitem_url: 'https://github.com/afahounko'
-subitem_project: 'https://github.com/ansible/ansible-tower-samples.git'
-subitem_playbook: 'local.yml'
+configure_label_prefix: 'Configure_'
+configure_url: 'https://github.com/afahounko'
+configure_project: 'https://github.com/ansible/ansible-tower-samples.git'
+configure_playbook: 'hello_world.yml'
+
+poweroff_label_prefix: 'PowerOff_'
+poweroff_playbook: 'hello_world.yml'
+
+remove_label_prefix: 'Remove_'
+remove_playbook: 'hello_world.yml'
 
 
 addTitle: 'NEW PROVIDER'

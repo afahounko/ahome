@@ -8,14 +8,16 @@ description: |
 hosts: all
 
 
-label_prefix: ''
-url: 'https://github.com/afahounko'
-project: 'https://github.com/ansible/ansible-tower-samples.git'
-playbook: 'hello_world.yml'
-playbook_poweroff: 'hello_world.yml'
-playbook_remove: 'hello_world.yml'
+project_url: 'https://github.com/ansible/ansible-tower-samples.git'
 
+configure_label_prefix: 'Configure_'
+configure_playbook: 'hello_world.yml'
 
+poweroff_label_prefix: 'VMPowerOff_'
+poweroff_playbook: 'hello_world.yml'
+
+remove_label_prefix: 'VMRemove_'
+remove_playbook: 'hello_world.yml'
 
 addTitle: 'NEW VMWARE VM'
 editTitle: '{{ name }}'

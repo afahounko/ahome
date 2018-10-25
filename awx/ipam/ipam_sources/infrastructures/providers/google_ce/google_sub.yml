@@ -8,6 +8,16 @@ description: |
 
 hosts: all
 
+configure_label_prefix: 'Configure'
+configure_url: 'https://github.com/afahounko'
+configure_project: 'https://github.com/ansible/ansible-tower-samples.git'
+configure_playbook: 'hello_world.yml'
+
+poweroff_label_prefix: 'PowerOff'
+poweroff_playbook: 'hello_world.yml'
+
+remove_label_prefix: 'Remove'
+remove_playbook: 'hello_world.yml'
 
 addTitle: 'NEW GOOGLE SUB ITEM'
 editTitle: '{{ name }}'
