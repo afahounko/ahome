@@ -234,19 +234,27 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 			var new_project_id = 0, poweroff_id = 0, remove_id = 0;
 			Wait('start');
 			//Project Saving
-    		data_project.name = form.configure_label_prefix + $scope.name;
-    		data_project.description = "";
-    		data_project.scm_type = "git";
-    		data_project.scm_url = form.configure_project;
-    		data_project.scm_branch = "";
-    		data_project.scm_clean = true;
-    		data_project.scm_delete_on_update = true;
-    		data_project.credential = null;
-    		data_project.timeout = 0;
-    		data_project.organization = 1;
-    		data_project.scm_update_on_launch = true;
-    		data_project.scm_update_cache_timeout = 0;
-
+			if(form.project)
+			{
+				data_project = form.project;
+				data_project.name = data_project.name_prefix + $scope.name;
+	    	
+			}
+			else
+			{
+	    		data_project.name = form.configure_label_prefix + $scope.name;
+	    		data_project.description = "";
+	    		data_project.scm_type = "git";
+	    		data_project.scm_url = form.configure_project;
+	    		data_project.scm_branch = "";
+	    		data_project.scm_clean = true;
+	    		data_project.scm_delete_on_update = true;
+	    		data_project.credential = null;
+	    		data_project.timeout = 0;
+	    		data_project.organization = 1;
+	    		data_project.scm_update_on_launch = true;
+	    		data_project.scm_update_cache_timeout = 0;
+			}
 			console.log(data_project);
 
             //defaultprojectUrl = GetBasePath('projects');
@@ -260,68 +268,36 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 					console.log('Project Post Succeed : ' + new_project_id);
 					
 					//Check if the data_project created successfully or not.
+					
 					//Rest.get().then(({data}) => {
-			        	//Job Saving
-			    		data_job.project = new_project_id;
-			    		data_job.playbook = form.configure_playbook;
-						data_job.description = "";
-						data_job.job_type = "run";
-						data_job.inventory = 1;
-						data_job.forks = 0;
-						data_job.limit = "";
-						data_job.verbosity = 0;
-						data_job.extra_vars = "webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3";
-						data_job.job_tags = "";
-						data_job.force_handlers = false;
-						data_job.skip_tags = "";
-						data_job.start_at_task = "";
-						data_job.timeout = 0;
-						data_job.use_fact_cache = false;
-						data_job.host_config_key = "";
-						data_job.ask_diff_mode_on_launch = false;
-						data_job.ask_variables_on_launch = false;
-						data_job.ask_limit_on_launch = false;
-						data_job.ask_tags_on_launch = false;
-						data_job.ask_skip_tags_on_launch = false;
-						data_job.ask_job_type_on_launch = false;
-						data_job.ask_verbosity_on_launch = false;
-						data_job.ask_inventory_on_launch = false;
-						data_job.ask_credential_on_launch = false;
-						data_job.survey_enabled = false;
-						data_job.become_enabled = false;
-						data_job.diff_mode = false;
-						data_job.allow_simultaneous = false;
-						data_job.cloud_credential = null;
-						data_job.network_credential = null;
-						data_job.credential = 1; 
-						data_job.vault_credential = null;
-
-						console.log(data_job);
-
 						//Run this function after 5s delay
 						setTimeout(function(){
-
 							//**************************** Make Job_Template named Prefix as "Poweroff_" and "Remove_" ************
-
 							//************************************ Save Poweroff_JobTemplate **********************************
-							data_job.name = form.poweroff_label_prefix + $scope.name;
-							data_job.playbook = form.poweroff_playbook;
+							data_job = form.poweroff_job;
+							data_job.name = data_job.name_prefix + $scope.name;
+							data_job.project = new_project_id;
+
 							Rest.setUrl(GetBasePath('job_templates'));
 				            Rest.post(data_job)
 					            .then(({data}) => {
 					            	
 					            	poweroff_id = data.id;
 					            	//************************************ Save Remove_JobTemplate **********************************
-					            	data_job.name = form.remove_label_prefix + $scope.name;
-									data_job.playbook = form.remove_playbook;
+									data_job = form.remove_job;
+									data_job.name = data_job.name_prefix + $scope.name;
+									data_job.project = new_project_id;
+
 									Rest.setUrl(GetBasePath('job_templates'));
 						            Rest.post(data_job)
 							            .then(({data}) => {
 							            	
 							            	remove_id = data.id;
 							            	//************************************ Save Configure_JobTemplate **********************************
-											data_job.name = form.configure_label_prefix + $scope.name;
-											data_job.playbook = form.configure_playbook;
+											data_job = form.configure_job;
+											data_job.name = data_job.name_prefix + $scope.name;
+											data_job.project = new_project_id;
+
 											Rest.setUrl(GetBasePath('job_templates'));
 								            Rest.post(data_job)
 								            .then(({data}) => {
