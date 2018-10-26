@@ -230,7 +230,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
             Prompt({
                 hdr: i18n._('PowerOff'),
                 resourceName: $filter('sanitize')(name),
-                body: '<div class="Prompt-bodyQuery">' + i18n._('Are you sure you want to Power Off this Job Template?') + '</div>',
+                body: '<span class="Prompt-bodyQuery">' + i18n._('Are you sure you want to Power Off ') + '<span class="Modal-titleResourceName">' + $filter('sanitize')(name) + '</span>' + i18n._('?') + '</span>',
                 action: action,
                 actionText: i18n._('PowerOff')
             });
@@ -298,7 +298,8 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
             Prompt({
                 hdr: i18n._('Remove'),
                 resourceName: $filter('sanitize')(name),
-                body: '<div class="Prompt-bodyQuery">' + i18n._('Are you sure you want to Remove this Job Template?') + '</div>',
+                //body: '<span class="Prompt-bodyQuery">' + i18n._('Are you sure you want to Remove ') + name + i18n._('?') + '</span>',
+                body: '<span class="Prompt-bodyQuery">' + i18n._('Are you sure you want to Remove ') + 	'<span class="Modal-titleResourceName">' + $filter('sanitize')(name) + '</span>' + i18n._('?') + '</span>',
                 action: action,
                 actionText: i18n._('Remove')
             });
