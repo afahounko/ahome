@@ -386,7 +386,7 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 							data_job = form.poweroff_job;
 							data_job.name = data_job.name_prefix + $scope.name;
 							data_job.project = new_project_id;
-							data_job.extra_vars = processExtravars(data_job);
+							//data_job.extra_vars = processExtravars(data_job);
 							
 							console.log(data_job);
 
@@ -416,7 +416,7 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 									data_job = form.remove_job;
 									data_job.name = data_job.name_prefix + $scope.name;
 									data_job.project = new_project_id;
-									data_job.extra_vars = processExtravars(data_job);
+									//data_job.extra_vars = processExtravars(data_job);
 							
 									console.log(data_job);
 									
@@ -438,7 +438,7 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 											data_job = form.configure_job;
 											data_job.name = data_job.name_prefix + $scope.name;
 											data_job.project = new_project_id;
-											data_job.extra_vars = processExtravars(data_job);
+											//data_job.extra_vars = processExtravars(data_job);
 							
 											console.log(data_job);
 											

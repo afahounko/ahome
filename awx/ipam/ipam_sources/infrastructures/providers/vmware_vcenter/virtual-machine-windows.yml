@@ -30,8 +30,7 @@ configure_job:
     forks: 0
     limit: ''
     verbosity: 0
-    extra_vars: ""
-    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    extra_vars: "webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3"
     job_tags: ''
     force_handlers: false
     skip_tags: ''
@@ -67,8 +66,7 @@ poweroff_job:
     forks: 0
     limit: ''
     verbosity: 0
-    extra_vars: ""
-    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    extra_vars: "webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3"
     job_tags: ''
     force_handlers: false
     skip_tags: ''
@@ -104,8 +102,7 @@ remove_job:
     forks: 0
     limit: ''
     verbosity: 0
-    extra_vars: ""
-    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    extra_vars: "webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3"
     job_tags: ''
     force_handlers: false
     skip_tags: ''

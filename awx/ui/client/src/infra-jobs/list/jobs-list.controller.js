@@ -172,6 +172,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
 
         $scope.poweroffJob= function(job_id, name) {
         	var action = function() {
+        		$('#prompt-modal').modal('hide');
 	            Wait('start');
 	            Rest.setUrl(GetBasePath('ipam_infrastructure_jobs') + job_id);
 	            Rest.get(GetBasePath('ipam_infrastructure_jobs') + job_id).then(({data}) => {
@@ -238,6 +239,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
 
         $scope.removeJob= function(job_id, name) {
         	var action = function() {
+        		$('#prompt-modal').modal('hide');
 	            Wait('start');
 	            Rest.setUrl(GetBasePath('ipam_infrastructure_jobs') + job_id);
 	            Rest.get(GetBasePath('ipam_infrastructure_jobs') + job_id).then(({data}) => {
