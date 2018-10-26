@@ -6,12 +6,12 @@
 
 import { N_ } from "../../i18n";
 
-export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'Rest','ParseTypeChange',
+export default ['$window', '$scope', '$rootScope', '$stateParams', 'JobForm', 'GenerateForm', 'Rest','ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath', 'MultiCredentialService',
     'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString',
-    function($window, $scope, $rootScope, JobForm, GenerateForm, Rest, ParseTypeChange, Alert,
+    function($window, $scope, $rootScope, $stateParams, JobForm, GenerateForm, Rest, ParseTypeChange, Alert,
     ProcessErrors, ReturnToCaller, GetBasePath, MultiCredentialService, Wait, CreateSelect2,
-    $state, $location, i18n, ParseVariableString) {
+	$state, $location, i18n,ParseVariableString) {
 
         var master = {}, boxes, box, variable, 
             id = $stateParams.job_id,
@@ -116,6 +116,32 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 		            multiple: false,
 		        });
                 
+				//for multi credential 2018/10/25
+				MultiCredentialService.getCredentialTypes()
+	            .then(({ data }) => {
+	                $scope.multiCredential = {
+	                    credentialTypes: data.results,
+	                    selectedCredentials: []
+	                };
+	            });
+	            
+        		/*const multiCredential = {};
+                const credentialTypesPromise = MultiCredentialService.getCredentialTypes()
+                    .then(({ data }) => {
+                        multiCredential.credentialTypes = data.results;
+                    });
+                console.log(credentialTypesPromise);
+                const multiCredentialPromises = [credentialTypesPromise];
+
+                $scope.canGetAllRelatedResources = false;
+                multiCredential.selectedCredentials = _.get(jobTemplateData, 'summary_fields.credentials');
+				
+				console.log(multiCredential);
+                $q.all(multiCredentialPromises)
+                    .then(() => {
+                        $scope.multiCredential = multiCredential;
+                        //$scope.$emit('jobTemplateLoaded', master);
+                    });*/
             })
             .catch(({data, status}) => {
                 ProcessErrors($scope, data, status, null, {

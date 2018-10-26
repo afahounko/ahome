@@ -30,7 +30,8 @@ configure_job:
     forks: 0
     limit: ''
     verbosity: 0
-    extra_vars: "webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3"
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
     job_tags: ''
     force_handlers: false
     skip_tags: ''
@@ -53,7 +54,8 @@ configure_job:
     allow_simultaneous: false
     cloud_credential: null
     network_credential: null
-    credential: 1 
+    credential: 1
+    credentials: '1,9'
     vault_credential: null
 
 poweroff_job:
@@ -65,7 +67,8 @@ poweroff_job:
     forks: 0
     limit: ''
     verbosity: 0
-    extra_vars: "webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3"
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
     job_tags: ''
     force_handlers: false
     skip_tags: ''
@@ -88,7 +91,8 @@ poweroff_job:
     allow_simultaneous: false
     cloud_credential: null
     network_credential: null
-    credential: 1 
+    credential: 1
+    credentials: '1,9'
     vault_credential: null
 
 remove_job:
@@ -100,7 +104,8 @@ remove_job:
     forks: 0
     limit: ''
     verbosity: 0
-    extra_vars: "webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3"
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
     job_tags: ''
     force_handlers: false
     skip_tags: ''
@@ -123,7 +128,8 @@ remove_job:
     allow_simultaneous: false
     cloud_credential: null
     network_credential: null
-    credential: 1 
+    credential: 1
+    credentials: '1,2'
     vault_credential: null
 
 addTitle: 'NEW VMWARE VM'
@@ -182,6 +188,15 @@ fields:
     defaultText: 'Choose a Datacenter'
     ngModel: 'datacenter'
     ngOptions: 'item as item.label for item in datacenter_type_options'
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 2'
+
+  credential : 
+    label: 'Credential'
+    type: 'select'
+    defaultText: 'Choose a Credential'
+    ngModel: 'credential'
+    ngOptions: 'item as item.label for item in credential_type_options'
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 2'
 
