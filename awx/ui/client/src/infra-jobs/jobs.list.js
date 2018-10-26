@@ -70,7 +70,7 @@ export default ['i18n', function(i18n) {
             launch: {
                 label: i18n._('Launch'),
                 icon: 'icon-launch',
-               	ngClick: "launchJob(job.id,'template_id')",
+               	ngClick: "launchJob(job.id)",
                 "class": 'btn-xs btn-default',
                 awToolTip: i18n._('Launch Job'),
                 dataPlacement: 'top',
@@ -78,7 +78,7 @@ export default ['i18n', function(i18n) {
 		    poweroff: {
                 label: i18n._('Launch Poweroff Job Template'),
                 iconClass: 'fa fa-power-off',
-               	ngClick: "launchJob(job.id,'poweroff_id')",
+               	ngClick: "poweroffJob(job.id, job.name)",
                 "class": 'btn-xs btn-default',
                 awToolTip: i18n._('Stop Job'),
                 dataPlacement: 'top',
@@ -86,7 +86,7 @@ export default ['i18n', function(i18n) {
 			remove: {
                 label: i18n._('Launch Remove Job Template'),
                 iconClass: 'fa fa-remove',
-               	ngClick: "launchJob(job.id,'remove_id')",
+               	ngClick: "removeJob(job.id, job.name)",
                 "class": 'btn-xs btn-default',
                 awToolTip: i18n._('Remove Job'),
                 dataPlacement: 'top',

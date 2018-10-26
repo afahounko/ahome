@@ -343,76 +343,71 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'JobForm', 'G
             Rest.put(data_project)
             	.then(({data}) => {
                 	console.log(data);
-					//Job Saving
-		    		data_job.name = 'Configure_' + $scope.name;
-		    		data_job.project = project_id;
-		    		data_job.playbook = "hello_world.yml";
-		    		
-					/*data_job.description = "";
-					data_job.job_type = "run";
-					data_job.inventory = 1;
 					
-					data_job.forks = 0;
-					data_job.limit = "";
-					data_job.verbosity = 0;
-					data_job.extra_vars = "webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3";
-					data_job.job_tags = "";
-					data_job.force_handlers = false;
-					data_job.skip_tags = "";
-					data_job.start_at_task = "";
-					data_job.timeout = 0;
-					data_job.use_fact_cache = false;
-					data_job.host_config_key = "";
-					data_job.ask_diff_mode_on_launch = false;
-					data_job.ask_variables_on_launch = false;
-					data_job.ask_limit_on_launch = false;
-					data_job.ask_tags_on_launch = false;
-					data_job.ask_skip_tags_on_launch = false;
-					data_job.ask_job_type_on_launch = false;
-					data_job.ask_verbosity_on_launch = false;
-					data_job.ask_inventory_on_launch = false;
-					data_job.ask_credential_on_launch = false;
-					data_job.survey_enabled = false;
-					data_job.become_enabled = false;
-					data_job.diff_mode = false;
-					data_job.allow_simultaneous = false;
-					data_job.cloud_credential = null;
-					data_job.network_credential = null;
-					data_job.credential = 1; 
-					data_job.vault_credential = null;*/
-
+		    		
 					console.log(data_job);
 					setTimeout(function(){
 						//****************************************************************************/
+						//Job Saving
+		    			data_job.name = form.configure_job.name_prefix + $scope.name;
+		    			data_job.playbook = form.configure_job.playbook;
 						Rest.setUrl(GetBasePath('job_templates') + template_id + '/');
 			            Rest.put(data_job)
 			            .then(({data}) => {
-			                	console.log('Job Template Post succeed');
+			                	console.log('Related Job Template changed succeed');
 			                	
-			                	//Save Job (Sub Items)
-					            Rest.setUrl(defaultUrl + '/');
-					            var data_subitem = processNewData(form.fields);
-					            console.log($scope);
-					            console.log($scope.name);
-					            console.log(data_subitem);
-					            
-					            Rest.put(data_subitem)
-					                .then(({data}) => {
-					                    base = $location.path().replace(/^\//, '').split('/')[0];
-					                    console.log(base);
-					                    if (base === 'ipam_infrastructure_jobs') {
-					                        $rootScope.flashMessage = i18n._('New Job successfully created!');
-					                        $rootScope.$broadcast("EditIndicatorChange", "Job", data.id);
-					                        
-					                        $state.go('infraJobsList', null, { reload: true});
-					                    } else {
-					                        ReturnToCaller(1);
-					                    }
-					                    console.log('InfraJob Post succeed');
-					                })
-					                .catch(({data, status}) => {
-					                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to add new JOB_SUBITEM. POST returned status: ') + status });
-					                });
+			                	//****************************************************************************/
+			                	//Job Saving
+		    					data_job.name = form.poweroff_job.name_prefix + $scope.name;
+		    					data_job.playbook = form.poweroff_job.playbook;
+								Rest.setUrl(GetBasePath('job_templates') + poweroff_id + '/');
+					            Rest.put(data_job)
+					            .then(({data}) => {
+					                	console.log('Related Job Template changed succeed');
+					                	//****************************************************************************/
+					                	//Job Saving
+		    							data_job.name = form.remove_job.name_prefix + $scope.name;
+		    							data_job.playbook = form.remove_job.playbook;
+										Rest.setUrl(GetBasePath('job_templates') + remove_id + '/');
+							            Rest.put(data_job)
+							            .then(({data}) => {
+							                	console.log('Related Job Template changed succeed');
+							                	//Save Job (Sub Items)
+									            Rest.setUrl(defaultUrl + '/');
+									            var data_subitem = processNewData(form.fields);
+									            console.log($scope);
+									            console.log($scope.name);
+									            console.log(data_subitem);
+									            
+									            Rest.put(data_subitem)
+									                .then(({data}) => {
+									                    base = $location.path().replace(/^\//, '').split('/')[0];
+									                    console.log(base);
+									                    if (base === 'ipam_infrastructure_jobs') {
+									                        $rootScope.flashMessage = i18n._('New Job successfully created!');
+									                        $rootScope.$broadcast("EditIndicatorChange", "Job", data.id);
+									                        
+									                        $state.go('infraJobsList', null, { reload: true});
+									                    } else {
+									                        ReturnToCaller(1);
+									                    }
+									                    console.log('InfraJob Post succeed');
+									                })
+									                .catch(({data, status}) => {
+									                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to add new JOB_SUBITEM. POST returned status: ') + status });
+									                });
+									    })
+						                .catch(({data, status}) => {
+						                    Wait('stop');
+						                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'),
+						                        msg: i18n._('Failed to create new JOB TEMPLATE. POST returned status: ') + status });
+						                });
+									})
+				                .catch(({data, status}) => {
+				                    Wait('stop');
+				                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'),
+				                        msg: i18n._('Failed to create new JOB TEMPLATE. POST returned status: ') + status });
+				                });	                
 
 			                })
 			                .catch(({data, status}) => {

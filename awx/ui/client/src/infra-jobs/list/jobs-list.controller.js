@@ -109,13 +109,13 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
             $state.go('infraJobsList.add_' + param);
         };
  
-        $scope.launchJob= function(job_id, launch_type) {
+        $scope.launchJob= function(job_id) {
+        	
             Wait('start');
             Rest.setUrl(GetBasePath('ipam_infrastructure_jobs') + job_id);
             Rest.get(GetBasePath('ipam_infrastructure_jobs') + job_id).then(({data}) => {
             	
-            	var job_template_id = data.opts[launch_type];
-            	console.log(template_id);
+            	var job_template_id = data.opts.template_id;
             	const jobTemplate = new JobTemplate();
             	const selectedJobTemplate = jobTemplate.create();
 	            const preLaunchPromises = [
@@ -164,6 +164,143 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
                     hdr: i18n._('Error!'),
                     msg: i18n.sprintf(i18n._('Failed to retrieve Job: %s. GET status: '), $stateParams.id) + status
                 });
+            });
+            
+            
+        };
+
+
+        $scope.poweroffJob= function(job_id, name) {
+        	var action = function() {
+	            Wait('start');
+	            Rest.setUrl(GetBasePath('ipam_infrastructure_jobs') + job_id);
+	            Rest.get(GetBasePath('ipam_infrastructure_jobs') + job_id).then(({data}) => {
+	            	
+	            	var job_template_id = data.opts.poweroff_id;
+	            	const jobTemplate = new JobTemplate();
+	            	const selectedJobTemplate = jobTemplate.create();
+		            const preLaunchPromises = [
+		                selectedJobTemplate.getLaunch(job_template_id),
+		                selectedJobTemplate.optionsLaunch(job_template_id),
+		            ];
+					
+		            Promise.all(preLaunchPromises)
+		                .then(([launchData, launchOptions]) => {
+		                    if (selectedJobTemplate.canLaunchWithoutPrompt()) {
+		                        selectedJobTemplate
+		                            .postLaunch({ id: job_template_id })
+		                            .then(({ data }) => {
+		                                $state.go('output', { id: data.job, type: 'playbook' }, { reload: true });
+		                            });
+		                    } else {
+		                        const promptData = {
+		                            launchConf: launchData.data,
+		                            launchOptions: launchOptions.data,
+		                            template: job_template_id,
+		                            templateType: 'job_template',
+		                            prompts: PromptService.processPromptValues({
+		                                launchConf: launchData.data,
+		                                launchOptions: launchOptions.data
+		                            }),
+		                            triggerModalOpen: true
+		                        };
+
+		                        if (launchData.data.survey_enabled) {
+		                            selectedJobTemplate.getSurveyQuestions(job_template_id)
+		                                .then(({ data }) => {
+		                                    const processed = PromptService.processSurveyQuestions({
+		                                        surveyQuestions: data.spec
+		                                    });
+		                                    promptData.surveyQuestions = processed.surveyQuestions;
+		                                    //vm.promptData = promptData;
+		                                });
+		                        } else {
+		                            //vm.promptData = promptData;
+		                        }
+		                    }
+		                });
+	 			})
+	            .catch(({data, status}) => {
+	                ProcessErrors($scope, data, status, null, {
+	                    hdr: i18n._('Error!'),
+	                    msg: i18n.sprintf(i18n._('Failed to retrieve Job: %s. GET status: '), $stateParams.id) + status
+	                });
+	            });
+    		};
+            Prompt({
+                hdr: i18n._('PowerOff'),
+                resourceName: $filter('sanitize')(name),
+                body: '<div class="Prompt-bodyQuery">' + i18n._('Are you sure you want to Power Off this Job Template?') + '</div>',
+                action: action,
+                actionText: i18n._('PowerOff')
+            });
+        };
+
+        $scope.removeJob= function(job_id, name) {
+        	var action = function() {
+	            Wait('start');
+	            Rest.setUrl(GetBasePath('ipam_infrastructure_jobs') + job_id);
+	            Rest.get(GetBasePath('ipam_infrastructure_jobs') + job_id).then(({data}) => {
+	            	
+	            	var job_template_id = data.opts.remove_id;
+	            	console.log(template_id);
+	            	const jobTemplate = new JobTemplate();
+	            	const selectedJobTemplate = jobTemplate.create();
+		            const preLaunchPromises = [
+		                selectedJobTemplate.getLaunch(job_template_id),
+		                selectedJobTemplate.optionsLaunch(job_template_id),
+		            ];
+					
+		            Promise.all(preLaunchPromises)
+		                .then(([launchData, launchOptions]) => {
+		                    if (selectedJobTemplate.canLaunchWithoutPrompt()) {
+		                        selectedJobTemplate
+		                            .postLaunch({ id: job_template_id })
+		                            .then(({ data }) => {
+		                                $state.go('output', { id: data.job, type: 'playbook' }, { reload: true });
+		                            });
+		                    } else {
+		                        const promptData = {
+		                            launchConf: launchData.data,
+		                            launchOptions: launchOptions.data,
+		                            template: job_template_id,
+		                            templateType: 'job_template',
+		                            prompts: PromptService.processPromptValues({
+		                                launchConf: launchData.data,
+		                                launchOptions: launchOptions.data
+		                            }),
+		                            triggerModalOpen: true
+		                        };
+
+		                        if (launchData.data.survey_enabled) {
+		                            selectedJobTemplate.getSurveyQuestions(job_template_id)
+		                                .then(({ data }) => {
+		                                    const processed = PromptService.processSurveyQuestions({
+		                                        surveyQuestions: data.spec
+		                                    });
+		                                    promptData.surveyQuestions = processed.surveyQuestions;
+		                                    //vm.promptData = promptData;
+		                                });
+		                        } else {
+		                            //vm.promptData = promptData;
+		                        }
+		                    }
+		                });
+	 			})
+	            .catch(({data, status}) => {
+	                ProcessErrors($scope, data, status, null, {
+	                    hdr: i18n._('Error!'),
+	                    msg: i18n.sprintf(i18n._('Failed to retrieve Job: %s. GET status: '), $stateParams.id) + status
+	                });
+	            });
+    		};
+            
+            Prompt({
+                hdr: i18n._('Remove'),
+                resourceName: $filter('sanitize')(name),
+                body: '<div class="Prompt-bodyQuery">' + i18n._('Are you sure you want to Remove this Job Template?') + '</div>',
+                action: action,
+                actionText: i18n._('Remove')
             });
         };
 
