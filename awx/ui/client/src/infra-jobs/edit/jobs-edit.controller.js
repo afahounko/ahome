@@ -21,13 +21,15 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'JobForm', 'G
         	id_type = $window.localStorage.getItem('form_id'),
             form = JobForm[id_type],
             defaultUrl = GetBasePath('ipam_infrastructure_jobs') + id;
-        var project_id, template_id, poweroff_id, remove_id;
+        var project_id, template_id, poweroff_id, remove_id,
+			template_data = {}, poweroff_data = {}, remove_data = {};
         console.log($stateParams);
         console.log(JobForm);
         console.log(form);
         init();
 
         function init() {
+        	//$scope.canAdd = false;
             Rest.setUrl(defaultUrl);
             Wait('start');
             Rest.get(defaultUrl).then(({data}) => {
@@ -38,6 +40,18 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'JobForm', 'G
                 poweroff_id = data.opts.poweroff_id;
                 remove_id = data.opts.remove_id;
                 
+                Rest.setUrl(GetBasePath('job_templates') + template_id + '/');
+            	Rest.get(defaultUrl).then(({data}) => {
+            		template_data = data;
+            	});
+            	Rest.setUrl(GetBasePath('job_templates') + poweroff_id + '/');
+            	Rest.get(defaultUrl).then(({data}) => {
+            		poweroff_data = data;
+            	});
+        	    Rest.setUrl(GetBasePath('job_templates') + remove_id + '/');
+            	Rest.get(defaultUrl).then(({data}) => {
+            		remove_data = data;
+            	});
 		        $scope.tabId = 1;
                 $scope.status1 = "active";
                 for (itm in data.opts)
@@ -68,7 +82,6 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'JobForm', 'G
 				var datacenterLists = [];
 		    	Rest.setUrl(GetBasePath('ipam_datacenters'));
 		        Rest.get().then(({data}) => {
-		        	console.log(datacenter_value);
 		        	datacenterLists = data.results;
 		        	for (var i = 0; i < datacenterLists.length; i++) {
 		        		datacenter_options.push({label:datacenterLists[i].name, value:datacenterLists[i].id});
@@ -317,59 +330,33 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'JobForm', 'G
 
         $scope.formSave = function() {
         	console.log("Update");
-            	
 			var fld, base, data = {}, data_project = {}, data_job = {};
 			Wait('start');
 			//Project Saving
     		data_project.name = 'Configure_' + $scope.name;
-    		/*data_project.description = "";
-    		data_project.scm_type = "git";
-    		data_project.scm_url = "https://github.com/ansible/ansible-tower-samples.git";
-    		data_project.scm_branch = "";
-    		data_project.scm_clean = true;
-    		data_project.scm_delete_on_update = true;
-    		data_project.credential = null;
-    		data_project.timeout = 0;
-    		data_project.organization = 1;
-    		data_project.scm_update_on_launch = true;
-    		data_project.scm_update_cache_timeout = 0;*/
-
-			console.log(data_project);
-
-            //defaultprojectUrl = GetBasePath('projects');
-			//url = (base === 'teams') ? GetBasePath('teams') + $stateParams.team_id + '/projects/' : defaultprojectUrl;
-			//console.log(url);
             Rest.setUrl(GetBasePath('projects') + project_id + '/');
             Rest.put(data_project)
             	.then(({data}) => {
-                	console.log(data);
-					
-		    		
-					console.log(data_job);
-					setTimeout(function(){
 						//****************************************************************************/
 						//Job Saving
-		    			data_job.name = form.configure_job.name_prefix + $scope.name;
-		    			data_job.playbook = form.configure_job.playbook;
+		    			template_data.name = form.configure_job.name_prefix + $scope.name;
 						Rest.setUrl(GetBasePath('job_templates') + template_id + '/');
-			            Rest.put(data_job)
+			            Rest.put(template_data)
 			            .then(({data}) => {
 			                	console.log('Related Job Template changed succeed');
 			                	
 			                	//****************************************************************************/
 			                	//Job Saving
-		    					data_job.name = form.poweroff_job.name_prefix + $scope.name;
-		    					data_job.playbook = form.poweroff_job.playbook;
+		    					poweroff_data.name = form.poweroff_job.name_prefix + $scope.name;
 								Rest.setUrl(GetBasePath('job_templates') + poweroff_id + '/');
-					            Rest.put(data_job)
+					            Rest.put(poweroff_data)
 					            .then(({data}) => {
 					                	console.log('Related Job Template changed succeed');
 					                	//****************************************************************************/
 					                	//Job Saving
-		    							data_job.name = form.remove_job.name_prefix + $scope.name;
-		    							data_job.playbook = form.remove_job.playbook;
+		    							remove_data.name = form.remove_job.name_prefix + $scope.name;
 										Rest.setUrl(GetBasePath('job_templates') + remove_id + '/');
-							            Rest.put(data_job)
+							            Rest.put(remove_data)
 							            .then(({data}) => {
 							                	console.log('Related Job Template changed succeed');
 							                	//Save Job (Sub Items)
@@ -400,28 +387,21 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'JobForm', 'G
 						                .catch(({data, status}) => {
 						                    Wait('stop');
 						                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'),
-						                        msg: i18n._('Failed to create new JOB TEMPLATE. POST returned status: ') + status });
+						                        msg: i18n._('Failed to create new REMOVE JOB TEMPLATE. POST returned status: ') + status });
 						                });
 									})
 				                .catch(({data, status}) => {
 				                    Wait('stop');
 				                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'),
-				                        msg: i18n._('Failed to create new JOB TEMPLATE. POST returned status: ') + status });
+				                        msg: i18n._('Failed to create new POWER OFF JOB TEMPLATE. POST returned status: ') + status });
 				                });	                
 
 			                })
 			                .catch(({data, status}) => {
 			                    Wait('stop');
 			                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'),
-			                        msg: i18n._('Failed to create new JOB TEMPLATE. POST returned status: ') + status });
+			                        msg: i18n._('Failed to create new CONFIGURE JOB TEMPLATE. POST returned status: ') + status });
 			                });
-						}, 5000);
-						//****************************************************************************/
-
-		            //defaultprojectUrl = GetBasePath('projects');
-					//url = (base === 'teams') ? GetBasePath('teams') + $stateParams.team_id + '/projects/' : defaultprojectUrl;
-					//console.log(url);
-		            
                 })
                 .catch(({data, status}) => {
                 	Wait('stop');

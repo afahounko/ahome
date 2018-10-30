@@ -199,7 +199,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 							{
 								data += "'"
 								for(subid in $scope[fld]){
-									data += $scope[fld][subid].name + ',';
+									data += $scope[fld][subid].id + ',';
 								}
 								data += "',"; 
 							}
@@ -288,7 +288,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
         // Save
         $scope.formSave = function() {
             var fld, data = {}, credential_data = {};
-            
+
             if(id_type == "vmware_vcenter")
             {
             	Rest.setUrl(GetBasePath('credentials'));
@@ -315,7 +315,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			                    if (base === 'ipam_providers') {
 			                        $rootScope.flashMessage = i18n._('New Provider successfully created!');
 			                        $rootScope.$broadcast("EditIndicatorChange", "Provider", data.id);
-			                        
+ 
 			                        $state.go('infraProvidersList', null, { reload: true });
 			                    } else {
 			                        ReturnToCaller(1);

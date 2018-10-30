@@ -166,7 +166,6 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'Rest', 'JobL
                 });
             });
             
-            
         };
 
 

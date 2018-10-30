@@ -194,22 +194,21 @@ fields:
     defaultText: 'Choose a Credential'
     ngModel: 'credential'
     ngOptions: 'item as item.label for item in credential_type_options'
-    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngDisabled: 'true'
     ngShow: 'tabId == 2'
-
-  multiCredential:
-    label: 'Credential'
-    type: 'custom'
-    control: '<multi-credential credentials="credentials" prompt="ask_credential_on_launch" credential-not-present="credentialNotPresent" selected-credentials="multiCredential.selectedCredentials" credential-types="multiCredential.credentialTypes"> </multi-credential>'
-    awPopOver: 'Select credentials that allow Tower to access the nodes this job will be ran against. You can only select one credential of each type. For machine credentials (SSH) checking  "Prompt on launch" without selecting credentials will require you to select a machine credential at run time. If you select credentials and check <Prompt on launch> the selected credential(s) become the defaults that can be updated at run time.'
-    dataTitle: 'Credentials'
-    dataPlacement: 'right'
-    dataContainer: 'body'
-    subCheckbox:
-      variable: 'ask_credential_on_launch'
-      text: 'Prompt on launch'
-      ngDisabled: '!(job_template_obj.summary_fields.user_capabilities.edit || canAddJobTemplate)'
-    ngShow: 'tabId == 2'
+#  multiCredential:
+#    label: 'Credential'
+#    type: 'custom'
+#    control: '<multi-credential credentials="credentials" prompt="ask_credential_on_launch" credential-not-present="credentialNotPresent" selected-credentials="multiCredential.selectedCredentials" credential-types="multiCredential.credentialTypes"> </multi-credential>'
+#    awPopOver: 'Select credentials that allow Tower to access the nodes this job will be ran against. You can only select one credential of each type. For machine credentials (SSH) checking  "Prompt on launch" without selecting credentials will require you to select a machine credential at run time. If you select credentials and check <Prompt on launch> the selected credential(s) become the defaults that can be updated at run time.'
+#    dataTitle: 'Credentials'
+#    dataPlacement: 'right'
+#    dataContainer: 'body'
+#    subCheckbox:
+#      variable: 'ask_credential_on_launch'
+#      text: 'Prompt on launch'
+#      ngDisabled: '!(job_template_obj.summary_fields.user_capabilities.edit || canAddJobTemplate)'
+#    ngShow: 'tabId == 2'
 
   opts: 
     label: Input Opts'

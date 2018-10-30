@@ -92,7 +92,6 @@ fields:
     basePath: 'organizations'
     sourceField: 'name'
     dataTitle: 'Organization'
-    required: true
     dataContainer: 'body'
     dataPlacement: 'right'
     ngShow: 'tabId == 2'
@@ -115,7 +114,6 @@ fields:
      basePath: 'hosts'
      sourceField: 'name'
      dataTitle: 'Inventory'
-     required: true
      dataContainer: 'body'
      dataPlacement: 'right'
      ngShow: 'tabId == 3'
