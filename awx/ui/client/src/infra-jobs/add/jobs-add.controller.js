@@ -99,7 +99,7 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
             .catch(({ data, status }) => {
                 ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get datacenters. Get returned status: ') + status });
             });
-            
+
             //for multi credential 2018/10/25
             MultiCredentialService.getCredentialTypes()
                 .then(({ data }) => {
