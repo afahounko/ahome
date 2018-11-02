@@ -246,10 +246,12 @@ angular
 
             $rootScope.breadcrumb = {};
             $rootScope.BRAND_NAME = AppStrings.get('BRAND_NAME');
-            $rootScope.tabTitle = `Ansible ${$rootScope.BRAND_NAME}`;
+            //$rootScope.tabTitle = `Ansible ${$rootScope.BRAND_NAME}`;
+            $rootScope.tabTitle = `AHOME`; //changed by zy
             $rootScope.$watch('$state.current.ncyBreadcrumbLabel', function(title) {
                 title = (title) ? "| " + title : "";
-                document.title = `Ansible ${$rootScope.BRAND_NAME} ${title}`;
+                //document.title = `Ansible ${$rootScope.BRAND_NAME} ${title}`;
+                document.title = `AHOME ${title}`;
             });
 
             function activateTab() {
