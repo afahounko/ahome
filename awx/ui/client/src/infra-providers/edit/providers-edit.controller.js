@@ -18,6 +18,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
         	id_type = $window.localStorage.getItem('form_id'),
             form = ProviderForm[id_type],
             defaultUrl = GetBasePath('ipam_providers') + id;
+        var credential_id, inventory_id, host_id, project_id, template_id, poweroff_id, remove_id;
         console.log($stateParams);
         init();
 
@@ -45,6 +46,13 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
                 var datacenter_value = data.opts.datacenter;
                 var ipaddress_value = data.opts.ipaddress;
                 var credential_value = data.opts.credential;
+                credential_id = data.opts.credential_id;  //edited 2018/11/6 for credential which created when adding
+                inventory_id = data.opts.inventory_id;  //edited 2018/11/6 for inventory which created when adding
+                host_id = data.opts.host_id;  //edited 2018/11/6 for host which created when adding
+                project_id = data.opts.project_id;
+                template_id = data.opts.template_id;
+                poweroff_id = data.opts.poweroff_id;
+                remove_id = data.opts.remove_id;
                 
                 id_type = data.opts.id_type;
                 console.log("ID_TYPE " + id_type);
@@ -134,7 +142,55 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 		            element: '#' + id_type + '_credential',
 		            multiple: false,
 		        });
+                //Get Host variable from Controller
                 
+                var inventory_hosts = data.opts.inventory_hosts;
+				$scope.cloud = form.cloud;
+				if(id_type == "vmware_vcenter")
+				{
+					Rest.setUrl(GetBasePath('hosts'));
+			        Rest.get().then(({data}) => {
+			        	var hostLists = data.results;
+			        	var localexist = false;
+			        	if(form.cloud)	//if cloud = true
+			        	{
+			        		var localres = [];
+				        	for (var i = 0; i < hostLists.length; i++)
+				        	{
+				        		
+					        	if(hostLists[i].name == "localhost"){
+					        		console.log("localhost Exist");
+					        		localres.push(hostLists[i]);
+					        		localexist = true;
+					        	}
+					        }
+					        $scope.inventory_hosts = localres;
+					        if(localexist == false)
+					        {
+					        	//If 'localhost' not exist, we must create a new Host named localhost
+					        	//For now i will skip this
+					        	//2018/11/5
+					        }
+					    }
+					    else  // if cloud = false
+					    {
+					    	var localres = [];
+				        	for (var i = 0; i < hostLists.length; i++)
+				        	{
+								var host_ids = {};
+				                host_ids = inventory_hosts.split(',');
+				                console.log(host_ids);
+				                for (var j = 0; j < host_ids.length; j++) {
+				                    if(hostLists[i].id == parseInt(host_ids[j])){
+						        		console.log("Match Found");
+						        		localres.push(hostLists[i]);
+						        	}
+				                }
+					        }
+					        $scope.inventory_hosts = localres;
+					    }
+			        });
+	        	}
             })
             .catch(({data, status}) => {
                 ProcessErrors($scope, data, status, null, {
@@ -234,8 +290,16 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 				}
 				if($scope.tabId == 4)
 				{
-					var fld;
+					var fld, subid;
 					var data = "{";
+					if(inventory_id != undefined) data += "'inventory_id':'" + inventory_id + "',\n";
+					if(credential_id != undefined) data += "'credential_id':'" + credential_id + "',\n";
+					if(host_id != undefined) data += "'host_id':'" + host_id + "',\n";
+					if(project_id != undefined) data += "'project_id':'" + project_id + "',\n";
+					if(template_id != undefined) data += "'template_id':'" + template_id + "',\n";
+					if(poweroff_id != undefined) data += "'poweroff_id':'" + poweroff_id + "',\n";
+					if(remove_id != undefined) data += "'remove_id':'" + remove_id + "',\n";
+	                
 					for (fld in form.fields) {
 						
 						if(fld == "datacenter" || fld == "credential" || fld == "ipaddress")
@@ -246,12 +310,29 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			            	data += ",\n"; 
 			            	continue;
 						}
+						if(fld == "inventory_hosts" || fld == "instance_groups")
+						{
+							data += "'" + fld + "':";
+							if($scope[fld] != undefined)
+							{
+								data += "'"
+								for(subid in $scope[fld]){
+									data += $scope[fld][subid].id + ',';
+								}
+								data = data.substring(0, data.length-1);
+								data += "',"; 
+							}
+							else data += "'',";
+							data+= "\n";
+							continue;
+						}
 		            	if(fld != "opts")
 		            	{
 			            	data += "'" + fld + "':";
 			            	if($scope[fld] != undefined) data += "'" + $scope[fld] + "'";
 			            	else data += "''";
 			            	data += ",\n"; 
+			            	
 			            }
 		            }
 		            data += "'id_type':'" + id_type + "'\n";

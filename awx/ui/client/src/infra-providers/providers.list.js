@@ -24,12 +24,10 @@ export default ['i18n', function(i18n) {
             status: {
                 label: '',
                 iconOnly: true,
-                ngClick: 'showSCMStatus(project.id)',
-//                awToolTip: '{{ project.statusTip }}',
-				awToolTip: 'Update Succeed',
-                dataTipWatch: 'project.statusTip',
+                ngClick: 'showSCMStatus(job.id)',
+				awToolTip: 'Provider running status. Green:running, Blink:pending',
                 dataPlacement: 'right',
-                icon: "icon-job-success",
+                icon: "{{ 'icon-job-' + job.job_status }}",
                 columnClass: "List-staticColumn--smallStatus",
                 nosort: true,
                 excludeModal: true
@@ -57,13 +55,28 @@ export default ['i18n', function(i18n) {
         },
         fieldActions: {
             columnClass: 'col-md-2 col-sm-3 col-xs-3',
-
             launch: {
                 label: i18n._('Launch'),
                 icon: 'icon-launch',
                	ngClick: "launchProvider(provider.id)",
                 "class": 'btn-xs btn-default',
-                awToolTip: i18n._('Launch App'),
+                awToolTip: i18n._('Launch Provider'),
+                dataPlacement: 'top',
+            },
+		    poweroff: {
+                label: i18n._('Stop Provider'),
+                iconClass: 'fa fa-power-off',
+               	ngClick: "poweroffProvider(provider.id, provider.name)",
+                "class": 'btn-xs btn-default',
+                awToolTip: i18n._('Stop Provider'),
+                dataPlacement: 'top',
+            },
+			remove: {
+                label: i18n._('Clean Provider'),
+                iconClass: 'fa fa-remove',
+               	ngClick: "removeProvider(provider.id, provider.name)",
+                "class": 'btn-xs btn-default',
+                awToolTip: i18n._('Remove Provider'),
                 dataPlacement: 'top',
             },
             edit: {
@@ -74,7 +87,7 @@ export default ['i18n', function(i18n) {
                 awToolTip: i18n._('Edit Provider'),
                 dataPlacement: 'top',
             },
-			view: {
+            view: {
                 ngClick: "viewProvider(provider.id)",
                 awToolTip: i18n._('View the Provider'),
                 dataPlacement: 'top',

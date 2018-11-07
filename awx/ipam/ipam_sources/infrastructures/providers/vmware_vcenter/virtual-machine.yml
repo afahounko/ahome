@@ -52,9 +52,9 @@ configure_job:
     become_enabled: false
     diff_mode: false
     allow_simultaneous: false
-    cloud_credential: null
     network_credential: null
-    credential: 1
+    cloud_credential: null
+    credential: 2
     credentials: '1,9'
     vault_credential: null
 
@@ -91,7 +91,7 @@ poweroff_job:
     allow_simultaneous: false
     cloud_credential: null
     network_credential: null
-    credential: 1
+    credential: 2
     credentials: '1,9'
     vault_credential: null
 
@@ -128,7 +128,7 @@ remove_job:
     allow_simultaneous: false
     cloud_credential: null
     network_credential: null
-    credential: 1
+    credential: 2
     credentials: '1,2'
     vault_credential: null
 

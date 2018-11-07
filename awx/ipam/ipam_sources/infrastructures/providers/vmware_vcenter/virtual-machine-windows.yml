@@ -54,7 +54,7 @@ configure_job:
     allow_simultaneous: false
     cloud_credential: null
     network_credential: null
-    credential: 1
+    credential: 2
     vault_credential: null
 
 poweroff_job:
@@ -90,7 +90,7 @@ poweroff_job:
     allow_simultaneous: false
     cloud_credential: null
     network_credential: null
-    credential: 1
+    credential: 2
     vault_credential: null
 
 remove_job:
@@ -126,7 +126,7 @@ remove_job:
     allow_simultaneous: false
     cloud_credential: null
     network_credential: null
-    credential: 1
+    credential: 2
     vault_credential: null
 
 addTitle: 'NEW WINDOWS VMWARE VM'
