@@ -190,7 +190,7 @@ angular.module('ProviderSaver', ['Utilities'])
                                                         }
 
                                                         //Save Job (Sub Items)
-                                                        Rest.setUrl(defaultUrl);
+                                                        Rest.setUrl(url);
                                                         var opts_field = "'project_id':'" + new_project_id + "',\n" + "'poweroff_id':'" + poweroff_id + "',\n" + "'remove_id':'" + remove_id + "',\n" + "'template_id':'" + data.id + "',\n";
                                                         data_subitem.opts = data_subitem.opts.slice(0, 1) + opts_field + data_subitem.opts.slice(1);
 
@@ -345,7 +345,7 @@ angular.module('ProviderSaver', ['Utilities'])
                                                 console.log(opts_field);
                                                 opts_field = opts_field.substring(0, opts_field.length-1);
                                                 opts_field = opts_field + "'\n,";
-                                                opts_field = opts_field + "'new_ssh_credential':'" + new_ssh_credential + "'\n,'";
+                                                opts_field = opts_field + "'new_ssh_credential':'" + new_ssh_credential + "'\n,";
 						                		data_item.opts = data_item.opts.slice(0, 1) + opts_field + data_item.opts.slice(1);
 						                		console.log(data_item);
 						                		
