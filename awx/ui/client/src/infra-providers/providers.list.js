@@ -27,7 +27,7 @@ export default ['i18n', function(i18n) {
                 ngClick: 'showSCMStatus(job.id)',
 				awToolTip: 'Provider running status. Green:running, Blink:pending',
                 dataPlacement: 'right',
-                icon: "{{ 'icon-job-' + job.job_status }}",
+                icon: "{{ 'icon-job-' + provider.job_status }}",
                 columnClass: "List-staticColumn--smallStatus",
                 nosort: true,
                 excludeModal: true

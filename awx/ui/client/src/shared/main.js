@@ -34,6 +34,7 @@ import orgAdminLookup from './org-admin-lookup/main';
 import limitPanels from './limit-panels/main';
 import multiSelectPreview from './multi-select-preview/main';
 import credentialTypesLookup from './credentialTypesLookup.factory';
+import providerSaver from './provider-saver';
 
 export default
 angular.module('shared', [
@@ -64,6 +65,7 @@ angular.module('shared', [
         orgAdminLookup.name,
         limitPanels.name,
         multiSelectPreview.name,
+        providerSaver.name,
         'ngCookies',
         'angular-duration-format'
     ])

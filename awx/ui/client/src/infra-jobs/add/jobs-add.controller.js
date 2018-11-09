@@ -14,10 +14,10 @@ const user_type_options = [
 
 export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'Rest', 'ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath', 'MultiCredentialService', 'ProjectUpdate',
-    'Wait', 'CreateSelect2', '$state', '$location', 'i18n', 'ParseVariableString',
+    'Wait', 'CreateSelect2', '$state', '$location', 'i18n', 'ParseVariableString', 'SaveSubItem',
     function ($window, $scope, $rootScope, JobForm, GenerateForm, Rest, ParseTypeChange, Alert,
         ProcessErrors, ReturnToCaller, GetBasePath, MultiCredentialService, ProjectUpdate, Wait, CreateSelect2,
-        $state, $location, i18n, ParseVariableString) {
+		$state, $location, i18n, ParseVariableString, SaveSubItem) {
 
         var defaultUrl = GetBasePath('ipam_infrastructure_jobs'),
             fk_model = $window.localStorage.getItem('fk_model'),
@@ -26,9 +26,6 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
             id_type = $window.localStorage.getItem('form_id'),
             parentData = [],
             form = JobForm[id_type],
-            credents = [],
-            poweroff_credents = [],
-            remove_credents = [],
             mcredentials = [];
 
         init();
@@ -108,42 +105,6 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
                         selectedCredentials: []
                     };
                 });
-
-			console.log(form.configure_job.credentials);
-            if (form.configure_job.credentials !== undefined && form.configure_job.credentials !== null) {
-                var cred_ids = {};
-                cred_ids = form.configure_job.credentials.split(',');
-                console.log(cred_ids);
-                for (var ind = 0; ind < cred_ids.length; ind++) {
-                    var tmp_cred = {};
-                    tmp_cred.id = parseInt(cred_ids[ind]);
-                    credents.push(tmp_cred);
-                }
-            }
-            console.log(credents);
-            if (form.poweroff_job.credentials !== undefined && form.poweroff_job.credentials !== null) {
-                var cred_ids = {};
-                cred_ids = form.poweroff_job.credentials.split(',');
-                console.log(cred_ids);
-                for (var ind = 0; ind < cred_ids.length; ind++) {
-                    var tmp_cred = {};
-                    tmp_cred.id = parseInt(cred_ids[ind]);
-                    poweroff_credents.push(tmp_cred);
-                }
-            }
-            console.log(poweroff_credents);
-            if (form.remove_job.credentials !== undefined && form.remove_job.credentials !== null) {
-                var cred_ids = {};
-
-                cred_ids = form.remove_job.credentials.split(',');
-                console.log(cred_ids);
-                for (var ind = 0; ind < cred_ids.length; ind++) {
-                    var tmp_cred = {};
-                    tmp_cred.id = parseInt(cred_ids[ind]);
-                    remove_credents.push(tmp_cred);
-                }
-            }
-            console.log(remove_credents);
 
             // change to modal dialog
 
@@ -276,6 +237,26 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
             }
         };
 
+
+        // prepares a data payload for a PUT request to the API
+        var processExtras = function (job_template) {
+            var fld, subid;
+            var data = "{";
+            console.log($scope);
+            for (fld in job_template) {
+
+                if (fld != "extra_vars") {
+                    data += "'ahome_" + fld + "':";
+                    if (job_template[fld] != undefined) data += "'" + job_template[fld] + "'";
+                    else data += "''";
+                    data += ",\n";
+                }
+            }
+            data += "'extra_vars':''\n";
+            data += "}";
+            return data;
+        };
+
         // prepares a data payload for a PUT request to the API
         var processNewData = function (fields) {
             var data = {};
@@ -294,244 +275,11 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
             return data;
         };
 
-        // prepares a data payload for a PUT request to the API
-        var processExtravars = function (job_template) {
-            var fld, subid;
-            var data = "{";
-            console.log($scope);
-            for (fld in job_template) {
-
-                if (fld != "extra_vars") {
-                    data += "'ahome_" + fld + "':";
-                    if (job_template[fld] != undefined) data += "'" + job_template[fld] + "'";
-                    else data += "''";
-                    data += ",\n";
-                }
-            }
-            data += "'extra_vars':''\n";
-            data += "}";
-
-        	/*
-        	var data = {};
-			for (fld in job_template) {
-            	if(fld != "extra_vars")
-            	{
-	            	data[fld] = job_template[fld];
-	            }
-            }*/
-            return data;
-        };
-        
-        // prepares a data payload for a PUT request to the API
-        var processExtras = function (job_template) {
-            var fld, subid;
-            var data = "{";
-            console.log($scope);
-            for (fld in job_template) {
-                data += "'ahome_" + fld + "':";
-                if (job_template[fld] != undefined) data += "'" + job_template[fld] + "'";
-                else data += "''";
-                data += ",\n";
-            }
-            data += "'extra_vars':''\n";
-            data += "}";
-
-            return data;
-        };
-
         // Save
         $scope.formSave = function () {
-
-            var fld, base, data = {}, data_project = {}, data_job = {};
-            var new_project_id = 0, poweroff_id = 0, remove_id = 0;
-            Wait('start');
-            //Project Saving
-            if (form.project) {
-                data_project = form.project;
-                data_project.name = data_project.name_prefix + $scope.name;
-            }
-            else {
-                data_project.name = form.configure_label_prefix + $scope.name;
-                data_project.description = "";
-                data_project.scm_type = "git";
-                data_project.scm_url = form.configure_project;
-                data_project.scm_branch = "";
-                data_project.scm_clean = true;
-                data_project.scm_delete_on_update = true;
-                data_project.credential = parentData.opts.credential_id;  //2018.10.27 get credential id from parent
-                data_project.timeout = 0;
-                data_project.organization = 1;
-                data_project.scm_update_on_launch = true;
-                data_project.scm_update_cache_timeout = 0;
-            }
-            console.log(data_project);
-
-            console.log(credents);
-            //defaultprojectUrl = GetBasePath('projects');
-            //url = (base === 'teams') ? GetBasePath('teams') + $stateParams.team_id + '/projects/' : defaultprojectUrl;
-            //console.log(url);
-            Rest.setUrl(GetBasePath('projects'));
-            Rest.post(data_project)
-                .then(({ data }) => {
-                    console.log(data);
-                    new_project_id = data.id;
-                    console.log('Project Updated Succeed : ' + new_project_id);
-                    
-                    //Check if the data_project created successfully or not. (here the status must be 'successful' when it created successfully)
-                    var interval = setInterval(function () {
-                        Rest.setUrl(GetBasePath('projects') + new_project_id + '/');
-                        Rest.get().then(({ data }) => {
-                        	console.log('Data get succeed');
-
-                            if (data.status == 'successful') {
-                            	console.log('Project status is succesful');
-                                //**************************** Make Job_Template named Prefix as "Poweroff_" and "Remove_" ************
-                                //************************************ Save Poweroff_JobTemplate **********************************
-                                data_job = form.poweroff_job;
-                                data_job.name = data_job.name_prefix + $scope.name;
-                                data_job.project = new_project_id;
-                                data_job.cloud_credential = parentData.opts.credential_id;
-                                data_job.inventory = parentData.opts.inventory_hosts;
-                                data_job.extra_vars = processExtras(parentData.opts);
-
-                                console.log(data_job);
-
-                                Rest.setUrl(GetBasePath('job_templates'));
-                                Rest.post(data_job)
-                                    .then(({ data }) => {
-
-                                        poweroff_id = data.id;
-                                        //Add multi credentials for poweroff
-                                        /*Rest.setUrl(GetBasePath('job_templates') + data.id + '/credentials/');
-                                        console.log(mcredentials);
-                                        for(var fld in mcredentials)
-                                        {
-                                            Rest.post(mcredentials[fld]);
-                                        }*/
-                                        Rest.setUrl(GetBasePath('job_templates') + data.id + '/credentials/');
-                                        if (poweroff_credents !== null) {
-                                            for (var fld in poweroff_credents) {
-                                                Rest.post(poweroff_credents[fld]);
-                                            }
-                                        }
-
-                                        //************************************ Save Remove_JobTemplate **********************************
-                                        data_job = form.remove_job;
-                                        data_job.name = data_job.name_prefix + $scope.name;
-                                        data_job.project = new_project_id;
-                                        data_job.inventory = parentData.opts.inventory_hosts;
-                                        data_job.cloud_credential = parentData.opts.credential_id;
-                                        //data_job.extra_vars = processExtravars(data_job);
-                                        data_job.extra_vars = processExtras(parentData.opts);
-
-                                        console.log(data_job);
-
-                                        Rest.setUrl(GetBasePath('job_templates'));
-                                        Rest.post(data_job)
-                                            .then(({ data }) => {
-
-                                                remove_id = data.id;
-                                                //Add multi credentials for poweroff
-                                                Rest.setUrl(GetBasePath('job_templates') + data.id + '/credentials/');
-                                                if (remove_credents !== null) {
-                                                    for (var fld in remove_credents) {
-                                                        Rest.post(remove_credents[fld]);
-                                                    }
-                                                }
-                                                //************************************ Save Configure_JobTemplate **********************************
-                                                data_job = form.configure_job;
-                                                data_job.name = data_job.name_prefix + $scope.name;
-                                                data_job.project = new_project_id;
-                                                data_job.inventory = parentData.opts.inventory_hosts;
-                                                data_job.cloud_credential = parentData.opts.credential_id;
-                                                //data_job.extra_vars = processExtravars(data_job);
-												data_job.extra_vars = processExtras(parentData.opts);
-
-                                                console.log(data_job);
-
-                                                Rest.setUrl(GetBasePath('job_templates'));
-                                                Rest.post(data_job)
-                                                    .then(({ data }) => {
-                                                        console.log('Job Template Post succeed');
-
-                                                        //Add multi credentials for Configure Job
-                                                        Rest.setUrl(GetBasePath('job_templates') + data.id + '/credentials/');
-                                                        if (credents !== null) {
-                                                            for (var fld in credents) {
-                                                                Rest.post(credents[fld]);
-                                                            }
-                                                        }
-
-                                                        //Save Job (Sub Items)
-                                                        Rest.setUrl(defaultUrl);
-                                                        var data_subitem = processNewData(form.fields);
-                                                        var opts_field = "'project_id':'" + new_project_id + "',\n" + "'poweroff_id':'" + poweroff_id + "',\n" + "'remove_id':'" + remove_id + "',\n" + "'template_id':'" + data.id + "',\n";
-                                                        data_subitem.opts = data_subitem.opts.slice(0, 1) + opts_field + data_subitem.opts.slice(1);
-
-                                                        Rest.post(data_subitem)
-                                                            .then(({ data }) => {
-                                                                base = $location.path().replace(/^\//, '').split('/')[0];
-                                                                console.log(base);
-                                                                if (base === 'ipam_infrastructure_jobs') {
-                                                                    $rootScope.flashMessage = i18n._('New Job successfully created!');
-                                                                    $rootScope.$broadcast("EditIndicatorChange", "Job", data.id);
-
-                                                                    $state.go('infraJobsList', null, { reload: true });
-                                                                } else {
-                                                                    ReturnToCaller(1);
-                                                                }
-                                                                console.log('InfraJob Post succeed');
-                                                            })
-                                                            .catch(({ data, status }) => {
-                                                                ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to add new JOB_SUBITEM. POST returned status: ') + status });
-                                                            });
-                                                    })
-                                                    .catch(({ data, status }) => {
-                                                        Wait('stop');
-                                                        ProcessErrors($scope, data, status, form, {
-                                                            hdr: i18n._('Error!'),
-                                                            msg: i18n._('Failed to create new JOB TEMPLATE. POST returned status: ') + status
-                                                        });
-                                                    });
-                                            })
-                                            .catch(({ data, status }) => {
-                                                Wait('stop');
-                                                ProcessErrors($scope, data, status, form, {
-                                                    hdr: i18n._('Error!'),
-                                                    msg: i18n._('Failed to create new REMOVE JOB TEMPLATE. POST returned status: ') + status
-                                                });
-                                            });
-
-                                    })
-                                    .catch(({ data, status }) => {
-                                        Wait('stop');
-                                        ProcessErrors($scope, data, status, form, {
-                                            hdr: i18n._('Error!'),
-                                            msg: i18n._('Failed to create new POWER OFF JOB TEMPLATE. POST returned status: ') + status
-                                        });
-                                    });
-                                clearInterval(interval);
-                            }
-                        })
-                    }, 1000);
-                    //****************************************************************************/
-
-                    //defaultprojectUrl = GetBasePath('projects');
-                    //url = (base === 'teams') ? GetBasePath('teams') + $stateParams.team_id + '/projects/' : defaultprojectUrl;
-                    //console.log(url);
-                    //})
-                    //.catch(({data, status}) => {
-                    //	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to Get Project ID. Get returned status: ') + status });
-                    //});
-
-                })
-                .catch(({ data, status }) => {
-                    Wait('stop');
-                    ProcessErrors($scope, data, status, form, {
-                        hdr: i18n._('Error!'),
-                        msg: i18n._('Failed to create new PROJECT. POST returned status: ') + status
-                    });
-                });
+        	var data_subitem = processNewData(form.fields);
+        	var extra_vars = processExtras(parentData.opts);
+			SaveSubItem(parentData, defaultUrl, form, data_subitem, extra_vars);
         };
 
         $scope.formCancel = function () {
