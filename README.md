@@ -3,7 +3,8 @@
 AHOME
 ===
 
-AHOME provides a web-based user interface, REST API, and task engine built on top of [Ansible](https://github.com/ansible/ansible). It is the upstream project for [Tower](https://www.ansible.com/tower), a commercial derivative of AWX.  
+AHOME uses AWX as engine.
+AWX provides a web-based user interface, REST API, and task engine built on top of [Ansible](https://github.com/ansible/ansible). It is the upstream project for [Tower](https://www.ansible.com/tower), a commercial derivative of AWX.  
 
 To install AWX, please view the [Install guide](./INSTALL.md).
 
