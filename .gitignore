@@ -2,6 +2,9 @@
 .tags
 .tags1
 
+# ahome-rpm
+ahome-rpm/result/*
+
 # Tower
 awx/settings/local_*.py*
 awx/*.sqlite3
