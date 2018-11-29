@@ -3,7 +3,9 @@
 .tags1
 
 # ahome-rpm
+*.tar.gz
 ahome-rpm/result/*
+ahome-rpm/*.gz
 
 # Tower
 awx/settings/local_*.py*
