@@ -27,4 +27,4 @@ exec docker run --rm -i \
     -v /tmp/awx-rpmbuild-cache:/cache \
     -v $YUM_CONFIG:/etc/yum.conf \
     -v $BUILD_SCRIPT:/build.sh \
-    $DOCKER_IMAGE /build.sh ahome-rpm/awx-build.spec
+    $DOCKER_IMAGE /build.sh awx-build.spec
