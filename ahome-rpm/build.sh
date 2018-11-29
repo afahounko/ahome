@@ -21,7 +21,7 @@ case "$1" in
 esac
 
 exec docker run --rm -i \
-    -v `pwd`:/source \
+    -v `pwd`/ahome-rpm:/source \
     -v $AHOME_PATH:/source/$AHOME_TAR_GZ \
     -v `pwd`/ahome-rpm/result:/result \
     -v /tmp/awx-rpmbuild-cache:/cache \
