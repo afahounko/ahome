@@ -27,16 +27,20 @@ export default ['$scope', '$rootScope', '$stateParams', 'RirForm', 'Rest',
 
                     $scope.rir_obj = data;
                     $scope.name = data.name;
-                    setScopeFields(data);
+                    for(var fld in data)
+                    {
+                    	$scope[fld] = data[fld];
+                    }
+                    //setScopeFields(data);
                     
                     Wait('stop');
-                })
-                .catch(({data, status}) => {
-                    ProcessErrors($scope, data, status, null, {
-                        hdr: i18n._('Error!'),
-                        msg: i18n.sprintf(i18n._('Failed to retrieve datacenter: %s. GET status: '), $stateParams.id) + status
-                    });
+            })
+            .catch(({data, status}) => {
+                ProcessErrors($scope, data, status, null, {
+                    hdr: i18n._('Error!'),
+                    msg: i18n.sprintf(i18n._('Failed to retrieve datacenter: %s. GET status: '), $stateParams.id) + status
                 });
+            });
         }
         
 		function setScopeFields(data) {

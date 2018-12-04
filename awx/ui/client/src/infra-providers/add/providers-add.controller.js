@@ -13,88 +13,73 @@ const user_type_options = [
 ];
 
 export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm', 'GenerateForm', 'Rest','ParseTypeChange',
-    'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath', 'SaveProvider', 
-    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString', '$q',
+    'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath', 'SaveInfraItem', 'DeleteSubJobTemplate', 'checkExistApi' ,
+    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString', '$q', 'initSelect', 'cloudProcess',
     function($window, $scope, $rootScope, $stateParams, ProviderForm, GenerateForm, Rest, ParseTypeChange, Alert,
-    ProcessErrors, ReturnToCaller, GetBasePath, SaveProvider, Wait, CreateSelect2, 
-	$state, $location, i18n, ParseVariableString, $q) {
+    ProcessErrors, ReturnToCaller, GetBasePath, SaveInfraItem, DeleteSubJobTemplate, checkExistApi, Wait, CreateSelect2, 
+	$state, $location, i18n, ParseVariableString, $q, initSelect, cloudProcess) {
 
         var defaultUrl = GetBasePath('ipam_providers'),
-        	id_type = $window.localStorage.getItem('form_id'),
-            form = ProviderForm[id_type];
+        	fk_type = $window.localStorage.getItem('form_id'),
+            form = ProviderForm[fk_type];
 
         init();
 
         function init() {
             // apply form definition's default field values
 			console.log("Add FORM Init");
-			console.log(id_type);
 			console.log(form);
             GenerateForm.applyDefaults(form, $scope);
 
             $scope.isAddForm = true;
-            
+
 			$scope.status1 = "active";
             $scope.tabId = 1;
 			$scope.previous = "CLOSE";
 			$scope.next = "NEXT";
+			$scope.cloud = form.cloud;
 
-	        var datacenter_options = [];
-			var datacenterLists = [];
-	    	Rest.setUrl(GetBasePath('ipam_datacenters'));
-	        Rest.get().then(({data}) => {
-	        	datacenterLists = data.results;
-	        	for (var i = 0; i < datacenterLists.length; i++) {
-	        		datacenter_options.push({label:datacenterLists[i].name, value:datacenterLists[i].id});
-	        	}
-	        	$scope.datacenter_type_options = datacenter_options;l
-	            for (var i = 0; i < datacenter_options.length; i++) {
-	                if (datacenter_options[i].value === datacenter_value) {
-	                    $scope.datacenter = datacenter_options[i];
-	                    break;
-	                }
-	            }
-	            
-	        })
-	    	.catch(({data, status}) => {
-	        	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get datacenters. Get returned status: ') + status });
-			});
+			if(!form.cloud && form.fields.kind){
+				$scope.kind_type_options = initSelect('', form.fields.kind.ngValues, form.fields.kind.ngFilter ? form.fields.kind.ngFilter : "");
+				if(form.credential_type == 'BuildFactory' || form.credential_type == 'Linux'){	//credential_type is machine
+					$scope.kind = $scope.kind_type_options[0];
+				}
+				else		//credential_type is custom (need to create a new credential_type with customized form)
+				{
+					$scope.kind = $scope.kind_type_options[1];
+				}
+			}
+			
+			if(form.fields.datacenter) $scope.datacenter_type_options = initSelect('ipam_datacenters', '', form.fields.datacenter.ngFilter ? form.fields.datacenter.ngFilter : "");
+	        if(form.fields.credential) $scope.credential_type_options = initSelect('credentials', '', form.fields.credential.ngFilter ? form.fields.credential.ngFilter : "");
 
-			var credential_options = [];
-			Rest.setUrl(GetBasePath('credentials'));
-	        Rest.get().then(({data}) => {
-	        	var credentialLists = data.results;
-	        	for (var i = 0; i < credentialLists.length; i++)
-	        		credential_options.push({label:credentialLists[i].name, value:credentialLists[i].id});
-	        	$scope.credential_type_options = credential_options;
-				//Set Selectbox
-				for (var i = 0; i < credential_options.length; i++) {
-	                if (credential_options[i].value === credential_value) {
-	                    $scope.credential = credential_options[i];
-	                    break;
-	                }
-	            }
-	        })
-	    	.catch(({data, status}) => {
-	        	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get Credentials. Get returned status: ') + status });
-			});
+			//$scope.kind = cloudProcess(form);
 	        CreateSelect2({
-	            element: '#' + id_type + '_datacenter',
-	            multiple: false,
-	        }); 
-
-	        CreateSelect2({
-	            element: '#' + id_type + '_credential',
+	            element: '#' + fk_type + '_kind',
 	            multiple: false,
 	        });
-	        
-			$scope.cloud = form.cloud;
-			/*if(id_type == "vmware_vcenter")
+	        CreateSelect2({
+	            element: '#' + fk_type + '_datacenter',
+	            multiple: false,
+	        });
+	        CreateSelect2({
+	            element: '#' + fk_type + '_credential',
+	            multiple: false,
+	        });
+	        CreateSelect2({
+	            element: '#' + fk_type + '_status',
+	            multiple: false,
+	        });
+			console.log(fk_type);
+			if(fk_type == "vmware_vcenter")
 			{
 				Rest.setUrl(GetBasePath('hosts'));
 		        Rest.get().then(({data}) => {
+		        	console.log(data);
+		        	console.log(form);
 		        	var hostLists = data.results;
 		        	var localexist = false;
+		        	
 		        	if(form.cloud)	//if cloud = true
 		        	{
 		        		var localres = [];
@@ -106,7 +91,6 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 				        		localexist = true;
 				        	}
 				        }
-				        
 				        if(localexist == true)
 				        {
 				        	$scope.inventory_hosts = localres;
@@ -133,7 +117,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 				    }
 		        });
             
-        	}*/
+        	}
 
 			// change to modal dialog
             var element = document.getElementById("modaldlg");
@@ -143,7 +127,9 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
             panel[0].style.width = "60%";
 
         }
-
+		$scope.kindChange = function(){
+			console.log($scope.kind.value);
+		}
         $scope.datacenterChange = function() {
             // When an scm_type is set, path is not required
             console.log($scope.datacenter);
@@ -172,7 +158,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			});
 			
 			CreateSelect2({
-	            element: '#' + id_type + '_ipaddress',
+	            element: '#' + fk_type + '_ipaddress',
 	            multiple: false,
 	        }); 
         };
@@ -231,7 +217,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 					var data = "{";
 					for (fld in form.fields) {
 						console.log($scope[fld]);
-						if(fld == "datacenter" || fld == "credential" || fld == "ipaddress")
+						if(fld == "kind" || fld == "datacenter" || fld == "credential" || fld == "ipaddress")
 						{
 							data += "'" + fld + "':";
 			            	if($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";
@@ -264,14 +250,15 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			            	
 			            }
 		            }
-		            data += "'id_type':'" + id_type + "'\n";
+		            data += "'fk_model':'providers',\n";
+		            data += "'fk_type':'" + fk_type + "'\n";
 		        	data += "}";
 		        	console.log(data);
 		            $scope.opts = ParseVariableString(data);
 					$scope.parseTypeOpts = 'yaml';
 			        ParseTypeChange({
 			            scope: $scope,
-			            field_id: id_type + '_opts',
+			            field_id: fk_type + '_opts',
 			            variable: 'opts',
 			            onChange: callback,
 			            parse_variable: 'parseTypeOpts'
@@ -327,34 +314,35 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
                     data[key] = $scope[key];
                 }
             });
+            if($scope.kind != null) data.kind = $scope.kind.value;
 			if($scope.datacenter != null) data.datacenter = $scope.datacenter.value;
             if($scope.credential != null) data.credential = $scope.credential.value;
     		data.opts = $scope.opts;
-    		
-            return data;
-        };
-        // prepares a data payload for a PUT request to the API
-        var processExtras = function (option) {
-            var fld, subid;
-            var data = "{";
-            console.log($scope);
-            for (fld in option) {
-                data += "'ahome_" + fld + "':";
-                if (option[fld] != undefined) data += "'" + option[fld] + "'";
-                else data += "''";
-                data += ",\n";
-            }
-            data += "'extra_vars':''\n";
-            data += "}";
-
             return data;
         };
         // Save
+        function deleteProvider(id, _callback){
+        	DeleteSubJobTemplate(defaultUrl, id, '', 0);
+        	_callback();
+        }
         $scope.formSave = function() {
-        	console.log(form);
-        	var data_subitem = processNewData(form.fields);
-        	console.log(data_subitem);
-        	SaveProvider(defaultUrl, form, data_subitem);
+        	var data_item = processNewData(form.fields);
+        	/*var check_flag = -100;
+        	while(check_flag != -100)
+        	{
+        		check_flag  = checkExistApi(defaultUrl, 'name', data_item.name);
+        	}
+        	console.log(check_flag);
+        	if(check_flag  == -1)
+        	{
+        		SaveInfraItem(defaultUrl, form, data_item);
+        	}
+        	else
+        	{
+        		deleteProvider(check_flag, function() {*/
+        			SaveInfraItem(defaultUrl, form, data_item, 'infraProvidersList');
+        		//});
+    //}
         };
 
         $scope.formCancel = function() {

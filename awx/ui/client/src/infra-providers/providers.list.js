@@ -24,7 +24,7 @@ export default ['i18n', function(i18n) {
             status: {
                 label: '',
                 iconOnly: true,
-                ngClick: 'showSCMStatus(job.id)',
+                ngClick: 'showJobScript(provider.id)',
 				awToolTip: 'Provider running status. Green:running, Blink:pending',
                 dataPlacement: 'right',
                 icon: "{{ 'icon-job-' + provider.job_status }}",
@@ -35,26 +35,27 @@ export default ['i18n', function(i18n) {
             name: {
                 key: true,
                 label: i18n._('Name'),
-                columnClass: 'col-md-3 col-sm-3 col-xs-9',
+                columnClass: 'col-md-2 col-sm-2 col-xs-8',
                 awToolTip: "Redirect to Job Page",
                 awTipPlacement: "top",
 				ngClick: "infraJobs()",
             },
-		    type: {
+			id: {
                 label: i18n._('Type'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
+                ngBind: 'provider.opts.fk_type',
+                columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
-			version: {
-                label: i18n._('Version'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
+            created: {
+            	label: i18n._('Created'),
+            	columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
-			lastupdated: {
+			last_updated: {
                 label: i18n._('Last Updated'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
+                columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
         },
         fieldActions: {
-            columnClass: 'col-md-2 col-sm-3 col-xs-3',
+            columnClass: 'col-md-4 col-sm-4 col-xs-4',
             launch: {
                 label: i18n._('Launch'),
                 icon: 'icon-launch',

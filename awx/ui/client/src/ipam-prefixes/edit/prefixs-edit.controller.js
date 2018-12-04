@@ -116,14 +116,7 @@ export default ['$scope', '$rootScope', '$stateParams', 'PrefixForm', 'Rest',
 		            });
 		            	
 
-					$scope.status_type_options = status_options;
-					$scope.status = status_options[0];
-					for (var i = 0; i < status_options.length; i++) {
-		                if (status_options[i].value === status_value) {
-		                    $scope.status = status_options[i];
-		                    break;
-		                }
-		            }
+		            $scope.status = "" + status_value;
 					CreateSelect2({
 		                element: '#prefix_status',
 		                multiple: false,

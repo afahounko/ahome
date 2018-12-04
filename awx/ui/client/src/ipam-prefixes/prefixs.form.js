@@ -72,9 +72,8 @@ export default ['i18n', function(i18n) {
                     label: i18n._('Status'),
                     type: 'select',
                     ngModel: 'status',
-                    ngOptions: 'item as item.label for item in status_type_options',
-                    disableChooseOption: true,
-                    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)',
+                    ngValues: 'Container, Active, Reserved, Deprecated',
+                    disableChooseOption: true
                 },
             },
 

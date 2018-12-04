@@ -699,6 +699,9 @@ export default
                                 if (options && options.checkbox) {
                                     html += createCheckbox(options.checkbox);
                                 }
+                                if (options && options.filter) {
+                                    html += createFilter(options.filter);
+                                }
 
                                 if (field.labelAction) {
                                     let action = field.labelAction;
@@ -1085,7 +1088,12 @@ export default
                                         html += field.awRequiredWhen.reqExpression ? "aw-required-when=\"" + field.awRequiredWhen.reqExpression + "\" " : "";
                                         html += field.awRequiredWhen.alwaysShowAsterisk ? "data-awrequired-always-show-asterisk=true " : "";
                                     }
+
                                     html += ">\n";
+                                    
+                                    console.log(field.multiSelect);
+                                    console.log(field.disableChooseOption);
+                                    console.log(field.ngValues);
                                     if (!field.multiSelect && !field.disableChooseOption) {
                                         html += "<option value=\"\">";
                                         // some languages use "Playbook" as a proper noun
@@ -1093,6 +1101,25 @@ export default
                                         // Add a custom default select 'value' (default text)
                                         html += (field.defaultText) ? field.defaultText : i18n.sprintf(i18n._("Choose a %s"), chosen_item);
                                         html += "</option>\n";
+                                        console.log('Option Default' + chosen_item);
+                                    }
+
+                                    if (field.ngValues) {
+                                    	html += "<option value=\"\">";
+                                        // some languages use "Playbook" as a proper noun
+                                        var chosen_item = (i18n._("playbook") !== i18n._("Playbook")) ? field.label.toUpperCase() : field.label;
+                                        // Add a custom default select 'value' (default text)
+                                        html += (field.defaultText) ? field.defaultText : i18n.sprintf(i18n._("Choose a %s"), chosen_item);
+                                        html += "</option>\n";
+
+                                    	var strs = {};
+            							strs = field.ngValues.split(',');
+                                    	for (var i = 0; i < strs.length; i++) {
+                                    		html += "<option value=\"" + i + "\">";
+	                                        // Add Fixed Variables
+	                                        html += strs[i];
+	                                        html += "</option>\n";
+							            }
                                     }
 
                                     html += "</select>\n";

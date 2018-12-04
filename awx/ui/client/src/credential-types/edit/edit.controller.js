@@ -164,6 +164,8 @@ export default ['Rest', 'Wait',
             generator.clearApiErrors($scope);
             Wait('start');
             Rest.setUrl(url + id + '/');
+            console.log($scope.inputs);
+            
             var inputs = ToJSON($scope.parseTypeInputs, $scope.inputs);
             var injectors = ToJSON($scope.parseTypeInjectors, $scope.injectors);
             if (inputs === null) {
@@ -172,6 +174,7 @@ export default ['Rest', 'Wait',
             if (injectors === null) {
               injectors = {};
             }
+            console.log(inputs);
             Rest.put({
                     name: $scope.name,
                     description: $scope.description,

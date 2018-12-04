@@ -6,23 +6,26 @@
 
 import { N_ } from "../../i18n";
 
-export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm', 'GenerateForm', 'Rest','ParseTypeChange',
+export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', 'ProviderForm', 'GenerateForm', 'Rest','ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath',
-    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString',
-    function($window, $scope, $rootScope, $stateParams, ProviderForm, GenerateForm, Rest, ParseTypeChange, Alert,
+    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString', 'initSelect', 
+    function($window, $scope, $rootScope, $stateParams, $timeout, ProviderForm, GenerateForm, Rest, ParseTypeChange, Alert,
     ProcessErrors, ReturnToCaller, GetBasePath, Wait, CreateSelect2, 
-    $state, $location, i18n, ParseVariableString) {
+	$state, $location, i18n, ParseVariableString, initSelect) {
 
         var master = {}, boxes, box, variable, 
             id = $stateParams.provider_id,
-        	id_type = $window.localStorage.getItem('form_id'),
-            form = ProviderForm[id_type],
+        	fk_type = $window.localStorage.getItem('form_id'),
+            form = ProviderForm[fk_type],
             defaultUrl = GetBasePath('ipam_providers') + id;
         var credential_id, inventory_id, host_id, project_id, template_id, poweroff_id, remove_id;
         console.log($stateParams);
         init();
 
         function init() {
+        	
+
+			
             Rest.setUrl(defaultUrl);
             Wait('start');
             Rest.get(defaultUrl).then(({data}) => {
@@ -43,9 +46,16 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
                 		$scope[itm] = false;
                 	}
                 }
-                var datacenter_value = data.opts.datacenter;
-                var ipaddress_value = data.opts.ipaddress;
-                var credential_value = data.opts.credential;
+				if(!form.cloud && form.fields.kind){
+					$scope.kind_type_options = initSelect('', form.fields.kind.ngValues, form.fields.kind.ngFilter ? form.fields.kind.ngFilter : "");
+					if(form.credential_type == 'BuildFactory' || form.credential_type == 'Linux'){	//credential_type is machine
+						$scope.kind = $scope.kind_type_options[0];
+					}
+					else		//credential_type is custom (need to create a new credential_type with customized form)
+					{
+						$scope.kind = $scope.kind_type_options[1];
+					}
+				}
                 credential_id = data.opts.credential_id;  //edited 2018/11/6 for credential which created when adding
                 inventory_id = data.opts.inventory_id;  //edited 2018/11/6 for inventory which created when adding
                 host_id = data.opts.host_id;  //edited 2018/11/6 for host which created when adding
@@ -54,8 +64,8 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
                 poweroff_id = data.opts.poweroff_id;
                 remove_id = data.opts.remove_id;
                 
-                id_type = data.opts.id_type;
-                console.log("ID_TYPE " + id_type);
+                fk_type = data.opts.fk_type;
+                console.log("FK_TYPE " + fk_type);
 
 				//setScopeFields(data);
 				//Set YAML/JSON Oots
@@ -64,89 +74,57 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 		            $scope[form.name + '_form'].$setDirty();
 		        };
 
-		        
-		        var datacenter_options = [];
-				var datacenterLists = [];
-		    	Rest.setUrl(GetBasePath('ipam_datacenters'));
-		        Rest.get().then(({data}) => {
-		        	console.log(datacenter_value);
-		        	datacenterLists = data.results;
-		        	for (var i = 0; i < datacenterLists.length; i++) {
-		        		datacenter_options.push({label:datacenterLists[i].name, value:datacenterLists[i].id});
-		        	}
-		        	$scope.datacenter_type_options = datacenter_options;
-		            for (var i = 0; i < datacenter_options.length; i++) {
-		            	console.log(''+datacenter_options[i].value);
-		                if ((''+datacenter_options[i].value) === datacenter_value) {
-		                    $scope.datacenter = datacenter_options[i];
-		                    break;
-		                }
-		            }
-		            if(datacenter_value == "") $scope.datacenter = null;
-		        })
-		    	.catch(({data, status}) => {
-		        	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get datacenters. Get returned status: ') + status });
-				});
+		        if(form.fields.datacenter){
+		        	$scope.datacenter_type_options = initSelect('ipam_datacenters', form.fields.datacenter.ngFilter ? form.fields.datacenter.ngFilter : "");
+		        	$timeout(function(){
+						for(var fld in $scope.datacenter_type_options)
+						{
+							if($scope.datacenter_type_options[fld].value == data.opts.datacenter)
+								$scope.datacenter = $scope.datacenter_type_options[fld];
+						}
+					},2000);
+		        }
 
-		        var ipaddress_options = [];
-				var ipaddressLists = [];
-		    	Rest.setUrl(GetBasePath('ipam_ip_addresses'));
-		        Rest.get().then(({data}) => {
-		        	console.log(ipaddress_value);
-		        	ipaddressLists = data.results;
-		        	for (var i = 0; i < ipaddressLists.length; i++) {
-		        		ipaddress_options.push({label:ipaddressLists[i].address, value:ipaddressLists[i].id});
-		        	}
-		        	$scope.ipaddress_type_options = ipaddress_options;
-		            for (var i = 0; i < ipaddress_options.length; i++) {
-		            	console.log(''+ipaddress_options[i].value);
-		                if ((''+ipaddress_options[i].value) === ipaddress_value) {
-		                    $scope.ipaddress = ipaddress_options[i];
-		                    break;
-		                }
-		            }
-		            if(ipaddress_value == "") $scope.ipaddress = null;
-		        })
-		    	.catch(({data, status}) => {
-		        	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get ipaddress. Get returned status: ') + status });
-				});
+		        if(form.fields.ipaddress){
+	        		$scope.ipaddress_type_options = initSelect('ipam_ip_addresses', form.fields.ipaddress.ngFilter ? form.fields.ipaddress.ngFilter : "");
+					$timeout(function(){
+						for(var fld in $scope.ipaddress_type_options)
+						{
+							if($scope.ipaddress_type_options[fld].value == data.opts.ipaddress)
+								$scope.ipaddress = $scope.ipaddress_type_options[fld];
+						}
+					},2000);
+	        		
+	        	}
 
-				var credential_options = [];
-				Rest.setUrl(GetBasePath('credentials'));
-		        Rest.get().then(({data}) => {
-		        	var credentialLists = data.results;
-		        	for (var i = 0; i < credentialLists.length; i++)
-		        		credential_options.push({label:credentialLists[i].name, value:credentialLists[i].id});
-		        	$scope.credential_type_options = credential_options;
-					//Set Selectbox
-					for (var i = 0; i < credential_options.length; i++) {
-		                if ((''+credential_options[i].value) === (''+credential_value)) {
-		                    $scope.credential = credential_options[i];
-		                    break;
-		                }
-		            }
-		            if(credential_value == "") $scope.credential = null;
-		        })
-		    	.catch(({data, status}) => {
-		        	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get Credentials. Get returned status: ') + status });
-				});
+	        	if(form.fields.credential){
+	        		$scope.credential_type_options = initSelect('credentials', form.fields.credential.ngFilter ? form.fields.credential.ngFilter : "");
+		        	$timeout(function(){
+						for(var fld in $scope.credential_type_options)
+						{
+							if($scope.credential_type_options[fld].value == data.opts.credentials)
+								$scope.credentials = $scope.credential_type_options[fld];
+						}
+					},2000);
+	        	}
 		        CreateSelect2({
-		            element: '#' + id_type + '_datacenter',
+		            element: '#' + fk_type + '_datacenter',
 		            multiple: false,
 		        }); 
 		        CreateSelect2({
-		            element: '#' + id_type + '_ipaddress',
+		            element: '#' + fk_type + '_ipaddress',
 		            multiple: false,
 		        }); 
 		        CreateSelect2({
-		            element: '#' + id_type + '_credential',
+		            element: '#' + fk_type + '_credential',
 		            multiple: false,
 		        });
+
                 //Get Host variable from Controller
                 
                 var inventory_hosts = data.opts.inventory_hosts;
 				$scope.cloud = form.cloud;
-				if(id_type == "vmware_vcenter")
+				if(fk_type == "vmware_vcenter")
 				{
 					Rest.setUrl(GetBasePath('hosts'));
 			        Rest.get().then(({data}) => {
@@ -157,7 +135,6 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			        		var localres = [];
 				        	for (var i = 0; i < hostLists.length; i++)
 				        	{
-				        		
 					        	if(hostLists[i].name == "localhost"){
 					        		console.log("localhost Exist");
 					        		localres.push(hostLists[i]);
@@ -237,7 +214,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			});
 			
 			CreateSelect2({
-	            element: '#' + id_type + '_ipaddress',
+	            element: '#' + fk_type + '_ipaddress',
 	            multiple: false,
 	        }); 
         };
@@ -335,14 +312,14 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			            	
 			            }
 		            }
-		            data += "'id_type':'" + id_type + "'\n";
+		            data += "'fk_type':'" + fk_type + "'\n";
 		        	data += "}";
 		            $scope.opts = ParseVariableString(data);
 					$scope.parseTypeOpts = 'yaml';
 					console.log(form);
 			        ParseTypeChange({
 			            scope: $scope,
-			            field_id: id_type + '_opts',
+			            field_id: fk_type + '_opts',
 			            variable: 'opts',
 			            onChange: callback,
 			            parse_variable: 'parseTypeOpts'

@@ -24,12 +24,10 @@ export default ['i18n', function(i18n) {
             status: {
                 label: '',
                 iconOnly: true,
-                ngClick: 'showSCMStatus(storage.id)',
-//                awToolTip: '{{ project.statusTip }}',
-				awToolTip: 'Update Succeed',
-                dataTipWatch: 'project.statusTip',
+                ngClick: 'showSCMStatus(job.id)',
+				awToolTip: 'Storage running status. Green:running, Blink:pending',
                 dataPlacement: 'right',
-                icon: "icon-job-success",
+                icon: "{{ 'icon-job-' + storage.job_status }}",
                 columnClass: "List-staticColumn--smallStatus",
                 nosort: true,
                 excludeModal: true
@@ -55,29 +53,30 @@ export default ['i18n', function(i18n) {
                 columnClass: 'col-md-3 col-sm-3 hidden-xs'
             },
         },
-/*
-        actions: {
-            add: {
-                label: i18n._('Create New'),
-                mode: 'all', // One of: edit, select, all
-                ngClick: 'addApp()',
-                awToolTip: i18n._('Create a new APP'),
-                actionClass: 'at-Button--add',
-                actionId: 'button-add',
-                ngShow: 'canAdd'
-            }
-        },
-*/
         fieldActions: {
-
             columnClass: 'col-md-2 col-sm-3 col-xs-3',
-
             launch: {
                 label: i18n._('Launch'),
                 icon: 'icon-launch',
                	ngClick: "launchStorage(storage.id)",
                 "class": 'btn-xs btn-default',
                 awToolTip: i18n._('Launch Storage'),
+                dataPlacement: 'top',
+            },
+		    poweroff: {
+                label: i18n._('Stop Storage'),
+                iconClass: 'fa fa-power-off',
+               	ngClick: "poweroffStorage(storage.id, storage.name)",
+                "class": 'btn-xs btn-default',
+                awToolTip: i18n._('Stop Storage'),
+                dataPlacement: 'top',
+            },
+			remove: {
+                label: i18n._('Clean Storage'),
+                iconClass: 'fa fa-remove',
+               	ngClick: "removeStorage(storage.id, storage.name)",
+                "class": 'btn-xs btn-default',
+                awToolTip: i18n._('Remove Storage'),
                 dataPlacement: 'top',
             },
             edit: {
@@ -88,7 +87,7 @@ export default ['i18n', function(i18n) {
                 awToolTip: i18n._('Edit Storage'),
                 dataPlacement: 'top',
             },
-			view: {
+            view: {
                 ngClick: "viewStorage(storage.id)",
                 awToolTip: i18n._('View the Storage'),
                 dataPlacement: 'top',

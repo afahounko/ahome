@@ -141,7 +141,15 @@ export default ['$compile', 'Attr', 'Icon',
 	                        	html += `<div class="MgmtCards-card">`;
 	                        }
 	                        	html += `<div class="MgmtCards-header">`;
-	                                html += `<h3 class="MgmtCards-label"> ${card.title}</h3>`;
+	                                html += `<div class="col-md-8"><h3 class="MgmtCards-label"> ${card.title}</h3><p>${(card.description || "Place organization description here")}</p></div>`;
+	                                if(card.logo != undefined && card.logo != null){
+	                                	html += `<div class="col-md-4"><img style="width:100px;position:absolute;" ng-src= ${card.logo}></img></div>`;	
+	                                }
+	                                else
+	                                {
+	                                	html += `<div class="col-md-4"><img style="width:85px;position:absolute;" ng-src= "/static/assets/logo/logo-ahome.png"></img></div>`;	
+	                                }
+	                                
 	                                //html += `<span class = "title">${(card.title || card.editTitle)}</span>`;
 	                                html += "<div class=\"MgmtCards-actionItems\">";
 		                                html += "<button class=\"MgmtCards-actionItem List-actionButton\"";
@@ -153,7 +161,6 @@ export default ['$compile', 'Attr', 'Icon',
 									html += "</div>";
 									
 	                            html += `</div>`;
-	                            html += `<p>${(card.description || "Place organization description here")}</p>`;
 	                        html += `</div>`;
 	                    }
 	                    html += "</div>";//boxes Holder

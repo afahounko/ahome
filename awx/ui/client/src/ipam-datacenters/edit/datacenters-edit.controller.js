@@ -28,7 +28,11 @@ export default ['$scope', '$rootScope', '$stateParams', 'DatacenterForm', 'Rest'
 
                     $scope.datacenter_obj = data;
                     $scope.name = data.name;
-                    setScopeFields(data);
+                    for(var fld in data)
+                    {
+                    	$scope[fld] = data[fld];
+                    }
+                    //setScopeFields(data);
 
                     Wait('stop');
                 })

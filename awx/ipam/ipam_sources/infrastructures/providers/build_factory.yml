@@ -7,9 +7,28 @@ description: |
 
 hosts: all
 
-cloud: true
-credential_types: 1,7
+cloud: false
+credential_type: Linux
+credential_input:
+    fields:
+      - type: string
+        id: username
+        label: Username
+      - secret: true
+        type: string
+        id: password
+        label: Password
+      - help_text: |
+          ansible_connection: winrm ansible_winrm_server_cert_validation: ignore
+        multiline: true
+        type: string
+        id: windows_options
+        label: Connection options
+    required:
+      - username
+      - password
 credential_prefix: 'Machine_'
+
 label_prefix: ''
 url: 'https://github.com/afahounko'
 project: 'https://github.com/ansible/ansible-tower-samples.git'
@@ -20,13 +39,12 @@ subitem_url: 'https://github.com/afahounko'
 subitem_project: 'https://github.com/ansible/ansible-tower-samples.git'
 subitem_playbook: 'local.yml'
 
-
 project:
-    name_prefix: 'Configure_'
+    name_prefix: 'Git_'
     description: ''
     scm_type: 'git'
     scm_branch: ''
-    scm_url: 'https://git.afahounko.com/caas/vmware.linux.git'
+    scm_url: 'https://git.afahounko.com/caas/ms_build_factory.git'
     scm_clean: true
     scm_delete_on_update: true
     credential: null
@@ -37,7 +55,7 @@ project:
 
 configure_job:
     name_prefix: 'Configure_'
-    playbook: 'create_vm.yml'
+    playbook: 'win_custom_iso.yml'
     description: ''
     job_type: "run"
     inventory: 1
@@ -68,12 +86,11 @@ configure_job:
     allow_simultaneous: false
     network_credential: null
     cloud_credential: null
-    credential: 2
     vault_credential: null
 
 poweroff_job:
     name_prefix: 'Poweroff_'
-    playbook: 'destroy_vm.yml'
+    playbook: 'win_custom_iso.yml'
     description: ''
     job_type: "run"
     inventory: 1
@@ -104,12 +121,11 @@ poweroff_job:
     allow_simultaneous: false
     cloud_credential: null
     network_credential: null
-    credential: 2
     vault_credential: null
 
 remove_job:
     name_prefix: 'Remove_'
-    playbook: 'remove_vm.yml'
+    playbook: 'win_custom_iso.yml'
     description: ''
     job_type: "run"
     inventory: 1
@@ -140,17 +156,19 @@ remove_job:
     allow_simultaneous: false
     cloud_credential: null
     network_credential: null
-    credential: 2
     vault_credential: null
 
 addTitle: 'NEW BUILD FACTORY'
 editTitle: '{{ name }}'
 name: 'build_factory'
 title: 'Build Factory'
+logo: '/static/assets/logo/providers/logo-buildfactory.png'
 basePath: 'ipam_providers'
 stateTree: 'infraProviders'
 breadcrumbName: 'INFRA PROVIDER'
 showActions: true
+subFormTitles:
+    credentialSubForm: 'Credential Type Details'
 launchclick: 'addNew("build_factory")'
 steps: 4
 
@@ -192,38 +210,133 @@ fields:
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 1'
 
-  host:
-    label: VCenter Host
-    type: 'text'
-    dataTitle: 'Choose a Credential'
-    awPopOverWatch: 'Enter the hostname or IP address that corresponds to your VMware vCenter.'
+  kind:
+    label: 'Credential Type'
+    type: 'select'
+    ngOptions: 'item as item.label for item in kind_type_options'
+    ngValues: 'Machine,Windows'
+    ngChange: 'kindChange()'
     required: true
+    awPopOver: '<p> Select the Cloud Kind for this Inventory to run on. </p>'
+    dataTitle: 'Credential Type'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    hasSubForm: true
+    ngDisabled: true
     ngShow: 'tabId == 2'
 
-  username: 
-    label: 'Username'
+  credential_username: 
+    label: 'UserName'
     type: 'text'
+    ngShow: "kind.value && tabId == 2"
+    autocomplete: false
+    subForm: "credentialSubForm"
+    hideSubForm: 'tabId != 2'
     required: true
-    ngShow: 'tabId == 2'
 
-  password: 
+  credential_password: 
     label: 'Password'
     type: 'sensitive'
+    ngShow: "kind.value && tabId == 2"
+    clear: false
+    autocomplete: false
     hasShowInputButton: true
+    subForm: "credentialSubForm"
     required: true
-    ngShow: 'tabId == 2'
+
+  ssh_key_data: 
+    label: 'SSH PRIVATE KEY'
+    type: 'textarea'
+    ngShow: "kind.value == '0' && tabId == 2"
+    #awRequiredWhen: 
+    #    reqExpression: 'key_required'
+    #    init: true
+    class: 'Form-textAreaLabel Form-formGroup--fullWidth'
+    elementClass: 'Form-monospace'
+    awDropFile: true
+    rows: 10
+    awPopOver: "SSH key description"
+    awPopOverWatch: "key_description"
+    dataTitle: 'Private Key'
+    dataPlacement: 'right'
+    dataContainer: "body"
+    subForm: "credentialSubForm"
+    ngDisabled: '!(credential_obj.summary_fields.user_capabilities.edit || canAdd)'
+
+  ssh_key_unlock: 
+    label: 'Private Key Passphrase'
+    type: 'sensitive'
+    ngShow: "kind.value == '0' && tabId == 2"
+    ngDisabled: "keyEntered == false || ssh_key_unlock_ask || !(credential_obj.summary_fields.user_capabilities.edit || canAdd)"
+    subCheckbox: 
+        variable: 'ssh_key_unlock_ask'
+        ngShow: "kind.value == 'ssh'"
+        text: 'Ask at runtime?'
+        ngChange: "ask('ssh_key_unlock', 'undefined')"
+        ngDisabled: "keyEntered == false"
+    
+    hasShowInputButton: true
+    subForm: 'credentialSubForm'
+
+  become_method: 
+    label: "Privilege Escalation"
+    type: 'select'
+    ngShow: "kind.value == '0' && tabId == 2"
+    dataTitle: 'Privilege Escalation'
+    ngOptions: 'become.label for become in become_options track by become.value'
+    awPopOver: "<p> Specify a method for %s operations. This is equivalent to specifying the parameter </p>"
+    dataPlacement: 'right'
+    dataContainer: "body"
+    subForm: 'credentialSubForm'
+    ngDisabled: '!(credential_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngChange: 'becomeMethodChange()'
+
+  become_username: 
+    label: 'Privilege Escalation Username'
+    type: 'text'
+    ngShow: "kind.value == '0' && tabId == 2"
+    autocomplete: false
+    subForm: 'credentialSubForm'
+    ngDisabled: '!(credential_obj.summary_fields.user_capabilities.edit || canAdd)'
+
+  become_password: 
+    label: 'Privilege Escalation Password'
+    type: 'sensitive'
+    ngShow: "kind.value == '0' && tabId == 2"
+    ngDisabled: "become_password_ask || !(credential_obj.summary_fields.user_capabilities.edit || canAdd)"
+    subCheckbox: 
+        variable: 'become_password_ask'
+        text: 'Ask at runtime?'
+        ngChange: "ask(become_password, undefined)"
+        ngDisabled: false
+    hasShowInputButton: true
+    autocomplete: false
+    subForm: 'credentialSubForm'
+
+  credential_windows_options: 
+    label: 'Connection Options'
+    type: 'textarea'
+    class: 'Form-textAreaLabel Form-formGroup--fullWidth'
+    rows: 10
+    ngShow: "kind.value == '1' && tabId == 2"
+    awPopOver: "<p> ansible_connection: winrm <br> ansible_winrm_server_cert_validation: ignore </p>"
+    awPopOverWatch: "<p> ansible_connection: winrm <br> ansible_winrm_server_cert_validation: ignore </p>"
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    autocomplete: false
+    subForm: "credentialSubForm"
 
   inventory_hosts:
-     label: 'Inventory Host'
-     type: 'custom'
-     sourceModel: 'hosts'
-     basePath: 'hosts'
-     awPopOver: "<p> Select the Inventory Hosts for this Inventory to run on. </p>"
-     dataTitle: 'Inventory Host'
-     dataPlacement: 'right'
-     dataContainer: 'body'
-     control: '<inventory-hosts-multiselect  bind="inventory_hosts" field-is-disabled="cloud"></inventory-hosts-multiselect>'
-     ngShow: 'tabId == 3'
+    label: 'Inventory Host'
+    type: 'custom'
+    sourceModel: 'hosts'
+    basePath: 'hosts'
+    awPopOver: "<p> Select the Inventory Hosts for this Inventory to run on. </p>"
+    dataTitle: 'Inventory Host'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    control: '<inventory-hosts-multiselect  bind="inventory_hosts" field-is-disabled="cloud"></inventory-hosts-multiselect>'
+    ngShow: 'tabId == 3'
 
   opts: 
     label: Input Opts'

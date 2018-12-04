@@ -6,13 +6,6 @@
 
 import { N_ } from "../../i18n";
 
-const status_options = [
-	{value:0, label:'Container'}, 
-	{value:1, label:'Active'}, 
-	{value:2, label:'Reserved'}, 
-	{value:3, label: 'Deprecated'}
-];
-
 export default ['$scope', '$rootScope', 'PrefixForm', 'GenerateForm', 'Rest',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath',
     'Wait', 'CreateSelect2', '$state', '$location', 'i18n',
@@ -41,11 +34,7 @@ export default ['$scope', '$rootScope', 'PrefixForm', 'GenerateForm', 'Rest',
         	.catch(({data, status}) => {
             	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get datacenters. Get returned status: ') + status });
 			});
-        	
-        	CreateSelect2({
-                element: '#prefix_datacenter',
-                multiple: false,
-            });
+
 
         	var vrf_options = [];
         	Rest.setUrl(GetBasePath('ipam_vrfs'));
@@ -59,11 +48,6 @@ export default ['$scope', '$rootScope', 'PrefixForm', 'GenerateForm', 'Rest',
         	.catch(({data, status}) => {
             	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get datacenters. Get returned status: ') + status });
 			});
-        	
-        	CreateSelect2({
-                element: '#prefix_vrf',
-                multiple: false,
-            });
 
         	var vlan_options = [];
         	Rest.setUrl(GetBasePath('ipam_vlans'));
@@ -77,14 +61,23 @@ export default ['$scope', '$rootScope', 'PrefixForm', 'GenerateForm', 'Rest',
         	.catch(({data, status}) => {
             	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get datacenters. Get returned status: ') + status });
 			});
-        	
+
+        	CreateSelect2({
+                element: '#prefix_datacenter',
+                multiple: false,
+            });
+
+        	CreateSelect2({
+                element: '#prefix_vrf',
+                multiple: false,
+            });
+
         	CreateSelect2({
                 element: '#prefix_vlan',
                 multiple: false,
             });
 
-			$scope.status_type_options = status_options;
-			$scope.status = status_options[0];
+			$scope.status = "";
 			CreateSelect2({
                 element: '#prefix_status',
                 multiple: false,
@@ -100,6 +93,9 @@ export default ['$scope', '$rootScope', 'PrefixForm', 'GenerateForm', 'Rest',
         // Save
         $scope.formSave = function() {
             var fld, data = {};
+            
+            console.log($scope);
+            console.log($scope.status);
 
 			data.prefix = $scope.prefix;
 			data.description = $scope.description;
@@ -108,7 +104,7 @@ export default ['$scope', '$rootScope', 'PrefixForm', 'GenerateForm', 'Rest',
             if($scope.datacenter != null) data.datacenter = $scope.datacenter.value;
             if($scope.vrf != null) data.vrf = $scope.vrf.value;
             if($scope.vlan != null) data.vlan = $scope.vlan.value;
-            data.status = $scope.status.value;
+            data.status = $scope.status;
             
             Wait('start');
             Rest.setUrl(defaultUrl);

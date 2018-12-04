@@ -8,7 +8,7 @@ description: |
 hosts: all
 
 project:
-    name_prefix: 'Configure_'
+    name_prefix: 'Git_'
     description: ''
     scm_type: 'git'
     scm_branch: ''
@@ -22,7 +22,7 @@ project:
     scm_update_cache_timeout: 0
 
 configure_job:
-    name_prefix: 'Configure_'
+    name_prefix: 'Run_'
     playbook: 'create_vm.yml'
     description: ''
     job_type: "run"
@@ -135,7 +135,8 @@ remove_job:
 addTitle: 'NEW VMWARE VM'
 editTitle: '{{ name }}'
 name: 'vmware_virtual_machine'
-title: 'VMWare Virtual Machine'
+title: 'Virtual Machine'
+logo: '/static/assets/logo/logo-vmware.png'
 basePath: 'ipam_infrastructure_jobs'
 stateTree: 'infraJobsList.providers.vmware_vcenter'
 #basePath: 'ipam_providers'
@@ -190,6 +191,8 @@ fields:
     ngOptions: 'item as item.label for item in datacenter_type_options'
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 2'
+    ngFilter: 
+      name: 'vm'
 
   credential : 
     label: 'Credential'

@@ -6,16 +6,16 @@
 
 import { N_ } from "../../i18n";
 
-export default ['$window', '$scope', '$rootScope', 'Rest', 'StorageList', 'Prompt',
+export default ['$window', '$scope', '$rootScope', 'Rest', 'StorageList', 'Prompt', 'JobTemplateModel', 'WorkflowJobTemplateModel',
     'ProcessErrors', 'GetBasePath', 'Wait', '$state', '$filter',
-    'rbacUiControlService', 'Dataset', 'i18n', 
-    function($window, $scope, $rootScope, Rest, StorageList, Prompt,
+    'rbacUiControlService', 'Dataset', 'i18n', 'processRow', 'LaunchRelatedJobTemplate', 'DeleteInfrastructure',
+    function($window, $scope, $rootScope, Rest, StorageList, Prompt, JobTemplateModel, WorkflowJobTemplateModel,
     ProcessErrors, GetBasePath, Wait, $state, $filter, rbacUiControlService,
-    Dataset, i18n) {
+	Dataset, i18n, processRow, LaunchRelatedJobTemplate, DeleteInfrastructure) {
 
         var list = StorageList,
         defaultUrl = GetBasePath('ipam_storages');
-
+		var project_id, template_id, poweroff_id, remove_id;
         init();
 
         function init() {
@@ -26,7 +26,10 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'StorageList', 'Promp
                 .then(function(params) {
                     $scope.canAdd = params.canAdd;
                 });
-                
+            $scope.$watchCollection(list.name, function(){
+	            _.forEach($scope[list.name], processStorageRow);
+	        });
+	        
             // search init
             $scope.list = list;
             $scope[`${list.iterator}_dataset`] = Dataset.data;
@@ -34,7 +37,13 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'StorageList', 'Promp
 
             $rootScope.flashMessage = null;
             $scope.selected = [];
+            
         }
+
+		//This function is for Getting Job Template's status
+	    function processStorageRow(storage) {
+            storage = processRow('ipam_storages', storage);
+	    }
 
         $scope.addNew = function(param) {
             console.log("Add Storage infraStorage" + param);
@@ -44,64 +53,40 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'StorageList', 'Promp
         
         $scope.infraJobs= function() {
         	console.log("********* Launch ************");
-        	//var locationTo = 'infraJobsList.storages.' + this.storage.related.opts.id_type;
+        	//var locationTo = 'infraJobsList.storages.' + this.storage.related.opts.fk_type;
         	//console.log(locationTo);
         	$window.localStorage.setItem('fk_model', 'storages');
-        	$window.localStorage.setItem('fk_type', this.storage.related.opts.id_type);
+        	$window.localStorage.setItem('fk_type', this.storage.related.opts.fk_type);
         	$window.localStorage.setItem('fk_id', this.storage.id);
-            $state.go('infraJobsList');
+
+            $rootScope.infraJob = "infraStoragesList";
+
+            $state.go('infraJobsList', {job_search:{fk_model:'storages', fk_type:this.storage.related.opts.fk_type, fk_id:this.storage.id}}, { reload: true });
 			console.log("State Go finished");
-        };
-        
-        $scope.launchStorage= function() {
-        	console.log("Launch");
-            //$rootScope.form_id = this.storage.related.opts.id_type;
-            //$state.go('infraJobsList', null, { reload: true});
+
         };
 
+        $scope.launchStorage = function(storage_id) {
+        	LaunchRelatedJobTemplate(defaultUrl, storage_id, null, 'template_id', 0, '');
+        };
+
+        $scope.poweroffStorage= function(storage_id, name) {
+        	LaunchRelatedJobTemplate(defaultUrl, storage_id, name, 'poweroff_id', 1, 'Power Off');
+        };
+
+        $scope.removeStorage = function(storage_id, name) {
+        	LaunchRelatedJobTemplate(defaultUrl, storage_id, name, 'remove_id', 1, 'Remove');
+        };
+        
         $scope.editStorage= function() {
         	console.log("stateGO");
-            console.log('infraStoragesList.edit_' + this.storage.related.opts.id_type);
-            $window.localStorage.setItem('form_id', this.storage.related.opts.id_type);
-            $state.go('infraStoragesList.edit_' + this.storage.related.opts.id_type, { storage_id: this.storage.id });
+            console.log('infraStoragesList.edit_' + this.storage.related.opts.fk_type);
+            $window.localStorage.setItem('form_id', this.storage.related.opts.fk_type);
+            $state.go('infraStoragesList.edit_' + this.storage.related.opts.fk_type, { storage_id: this.storage.id });
         };
 
         $scope.deleteStorage = function(id, name) {
-            var action = function() {
-                $('#prompt-modal').modal('hide');
-                Wait('start');
-                var url = defaultUrl + id + '/';
-                Rest.setUrl(url);
-                Rest.destroy()
-                    .then(() => {
-                        let reloadListStateParams = null;
-
-                        if($scope.ipam_storages.length === 1 && $state.params.storage_search && !_.isEmpty($state.params.storage_search.page) && $state.params.storage_search.page !== '1') {
-                            reloadListStateParams = _.cloneDeep($state.params);
-                            reloadListStateParams.storage_search.page = (parseInt(reloadListStateParams.storage_search.page)-1).toString();
-                        }
-
-                        if (parseInt($state.params.storage_id) === id) {
-                            $state.go('^', null, { reload: true });
-                        } else {
-                            $state.go('.', null, { reload: true });
-                        }
-                    })
-                    .catch(({data, status}) => {
-                        ProcessErrors($scope, data, status, null, {
-                            hdr: i18n._('Error!'),
-                            msg: i18n.sprintf(i18n._('Call to %s failed. DELETE returned status: '), url) + status
-                        });
-                    });
-            };
-
-            Prompt({
-                hdr: i18n._('Delete'),
-                resourceName: $filter('sanitize')(name),
-                body: '<div class="Prompt-bodyQuery">' + i18n._('Are you sure you want to delete this Storage?') + '</div>',
-                action: action,
-                actionText: i18n._('DELETE')
-            });
+			DeleteInfrastructure(defaultUrl, id, name, 'storages',  this.storage.related.opts.fk_type);
         };
     }
 ];

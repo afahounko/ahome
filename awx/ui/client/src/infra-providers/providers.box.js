@@ -10,11 +10,9 @@
  * @name boxes.function:Apps
  * @description This form is for Boxes infra_apps
 */
-
 export default ['Wait','GetBasePath','Rest','i18n', '$q', function(Wait,GetBasePath,Rest,i18n, $q) {
 	var deferred = $q.defer();
 	var defaultUrl = GetBasePath('ipam_infrastructure_ui');
-	
 	
 	var return_val = null;
 	var formData = new FormData();

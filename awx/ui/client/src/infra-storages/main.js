@@ -23,9 +23,9 @@ angular.module('infraStoragesList', [])
    .config(['$stateProvider', 'stateDefinitionsProvider',
         function($stateProvider, stateDefinitionsProvider) {
             let stateDefinitions = stateDefinitionsProvider.$get();
-
+			console.log("Storage Main");
             function generateStateTree() {
-                let storagesTree = stateDefinitions.generateTree({
+                let StoragesTree = stateDefinitions.generateTree({
                     parent: 'infraStoragesList',
                     modes: ['add', 'edit'],
                     box: 'StorageBox',
@@ -46,7 +46,7 @@ angular.module('infraStoragesList', [])
                     },
                 });
                 return Promise.all([
-                    storagesTree
+                    StoragesTree
                 ]).then((generated) => {
                     return {
                         states: _.reduce(generated, (result, definition) => {
@@ -63,4 +63,3 @@ angular.module('infraStoragesList', [])
             $stateProvider.state(stateTree);
         }
     ]);
-            	

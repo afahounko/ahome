@@ -6,12 +6,12 @@
 
 import { N_ } from "../../i18n";
 
-export default ['$window', '$scope', '$rootScope', 'Rest', 'ProviderList', 'Prompt', 'JobTemplateModel', 'WorkflowJobTemplateModel',
+export default ['$window', '$scope', '$rootScope', '$location', 'Rest', 'ProviderList', 'Prompt', 'JobTemplateModel', 'WorkflowJobTemplateModel',
     'ProcessErrors', 'GetBasePath', 'Wait', '$state', '$filter',
-    'rbacUiControlService', 'Dataset', 'i18n', 'processRow', 'LaunchRelatedJobTemplate', 'DeleteRelatedJobTemplate',
-    function($window, $scope, $rootScope, Rest, ProviderList, Prompt, JobTemplateModel, WorkflowJobTemplateModel,
+    'rbacUiControlService', 'Dataset', 'i18n', 'processRow', 'LaunchRelatedJobTemplate', 'DeleteInfrastructure',
+    function($window, $scope, $rootScope, $location, Rest, ProviderList, Prompt, JobTemplateModel, WorkflowJobTemplateModel,
     ProcessErrors, GetBasePath, Wait, $state, $filter, rbacUiControlService,
-	Dataset, i18n, processRow, LaunchRelatedJobTemplate, DeleteRelatedJobTemplate) {
+	Dataset, i18n, processRow, LaunchRelatedJobTemplate, DeleteInfrastructure) {
 
         var list = ProviderList,
         defaultUrl = GetBasePath('ipam_providers');
@@ -29,6 +29,7 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'ProviderList', 'Prom
             $scope.$watchCollection(list.name, function(){
 	            _.forEach($scope[list.name], processProviderRow);
 	        });
+	        
             // search init
             $scope.list = list;
             $scope[`${list.iterator}_dataset`] = Dataset.data;
@@ -36,12 +37,24 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'ProviderList', 'Prom
 
             $rootScope.flashMessage = null;
             $scope.selected = [];
+            
         }
 
 		//This function is for Getting Job Template's status
 	    function processProviderRow(provider) {
             provider = processRow('ipam_providers', provider);
 	    }
+ 
+ 		$scope.showJobScript = function(id)
+ 		{
+ 			if(this.provider.job_status == 'pending'){
+ 				Alert(i18n._('Job Pending'), i18n._('The selected job is under pending status.'), 'alert-info');
+ 			}
+ 			else{
+ 				console.log('/jobs/playbook/' + this.provider.last_id);
+ 				$location.path('/jobs/playbook/' + this.provider.last_id);
+ 			}
+ 		}
 
         $scope.addNew = function(param) {
             console.log("Add Provider infraProvider" + param);
@@ -51,19 +64,19 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'ProviderList', 'Prom
         
         $scope.infraJobs= function() {
         	console.log("********* Launch ************");
-        	//var locationTo = 'infraJobsList.providers.' + this.provider.related.opts.id_type;
+        	//var locationTo = 'infraJobsList.providers.' + this.provider.related.opts.fk_type;
         	//console.log(locationTo);
         	$window.localStorage.setItem('fk_model', 'providers');
-        	$window.localStorage.setItem('fk_type', this.provider.related.opts.id_type);
+        	$window.localStorage.setItem('fk_type', this.provider.related.opts.fk_type);
         	$window.localStorage.setItem('fk_id', this.provider.id);
 
             $rootScope.infraJob = "infraProvidersList";
-			console.log($rootScope.infraJob);
 
-            $state.go('infraJobsList');
+            $state.go('infraJobsList', {job_search:{fk_model:'providers', fk_type:this.provider.related.opts.fk_type, fk_id:this.provider.id}}, { reload: true });
 			console.log("State Go finished");
+
         };
-        
+
         $scope.launchProvider = function(provider_id) {
         	LaunchRelatedJobTemplate(defaultUrl, provider_id, null, 'template_id', 0, '');
         };
@@ -75,16 +88,16 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'ProviderList', 'Prom
         $scope.removeProvider = function(provider_id, name) {
         	LaunchRelatedJobTemplate(defaultUrl, provider_id, name, 'remove_id', 1, 'Remove');
         };
-        
+
         $scope.editProvider= function() {
         	console.log("stateGO");
-            console.log('infraProvidersList.edit_' + this.provider.related.opts.id_type);
-            $window.localStorage.setItem('form_id', this.provider.related.opts.id_type);
-            $state.go('infraProvidersList.edit_' + this.provider.related.opts.id_type, { provider_id: this.provider.id });
+            console.log('infraProvidersList.edit_' + this.provider.related.opts.fk_type);
+            $window.localStorage.setItem('form_id', this.provider.related.opts.fk_type);
+            $state.go('infraProvidersList.edit_' + this.provider.related.opts.fk_type, { provider_id: this.provider.id });
         };
 
         $scope.deleteProvider = function(id, name) {
-			DeleteRelatedJobTemplate(defaultUrl, id, name);
+			DeleteInfrastructure(defaultUrl, id, name, 'providers',  this.provider.related.opts.fk_type);
         };
     }
 ];

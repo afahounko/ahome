@@ -9,8 +9,8 @@
  * generateLookupNodes - Attaches to a form node. Builds an abstract '*.lookup' node with field-specific 'lookup.*' children e.g. {name: 'projects.add.lookup.organizations', ...}
  */
 
-export default ['$rootScope', '$injector', '$stateExtender', '$log', 'i18n',
-    function ($rootScope, $injector, $stateExtender, $log, i18n) {
+export default ['$window', '$state', '$rootScope', '$injector', '$stateExtender', '$log', 'i18n',
+	function ($window, $state, $rootScope, $injector, $stateExtender, $log, i18n) {
         return {
             /**
             * @ngdoc method
@@ -117,10 +117,13 @@ export default ['$rootScope', '$injector', '$stateExtender', '$log', 'i18n',
                             if (params.generateSchedulerView) {
                                 html = generateList.insertSchedulerView() + html;
                             }
+                            
+
                             return html;
                         };
                     }
                 }
+                console.log(params.views);
 
                 let views = params.views ? params.views : {
                     '@': {
@@ -139,7 +142,7 @@ export default ['$rootScope', '$injector', '$stateExtender', '$log', 'i18n',
                     ncyBreadcrumb: {
                         label: list.title
                     },
-                    resolve: {
+	                resolve: {
                         Dataset: [params.list, 'QuerySet', '$stateParams', 'GetBasePath',
                         function (list, qs, $stateParams, GetBasePath) {
                             let path = GetBasePath(list.basePath) || GetBasePath(list.name);
@@ -159,6 +162,7 @@ export default ['$rootScope', '$injector', '$stateExtender', '$log', 'i18n',
                     state.ncyBreadcrumb = params.ncyBreadcrumb;
                 }
                 if (list.search) {
+                	console.log(state);
                     state.params[`${list.iterator}_search`].value = _.merge(state.params[`${list.iterator}_search`].value, list.search);
                 }
                 return state;
@@ -996,7 +1000,7 @@ export default ['$rootScope', '$injector', '$stateExtender', '$log', 'i18n',
             generateLookupNodes: function (form, formStateDefinition) {
 
                 function buildFieldDefinition(field) {
-
+					console.log('buildFieldDefinition');
                     // Some lookup modals require some additional default params,
                     // namely organization and inventory_script, and insights
                     // credentials. If these params

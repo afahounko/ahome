@@ -6,12 +6,12 @@
 
 import { N_ } from "../../i18n";
 
-export default ['$window', '$scope', '$rootScope', '$stateParams', 'JobForm', 'GenerateForm', 'Rest','ParseTypeChange',
+export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', 'JobForm', 'GenerateForm', 'Rest','ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath', 'MultiCredentialService',
-    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString',
-    function($window, $scope, $rootScope, $stateParams, JobForm, GenerateForm, Rest, ParseTypeChange, Alert,
+    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString', 'initSelect',
+    function($window, $scope, $rootScope, $stateParams, $timeout, JobForm, GenerateForm, Rest, ParseTypeChange, Alert,
     ProcessErrors, ReturnToCaller, GetBasePath, MultiCredentialService, Wait, CreateSelect2,
-	$state, $location, i18n,ParseVariableString) {
+	$state, $location, i18n,ParseVariableString, initSelect) {
 
         var master = {}, boxes, box, variable, 
             id = $stateParams.job_id,
@@ -66,8 +66,6 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'JobForm', 'G
                 		$scope[itm] = false;
                 	}
                 }
-                var datacenter_value = data.opts.datacenter;
-                var credential_value = data.opts.credential;
                 id_type = data.opts.id_type;
                 console.log("ID_TYPE " + id_type);
 
@@ -78,57 +76,50 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'JobForm', 'G
 		            $scope[form.name + '_form'].$setDirty();
 		        };
 
-		        var datacenter_options = [];
-				var datacenterLists = [];
-		    	Rest.setUrl(GetBasePath('ipam_datacenters'));
-		        Rest.get().then(({data}) => {
-		        	datacenterLists = data.results;
-		        	for (var i = 0; i < datacenterLists.length; i++) {
-		        		datacenter_options.push({label:datacenterLists[i].name, value:datacenterLists[i].id});
-		        	}
-		        	$scope.datacenter_type_options = datacenter_options;
-		            for (var i = 0; i < datacenter_options.length; i++) {
-		            	console.log(''+datacenter_options[i].value);
-		                if ((''+datacenter_options[i].value) === datacenter_value) {
-		                    $scope.datacenter = datacenter_options[i];
-		                    break;
-		                }
-		            }
-		            if(datacenter_value == "") $scope.datacenter = null;
-		        })
-		    	.catch(({data, status}) => {
-		        	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get datacenters. Get returned status: ') + status });
-				});
-
-				var credential_options = [];
-				Rest.setUrl(GetBasePath('credentials'));
-		        Rest.get().then(({data}) => {
-		        	var credentialLists = data.results;
-		        	for (var i = 0; i < credentialLists.length; i++)
-		        		credential_options.push({label:credentialLists[i].name, value:credentialLists[i].id});
-		        	$scope.credential_type_options = credential_options;
-					//Set Selectbox
-					for (var i = 0; i < credential_options.length; i++) {
-		                if ((''+credential_options[i].value) === (''+credential_value)) {
-		                    $scope.credential = credential_options[i];
-		                    break;
-		                }
-		            }
-		            if(credential_value == "") $scope.credential = null;
-		        })
-		    	.catch(({data, status}) => {
-		        	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get Credentials. Get returned status: ') + status });
-				});
+		        if(form.fields.datacenter){
+		        	$scope.datacenter_type_options = initSelect('ipam_datacenters', form.fields.datacenter.ngFilter ? form.fields.datacenter.ngFilter : "");
+		        	console.log('datacenter');
+		        	$timeout(function(){
+						for(var fld in $scope.datacenter_type_options)
+						{
+							if($scope.datacenter_type_options[fld].value == data.opts.datacenter)
+								$scope.datacenter = $scope.datacenter_type_options[fld];
+						}
+					},2000);
+		        }
+		        if(form.fields.ipaddress){
+	        		$scope.ipaddress_type_options = initSelect('ipam_ip_addresses', form.fields.ipaddress.ngFilter ? form.fields.ipaddress.ngFilter : "");
+	        		$timeout(function(){
+						for(var fld in $scope.ipaddress_type_options)
+						{
+							if($scope.ipaddress_type_options[fld].value == data.opts.ipaddress)
+								$scope.ipaddress = $scope.ipaddress_type_options[fld];
+						}
+					},2000);
+	        		
+	        	}
+	        	if(form.fields.credential){
+	        		$scope.credential_type_options = initSelect('credentials', form.fields.credential.ngFilter ? form.fields.credential.ngFilter : "");
+		        	$timeout(function(){
+						for(var fld in $scope.credential_type_options)
+						{
+							if($scope.credential_type_options[fld].value == data.opts.credentials)
+								$scope.credentials = $scope.credential_type_options[fld];
+						}
+					},2000);
+	        	}
 		        CreateSelect2({
 		            element: '#' + id_type + '_datacenter',
 		            multiple: false,
 		        }); 
-
+		        CreateSelect2({
+		            element: '#' + id_type + '_ipaddress',
+		            multiple: false,
+		        }); 
 		        CreateSelect2({
 		            element: '#' + id_type + '_credential',
 		            multiple: false,
 		        });
-                
 				//for multi credential 2018/10/25
 				MultiCredentialService.getCredentialTypes()
 	            .then(({ data }) => {

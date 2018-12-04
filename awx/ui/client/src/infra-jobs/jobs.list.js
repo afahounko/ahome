@@ -15,6 +15,7 @@ export default ['i18n', function(i18n) {
         search: {
             order_by: 'name'
         },
+		searchJob: 1,
         selectInstructions: '<p>Select existing users by clicking each user or checking the related checkbox. When finished, click the blue ' +
             '<em>Select</em> button, located bottom right.</p> <p>When available, a brand new user can be created by clicking the ' +
             '<i class=\"fa fa-plus\"></i> button.</p>',
@@ -24,9 +25,9 @@ export default ['i18n', function(i18n) {
             status: {
                 label: '',
                 iconOnly: true,
-                ngClick: 'showSCMStatus(job.id)',
+                ngClick: 'showJobScript(job.id)',
 //                awToolTip: '{{ project.statusTip }}',
-				awToolTip: 'Job Template running status. Green:running, Blink:pending',
+				awToolTip: '{{ job.tool_tip }}',
                 dataPlacement: 'right',
                 icon: "{{ 'icon-job-' + job.job_status }}",
                 columnClass: "List-staticColumn--smallStatus",

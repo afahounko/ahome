@@ -10,6 +10,8 @@ hosts: all
 cloud: true
 credential_types: 1,7
 credential_prefix: 'Machine_'
+subitem_auto: 1
+
 label_prefix: ''
 url: 'https://github.com/afahounko'
 project: 'https://github.com/ansible/ansible-tower-samples.git'
@@ -22,11 +24,11 @@ subitem_playbook: 'local.yml'
 
 
 project:
-    name_prefix: 'Configure_'
+    name_prefix: 'Git_'
     description: ''
     scm_type: 'git'
     scm_branch: ''
-    scm_url: 'https://git.afahounko.com/caas/vmware.linux.git'
+    scm_url: 'https://git.afahounko.com/caas/providers/vmware_vcenter.git'
     scm_clean: true
     scm_delete_on_update: true
     credential: null
@@ -37,7 +39,7 @@ project:
 
 configure_job:
     name_prefix: 'Configure_'
-    playbook: 'create_vm.yml'
+    playbook: 'configure.yml'
     description: ''
     job_type: "run"
     inventory: 1
@@ -73,7 +75,7 @@ configure_job:
 
 poweroff_job:
     name_prefix: 'Poweroff_'
-    playbook: 'destroy_vm.yml'
+    playbook: 'poweroff.yml'
     description: ''
     job_type: "run"
     inventory: 1
@@ -109,7 +111,7 @@ poweroff_job:
 
 remove_job:
     name_prefix: 'Remove_'
-    playbook: 'remove_vm.yml'
+    playbook: 'remove.yml'
     description: ''
     job_type: "run"
     inventory: 1
@@ -147,6 +149,7 @@ addTitle: 'NEW PROVIDER'
 editTitle: '{{ name }}'
 name: 'vmware_vcenter'
 title: 'VMWare VCenter'
+logo: '/static/assets/logo/providers/logo-vmware.png'
 basePath: 'ipam_providers'
 stateTree: 'infraProviders'
 breadcrumbName: 'INFRA PROVIDER'
@@ -192,8 +195,19 @@ fields:
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 1'
 
+  datacenter: 
+    label: 'Datacenter'
+    type: 'select'
+    defaultText: 'Choose a Datacenter'
+    ngModel: 'datacenter'
+    ngOptions: 'item as item.label for item in datacenter_type_options'
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 1'
+    ngFilter: 
+      id: '2'
+
   host:
-    label: VCenter Host
+    label: VMWare Host
     type: 'text'
     dataTitle: 'Choose a Credential'
     awPopOverWatch: 'Enter the hostname or IP address that corresponds to your VMware vCenter.'

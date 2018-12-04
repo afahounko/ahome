@@ -14,10 +14,10 @@ const user_type_options = [
 
 export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'Rest', 'ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath', 'MultiCredentialService', 'ProjectUpdate',
-    'Wait', 'CreateSelect2', '$state', '$location', 'i18n', 'ParseVariableString', 'SaveSubItem',
+    'Wait', 'CreateSelect2', '$state', '$location', 'i18n', 'ParseVariableString', 'SaveInfraSubItem', 'initSelect',
     function ($window, $scope, $rootScope, JobForm, GenerateForm, Rest, ParseTypeChange, Alert,
         ProcessErrors, ReturnToCaller, GetBasePath, MultiCredentialService, ProjectUpdate, Wait, CreateSelect2,
-		$state, $location, i18n, ParseVariableString, SaveSubItem) {
+		$state, $location, i18n, ParseVariableString, SaveInfraSubItem, initSelect) {
 
         var defaultUrl = GetBasePath('ipam_infrastructure_jobs'),
             fk_model = $window.localStorage.getItem('fk_model'),
@@ -34,10 +34,6 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
             // apply form definition's default field values
             //$scope.canAdd = true;
             console.log("Add FORM Init");
-            console.log(fk_model);
-            console.log(fk_type);
-            console.log(fk_id);
-            console.log(id_type);
             console.log(form);
             GenerateForm.applyDefaults(form, $scope);
 
@@ -50,51 +46,28 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
             $scope.previous = "CLOSE";
             $scope.next = "NEXT";
 
-			Rest.setUrl(GetBasePath('ipam_' + fk_model) + fk_id + '/');
-            Rest.get().then(({ data }) => {
-                parentData = data;
-                console.log(parentData);
-                
-	            var datacenter_options = [];
-	            var datacenterLists = [];
-	            Rest.setUrl(GetBasePath('ipam_datacenters'));
-	            Rest.get().then(({ data }) => {
-	                datacenterLists = data.results;
-	                for (var i = 0; i < datacenterLists.length; i++) {
-	                    datacenter_options.push({ label: datacenterLists[i].name, value: datacenterLists[i].id });
-	                }
-	                $scope.datacenter_type_options = datacenter_options;
-	            })
+			if(form.fields.datacenter) $scope.datacenter_type_options = initSelect('ipam_datacenters', '', form.fields.datacenter.ngFilter ? form.fields.datacenter.ngFilter : "");
+	        if(form.fields.credential) $scope.credential_type_options = initSelect('credentials', '', form.fields.credential.ngFilter ? form.fields.credential.ngFilter : "");
+		    if(form.fields.ipaddress)  $scope.ipaddress_type_options = initSelect('ipam_ip_addresses', '', form.fields.ipaddress.ngFilter ? form.fields.ipaddress.ngFilter : "");
+		    
+		    CreateSelect2({
+                element: '#' + id_type + '_kind',
+                multiple: false,
+            });
 
-	            var credential_options = [];
-	            Rest.setUrl(GetBasePath('credentials'));
-	            Rest.get().then(({ data }) => {
-	                var credentialLists = data.results;
-	                for (var i = 0; i < credentialLists.length; i++)
-	                    credential_options.push({ label: credentialLists[i].name, value: credentialLists[i].id });
-	                $scope.credential_type_options = credential_options;
-	                //Set Selectbox
-	                for (var i = 0; i < credential_options.length; i++) {
-	                    if (credential_options[i].value === parseInt(parentData.opts.credential_id)) {
-	                        $scope.credential = credential_options[i];
-	                        break;
-	                    }
-	                }
-	            })
+            CreateSelect2({
+                element: '#' + id_type + '_datacenter',
+                multiple: false,
+            });
 
-	            CreateSelect2({
-	                element: '#' + id_type + '_datacenter',
-	                multiple: false,
-	            });
+            CreateSelect2({
+                element: '#' + id_type + '_credential',
+                multiple: false,
+            });
 
-	            CreateSelect2({
-	                element: '#' + id_type + '_credential',
-	                multiple: false,
-	            });
-
-            })
-            .catch(({ data, status }) => {
-                ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get datacenters. Get returned status: ') + status });
+            CreateSelect2({
+                element: '#' + id_type + '_ipaddress',
+                multiple: false,
             });
 
             //for multi credential 2018/10/25
@@ -239,23 +212,7 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
 
 
         // prepares a data payload for a PUT request to the API
-        var processExtras = function (job_template) {
-            var fld, subid;
-            var data = "{";
-            console.log($scope);
-            for (fld in job_template) {
 
-                if (fld != "extra_vars") {
-                    data += "'ahome_" + fld + "':";
-                    if (job_template[fld] != undefined) data += "'" + job_template[fld] + "'";
-                    else data += "''";
-                    data += ",\n";
-                }
-            }
-            data += "'extra_vars':''\n";
-            data += "}";
-            return data;
-        };
 
         // prepares a data payload for a PUT request to the API
         var processNewData = function (fields) {
@@ -266,20 +223,22 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
                 }
             });
             data.scm_type = "";
+            data.id_type = id_type;
             data.fk_model = fk_model;
             data.fk_type = fk_type;
             data.fk_id = fk_id;
             if ($scope.datacenter != null) data.datacenter = $scope.datacenter.value;
             if ($scope.credential != null) data.credential = $scope.credential.value;
             data.opts = $scope.opts;
+            console.log(data);
             return data;
         };
 
         // Save
         $scope.formSave = function () {
         	var data_subitem = processNewData(form.fields);
-        	var extra_vars = processExtras(parentData.opts);
-			SaveSubItem(parentData, defaultUrl, form, data_subitem, extra_vars);
+        	console.log(data_subitem);
+			SaveInfraSubItem(parentData, defaultUrl, form, data_subitem);
         };
 
         $scope.formCancel = function () {
