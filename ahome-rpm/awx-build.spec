@@ -14,7 +14,11 @@ Summary: AHOME
 Name: awx
 Version: 2.1.0
 Release: 1%{dist}
+<<<<<<< HEAD
 Source0: /dist/awx-%{version}.tar.gz
+=======
+Source0: /dist/awx-2.1.0.tar.gz
+>>>>>>> f38b1613a3aaaa6fca0093517b48816789799389
 Source1: settings.py.dist
 %if 0%{?amzn}
 Source2: awx-cbreceiver.upstart
@@ -27,11 +31,17 @@ Source7: awx-web.upstart
 %if 0%{?el7}
 Source2: awx-cbreceiver.service
 Source3: awx-dispatcher.service
+<<<<<<< HEAD
 Source4: awx-celery-worker.service
 Source5: awx-channels-worker.service
 Source6: awx-daphne.service
 Source7: awx-web.service
 Source9: awx-celery-beat.service
+=======
+Source5: awx-channels-worker.service
+Source6: awx-daphne.service
+Source7: awx-web.service
+>>>>>>> f38b1613a3aaaa6fca0093517b48816789799389
 %endif
 Source8: nginx.conf.example
 License: GPLv3
@@ -52,7 +62,11 @@ Requires(pre): /usr/sbin/useradd, /usr/bin/getent
 %{summary}
 
 %prep
+<<<<<<< HEAD
 %setup -q -n awx-%{version}
+=======
+%setup -q -n awx-2.1.0
+>>>>>>> f38b1613a3aaaa6fca0093517b48816789799389
 
 %build
 # Setup build environment
@@ -102,7 +116,11 @@ mkdir -p %{buildroot}%{_prefix}/embedded/bin
 mkdir -p %{buildroot}%{_prefix}/bin
 mkdir -p %{buildroot}%{service_configdir}
 mkdir -p %{buildroot}/var/lib/awx/
+<<<<<<< HEAD
 echo %{version} > %{buildroot}%{service_homedir}/.tower_version
+=======
+echo 2.1.0 > %{buildroot}%{service_homedir}/.tower_version
+>>>>>>> f38b1613a3aaaa6fca0093517b48816789799389
 
 cp %{_sourcedir}/settings.py.dist %{buildroot}%{service_configdir}/settings.py
 mv embedded/lib %{buildroot}%{_prefix}/embedded/lib
@@ -128,7 +146,11 @@ done
 %if 0%{?el7}
 # Install systemd configuration
 mkdir -p %{buildroot}%{_unitdir}
+<<<<<<< HEAD
 for service in awx-celery-beat awx-celery-worker awx-cbreceiver awx-dispatcher awx-channels-worker awx-daphne awx-web; do
+=======
+for service in awx-cbreceiver awx-dispatcher awx-channels-worker awx-daphne awx-web; do
+>>>>>>> f38b1613a3aaaa6fca0093517b48816789799389
     cp %{_sourcedir}/${service}.service %{buildroot}%{_unitdir}/
 done
 %endif
@@ -168,8 +190,11 @@ cp %{_sourcedir}/nginx.conf.example ./
 %systemd_post awx-channels-worker
 %systemd_post awx-daphne
 %systemd_post awx-web
+<<<<<<< HEAD
 %systemd_post awx-celery-worker
 %systemd_post awx-celery-beat
+=======
+>>>>>>> f38b1613a3aaaa6fca0093517b48816789799389
 %endif
 
 %if 0%{?amzn}
@@ -190,8 +215,11 @@ fi
 %systemd_preun awx-channels-worker
 %systemd_preun awx-daphne
 %systemd_preun awx-web
+<<<<<<< HEAD
 %systemd_preun awx-celery-worker
 %systemd_preun awx-celery-beat
+=======
+>>>>>>> f38b1613a3aaaa6fca0093517b48816789799389
 %endif
 
 %if 0%{?amzn}
@@ -219,8 +247,11 @@ fi
 %systemd_postun awx-channels-worker
 %systemd_postun awx-daphne
 %systemd_postun awx-web
+<<<<<<< HEAD
 %systemd_postun awx-celery-beat
 %systemd_postun awx-celery-worker
+=======
+>>>>>>> f38b1613a3aaaa6fca0093517b48816789799389
 %endif
 
 %clean
@@ -268,8 +299,11 @@ rm -rf $RPM_BUILD_ROOT
 %attr(0644, root, root) %{_unitdir}/awx-channels-worker.service
 %attr(0644, root, root) %{_unitdir}/awx-daphne.service
 %attr(0644, root, root) %{_unitdir}/awx-web.service
+<<<<<<< HEAD
 %attr(0644, root, root) %{_unitdir}/awx-celery-beat.service
 %attr(0644, root, root) %{_unitdir}/awx-celery-worker.service
+=======
+>>>>>>> f38b1613a3aaaa6fca0093517b48816789799389
 %endif
 
 %changelog
