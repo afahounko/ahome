@@ -398,7 +398,7 @@ export default ['$compile', 'Attr', 'Icon',
                 cnt = 2;
                 base = (list.base) ? list.base : list.name;
                 base = base.replace(/^\//, '');
-                for (fld in list.fields) {
+                for (fld in list.fields) {	//This is original fields adding function. Truegardener
                     cnt++;
                     if ((list.fields[fld].searchOnly === undefined || list.fields[fld].searchOnly === false) &&
                         !(options.mode === 'lookup' && list.fields[fld].excludeModal === true)) {

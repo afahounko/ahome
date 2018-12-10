@@ -309,11 +309,18 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
         // prepares a data payload for a PUT request to the API
         var processNewData = function(fields) {
             var data = {};
+    		var inputs = {};
             _.forEach(fields, function(value, key) {
                 if ($scope[key] !== '' && $scope[key] !== null && $scope[key] !== undefined) {
                     data[key] = $scope[key];
+                    if(key.startsWith('credential_'))
+                    {
+                    	inputs[key.substring(11)] = $scope[key];
+                    }
                 }
             });
+            console.log(inputs);
+            data.inputs = inputs;
             if($scope.kind != null) data.kind = $scope.kind.value;
 			if($scope.datacenter != null) data.datacenter = $scope.datacenter.value;
             if($scope.credential != null) data.credential = $scope.credential.value;

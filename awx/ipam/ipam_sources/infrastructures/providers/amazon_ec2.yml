@@ -203,13 +203,13 @@ fields:
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 1'
 
-  username: 
+  credential_username: 
     label: 'Username'
     type: 'text'
     required: true
     ngShow: 'tabId == 2'
 
-  password: 
+  credential_password: 
     label: 'Password'
     type: 'sensitive'
     hasShowInputButton: true

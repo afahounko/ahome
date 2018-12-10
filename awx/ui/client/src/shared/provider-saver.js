@@ -457,11 +457,7 @@ function ($http, $rootScope, $state, $location, $q, Store, ProcessErrors, Return
 
 	            credential_data[i].description = data_item.description;
 	            credential_data[i].user = 1;   // only for user type
-	            credential_data[i].inputs = {};
-	        	if(cred_types[i] > 1)credential_data[i].inputs.host = data_item.host;
-	        	credential_data[i].inputs.username = data_item.username;
-	        	credential_data[i].inputs.password = data_item.password;
-				if(cred_types[i]>1) credential_data[i].inputs.windows_options = data_item.windows_options;
+	            credential_data[i].inputs = data_item.inputs;
 	        	console.log(i);
 	        	console.log(cred_types[i]);
 	        	console.log(credential_data[i].credential_type);

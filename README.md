@@ -1,9 +1,8 @@
 [![Run Status](https://api.shippable.com/projects/591c82a22f895107009e8b35/badge?branch=devel)](https://app.shippable.com/github/ansible/awx)
 
-AHOME
+AWX
 ===
 
-AHOME uses AWX as engine.
 AWX provides a web-based user interface, REST API, and task engine built on top of [Ansible](https://github.com/ansible/ansible). It is the upstream project for [Tower](https://www.ansible.com/tower), a commercial derivative of AWX.  
 
 To install AWX, please view the [Install guide](./INSTALL.md).

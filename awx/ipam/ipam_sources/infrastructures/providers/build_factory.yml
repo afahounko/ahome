@@ -8,7 +8,7 @@ description: |
 hosts: all
 
 cloud: false
-credential_type: Linux
+credential_type: Windows
 credential_input:
     fields:
       - type: string
@@ -244,7 +244,7 @@ fields:
     subForm: "credentialSubForm"
     required: true
 
-  ssh_key_data: 
+  credential_ssh_key_data: 
     label: 'SSH PRIVATE KEY'
     type: 'textarea'
     ngShow: "kind.value == '0' && tabId == 2"
@@ -263,7 +263,7 @@ fields:
     subForm: "credentialSubForm"
     ngDisabled: '!(credential_obj.summary_fields.user_capabilities.edit || canAdd)'
 
-  ssh_key_unlock: 
+  credential_ssh_key_unlock: 
     label: 'Private Key Passphrase'
     type: 'sensitive'
     ngShow: "kind.value == '0' && tabId == 2"
@@ -278,7 +278,7 @@ fields:
     hasShowInputButton: true
     subForm: 'credentialSubForm'
 
-  become_method: 
+  credential_become_method: 
     label: "Privilege Escalation"
     type: 'select'
     ngShow: "kind.value == '0' && tabId == 2"
@@ -291,7 +291,7 @@ fields:
     ngDisabled: '!(credential_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngChange: 'becomeMethodChange()'
 
-  become_username: 
+  credential_become_username: 
     label: 'Privilege Escalation Username'
     type: 'text'
     ngShow: "kind.value == '0' && tabId == 2"
@@ -299,7 +299,7 @@ fields:
     subForm: 'credentialSubForm'
     ngDisabled: '!(credential_obj.summary_fields.user_capabilities.edit || canAdd)'
 
-  become_password: 
+  credential_become_password: 
     label: 'Privilege Escalation Password'
     type: 'sensitive'
     ngShow: "kind.value == '0' && tabId == 2"

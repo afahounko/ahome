@@ -49,10 +49,12 @@ export default ['i18n', function(i18n) {
             	label: i18n._('Created'),
             	columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
-			last_updated: {
+            last_updated: {
                 label: i18n._('Last Updated'),
-                columnClass: 'col-md-2 col-sm-2 hidden-xs'
-            },
+                filter: "longDate",
+                columnClass: "col-lg-3 hidden-md hidden-sm hidden-xs",
+                excludeModal: true
+            }
         },
         fieldActions: {
             columnClass: 'col-md-4 col-sm-4 col-xs-4',

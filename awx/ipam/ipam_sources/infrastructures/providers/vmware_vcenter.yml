@@ -206,7 +206,7 @@ fields:
     ngFilter: 
       id: '2'
 
-  host:
+  credential_host:
     label: VMWare Host
     type: 'text'
     dataTitle: 'Choose a Credential'
@@ -214,13 +214,13 @@ fields:
     required: true
     ngShow: 'tabId == 2'
 
-  username: 
+  credential_username: 
     label: 'Username'
     type: 'text'
     required: true
     ngShow: 'tabId == 2'
 
-  password: 
+  credential_password: 
     label: 'Password'
     type: 'sensitive'
     hasShowInputButton: true

@@ -225,7 +225,7 @@ fields:
     ngDisabled: true
     ngShow: 'tabId == 2'
 
-  username: 
+  credential_username: 
     label: 'UserName'
     type: 'text'
     ngShow: "kind.value && tabId == 2"
@@ -234,7 +234,7 @@ fields:
     hideSubForm: 'tabId != 2'
     required: true
 
-  password: 
+  credential_password: 
     label: 'Password'
     type: 'sensitive'
     ngShow: "kind.value && tabId == 2"
