@@ -6,6 +6,7 @@ import {
     OUTPUT_PAGE_SIZE,
 } from './constants';
 
+let $compile;
 let $q;
 let $scope;
 let $state;
@@ -96,7 +97,6 @@ function firstRange () {
                 .then(() => render.pushFront(results));
         })
         .finally(() => {
-            render.compile();
             scroll.resume();
             lockFollow = false;
         });
@@ -124,7 +124,6 @@ function nextRange () {
                 .then(() => render.pushFront(results));
         })
         .finally(() => {
-            render.compile();
             scroll.resume();
             lockFrames = false;
 
@@ -163,7 +162,6 @@ function previousRange () {
             return $q.resolve();
         })
         .finally(() => {
-            render.compile();
             scroll.resume();
             lockFrames = false;
 
@@ -191,7 +189,6 @@ function lastRange () {
             return $q.resolve();
         })
         .finally(() => {
-            render.compile();
             scroll.resume();
 
             return $q.resolve();
@@ -283,7 +280,6 @@ function firstPage () {
                 .then(() => render.pushFront(results));
         })
         .finally(() => {
-            render.compile();
             scroll.resume();
 
             return $q.resolve();
@@ -313,7 +309,6 @@ function lastPage () {
             return $q.resolve();
         })
         .finally(() => {
-            render.compile();
             scroll.resume();
 
             return $q.resolve();
@@ -335,7 +330,6 @@ function nextPage () {
                 .then(() => render.pushFront(results));
         })
         .finally(() => {
-            render.compile();
             scroll.resume();
         });
 }
@@ -369,7 +363,6 @@ function previousPage () {
             return $q.resolve();
         })
         .finally(() => {
-            render.compile();
             scroll.resume();
 
             return $q.resolve();
@@ -553,6 +546,10 @@ function toggleTaskCollapse (uuid) {
     render.records[uuid].isCollapsed = !isCollapsed;
 }
 
+function compile (html) {
+    return $compile(html)($scope);
+}
+
 function showHostDetails (id, uuid) {
     $state.go('output.host-event.json', { eventId: id, taskUuid: uuid });
 }
@@ -602,7 +599,7 @@ function showMissingEvents (uuid) {
                         delete render.records[uuid];
                     }
                 })
-                .then(() => render.compile())
+                .then(() => render.compile(elements))
                 .then(() => lines);
         });
 }
@@ -712,6 +709,7 @@ function clear () {
 }
 
 function OutputIndexController (
+    _$compile_,
     _$q_,
     _$scope_,
     _$state_,
@@ -729,6 +727,7 @@ function OutputIndexController (
     const { isPanelExpanded, _debug } = $stateParams;
     const isProcessingFinished = !_debug && _resource_.model.get('event_processing_finished');
 
+    $compile = _$compile_;
     $q = _$q_;
     $scope = _$scope_;
     $state = _$state_;
@@ -766,7 +765,7 @@ function OutputIndexController (
     vm.debug = _debug;
 
     render.requestAnimationFrame(() => {
-        render.init($scope, { toggles: vm.toggleLineEnabled });
+        render.init({ compile, toggles: vm.toggleLineEnabled });
 
         status.init(resource);
         page.init(resource.events);
@@ -816,7 +815,6 @@ function OutputIndexController (
                 status.sync();
                 scroll.unlock();
                 scroll.unhide();
-                render.compile();
             }
         });
 
@@ -852,6 +850,7 @@ function OutputIndexController (
 }
 
 OutputIndexController.$inject = [
+    '$compile',
     '$q',
     '$scope',
     '$state',

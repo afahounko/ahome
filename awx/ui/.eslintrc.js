@@ -31,8 +31,7 @@ module.exports = {
         $: true,
         _: true,
         codemirror: true,
-        jsyaml: true,
-        crypto: true
+        jsyaml: true
     },
     rules: {
         'arrow-parens': 'off',

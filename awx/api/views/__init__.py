@@ -8,8 +8,8 @@ import dateutil
 import time
 import socket
 import sys
+import logging
 import requests
-import functools
 from base64 import b64encode
 from collections import OrderedDict, Iterable
 import six
@@ -18,12 +18,14 @@ import six
 # Django
 from django.conf import settings
 from django.core.exceptions import FieldError, ObjectDoesNotExist
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.db import IntegrityError, transaction, connection
 from django.shortcuts import get_object_or_404
+from django.utils.encoding import smart_text
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now
-from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 from django.contrib.contenttypes.models import ContentType
@@ -33,7 +35,7 @@ from django.utils.translation import ugettext_lazy as _
 # Django REST Framework
 from rest_framework.exceptions import PermissionDenied, ParseError
 from rest_framework.parsers import FormParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.views import exception_handler
@@ -61,11 +63,12 @@ from wsgiref.util import FileWrapper
 # AWX
 from awx.main.tasks import send_notifications
 from awx.main.access import get_user_queryset
+from awx.main.ha import is_ha_environment
 from awx.api.filters import V1CredentialFilterBackend
 from awx.api.generics import get_view_name
 from awx.api.generics import * # noqa
-from awx.api.versioning import reverse, get_request_version
-from awx.conf.license import feature_enabled, feature_exists, LicenseForbids, get_license
+from awx.api.versioning import reverse, get_request_version, drf_reverse
+from awx.conf.license import get_license, feature_enabled, feature_exists, LicenseForbids
 from awx.main.models import * # noqa
 from awx.main.utils import * # noqa
 from awx.main.utils import (
@@ -88,7 +91,7 @@ from awx.api.renderers import * # noqa
 from awx.api.serializers import * # noqa
 from awx.api.metadata import RoleMetadata, JobTypeMetadata
 from awx.main.constants import ACTIVE_STATES
-from awx.main.scheduler.dag_workflow import WorkflowDAG
+from awx.main.scheduler.tasks import run_job_complete
 from awx.api.views.mixin import (
     ActivityStreamEnforcementMixin,
     SystemTrackingEnforcementMixin,
@@ -97,53 +100,7 @@ from awx.api.views.mixin import (
     InstanceGroupMembershipMixin,
     RelatedJobsPreventDeleteMixin,
     OrganizationCountsMixin,
-    ControlledByScmMixin,
 )
-from awx.api.views.organization import ( # noqa
-    OrganizationList,
-    OrganizationDetail,
-    OrganizationInventoriesList,
-    OrganizationUsersList,
-    OrganizationAdminsList,
-    OrganizationProjectsList,
-    OrganizationWorkflowJobTemplatesList,
-    OrganizationTeamsList,
-    OrganizationActivityStreamList,
-    OrganizationNotificationTemplatesList,
-    OrganizationNotificationTemplatesAnyList,
-    OrganizationNotificationTemplatesErrorList,
-    OrganizationNotificationTemplatesSuccessList,
-    OrganizationInstanceGroupsList,
-    OrganizationAccessList,
-    OrganizationObjectRolesList,
-)
-from awx.api.views.inventory import ( # noqa
-    InventoryList,
-    InventoryDetail,
-    InventoryUpdateEventsList,
-    InventoryScriptList,
-    InventoryScriptDetail,
-    InventoryScriptObjectRolesList,
-    InventoryScriptCopy,
-    InventoryList,
-    InventoryDetail,
-    InventoryActivityStreamList,
-    InventoryInstanceGroupsList,
-    InventoryAccessList,
-    InventoryObjectRolesList,
-    InventoryJobTemplateList,
-    InventoryCopy,
-)
-from awx.api.views.root import ( # noqa
-    ApiRootView,
-    ApiOAuthAuthorizationRootView,
-    ApiVersionRootView,
-    ApiV1RootView,
-    ApiV2RootView,
-    ApiV1PingView,
-    ApiV1ConfigView,
-)
-
 
 logger = logging.getLogger('awx.api.views')
 
@@ -159,6 +116,274 @@ def api_exception_handler(exc, context):
     if isinstance(context['view'], UnifiedJobStdout):
         context['view'].renderer_classes = [BrowsableAPIRenderer, renderers.JSONRenderer]
     return exception_handler(exc, context)
+
+
+class ApiRootView(APIView):
+
+    permission_classes = (AllowAny,)
+    view_name = _('REST API')
+    versioning_class = None
+    swagger_topic = 'Versioning'
+
+    @method_decorator(ensure_csrf_cookie)
+    def get(self, request, format=None):
+        ''' List supported API versions '''
+
+        v1 = reverse('api:api_v1_root_view', kwargs={'version': 'v1'})
+        v2 = reverse('api:api_v2_root_view', kwargs={'version': 'v2'})
+        data = OrderedDict()
+        data['description'] = _('AWX REST API')
+        data['current_version'] = v2
+        data['available_versions'] = dict(v1 = v1, v2 = v2)
+        data['oauth2'] = drf_reverse('api:oauth_authorization_root_view')
+        if feature_enabled('rebranding'):
+            data['custom_logo'] = settings.CUSTOM_LOGO
+            data['custom_login_info'] = settings.CUSTOM_LOGIN_INFO
+        return Response(data)
+
+
+class ApiOAuthAuthorizationRootView(APIView):
+
+    permission_classes = (AllowAny,)
+    view_name = _("API OAuth 2 Authorization Root")
+    versioning_class = None
+    swagger_topic = 'Authentication'
+
+    def get(self, request, format=None):
+        data = OrderedDict()
+        data['authorize'] = drf_reverse('api:authorize')
+        data['token'] = drf_reverse('api:token')
+        data['revoke_token'] = drf_reverse('api:revoke-token')
+        return Response(data)
+
+
+class ApiVersionRootView(APIView):
+
+    permission_classes = (AllowAny,)
+    swagger_topic = 'Versioning'
+
+    def get(self, request, format=None):
+        ''' List top level resources '''
+        data = OrderedDict()
+        data['ping'] = reverse('api:api_v1_ping_view', request=request)
+        data['instances'] = reverse('api:instance_list', request=request)
+        data['instance_groups'] = reverse('api:instance_group_list', request=request)
+        data['config'] = reverse('api:api_v1_config_view', request=request)
+        data['settings'] = reverse('api:setting_category_list', request=request)
+        data['me'] = reverse('api:user_me_list', request=request)
+        data['dashboard'] = reverse('api:dashboard_view', request=request)
+        data['organizations'] = reverse('api:organization_list', request=request)
+        data['users'] = reverse('api:user_list', request=request)
+        data['projects'] = reverse('api:project_list', request=request)
+        data['project_updates'] = reverse('api:project_update_list', request=request)
+        data['teams'] = reverse('api:team_list', request=request)
+        data['credentials'] = reverse('api:credential_list', request=request)
+        if get_request_version(request) > 1:
+            data['credential_types'] = reverse('api:credential_type_list', request=request)
+            data['applications'] = reverse('api:o_auth2_application_list', request=request)
+            data['tokens'] = reverse('api:o_auth2_token_list', request=request)
+        data['inventory'] = reverse('api:inventory_list', request=request)
+        data['inventory_scripts'] = reverse('api:inventory_script_list', request=request)
+        data['inventory_sources'] = reverse('api:inventory_source_list', request=request)
+        data['inventory_updates'] = reverse('api:inventory_update_list', request=request)
+        data['groups'] = reverse('api:group_list', request=request)
+        data['hosts'] = reverse('api:host_list', request=request)
+        data['job_templates'] = reverse('api:job_template_list', request=request)
+        data['jobs'] = reverse('api:job_list', request=request)
+        data['job_events'] = reverse('api:job_event_list', request=request)
+        data['ad_hoc_commands'] = reverse('api:ad_hoc_command_list', request=request)
+        data['system_job_templates'] = reverse('api:system_job_template_list', request=request)
+        data['system_jobs'] = reverse('api:system_job_list', request=request)
+        data['schedules'] = reverse('api:schedule_list', request=request)
+        data['roles'] = reverse('api:role_list', request=request)
+        data['notification_templates'] = reverse('api:notification_template_list', request=request)
+        data['notifications'] = reverse('api:notification_list', request=request)
+        data['labels'] = reverse('api:label_list', request=request)
+        data['unified_job_templates'] = reverse('api:unified_job_template_list', request=request)
+        data['unified_jobs'] = reverse('api:unified_job_list', request=request)
+        data['activity_stream'] = reverse('api:activity_stream_list', request=request)
+        data['workflow_job_templates'] = reverse('api:workflow_job_template_list', request=request)
+        data['workflow_jobs'] = reverse('api:workflow_job_list', request=request)
+        data['workflow_job_template_nodes'] = reverse('api:workflow_job_template_node_list', request=request)
+        data['workflow_job_nodes'] = reverse('api:workflow_job_node_list', request=request)
+
+        data['ipam_rirs'] = reverse('api:ipam_rir-list', request=request)
+        data['ipam_vrfs'] = reverse('api:ipam_vrf-list', request=request)
+        data['ipam_datacenters'] = reverse('api:ipam_datacenter-list', request=request)
+        data['ipam_aggregates'] = reverse('api:ipam_aggregate-list', request=request)
+        data['ipam_prefixes'] = reverse('api:ipam_prefix-list', request=request)
+        data['ipam_ip_addresses'] = reverse('api:ipam_ip_address-list', request=request)
+        data['ipam_vlans'] = reverse('api:ipam_vlan-list', request=request)
+        data['ipam_providers'] = reverse('api:ipam_provider-list', request=request)
+        data['ipam_storages'] = reverse('api:ipam_storage-list', request=request)
+        data['ipam_services'] = reverse('api:ipam_service-list', request=request)
+        data['ipam_networks'] = reverse('api:ipam_network-list', request=request)
+        data['ipam_apps'] = reverse('api:ipam_app-list', request=request)
+        data['ipam_nocs'] = reverse('api:ipam_noc-list', request=request)
+        data['ipam_pkis'] = reverse('api:ipam_pki-list', request=request)
+        data['ipam_securities'] = reverse('api:ipam_security-list', request=request)
+        data['ipam_monitorings'] = reverse('api:ipam_monitoring-list', request=request)
+        data['ipam_backups'] = reverse('api:ipam_backup-list', request=request)
+        data['ipam_documentations'] = reverse('api:ipam_documentation-list', request=request)
+        data['ipam_bare_metals'] = reverse('api:ipam_bare_metal-list', request=request)
+        data['ipam_virtual_hosts'] = reverse('api:ipam_virtual_host-list', request=request)
+        data['ipam_network_gears'] = reverse('api:ipam_network_gear-list', request=request)
+        data['ipam_registries'] = reverse('api:ipam_registry-list', request=request)
+        data['ipam_infrastructure_jobs'] = reverse('api:ipam_infrastructure_job-list', request=request)
+        data['ipam_infrastructure_ui'] = reverse('api:ipam_infrastructure_ui-list', request=request)
+        data['ipam_infrastructure_jobs_ui'] = reverse('api:ipam_infrastructure_jobs_ui-list', request=request)
+        data['ipam_infrastructure_demo'] = reverse('api:ipam_infrastructure_ui-group-names', request=request)
+        data['ipam_infrastructures_defs'] = reverse('api:ipam_infrastructures_def-list', request=request)
+        data['ipam_resources_defs'] = reverse('api:ipam_resources_def-list', request=request)
+
+        return Response(data)
+
+
+class ApiV1RootView(ApiVersionRootView):
+    view_name = _('Version 1')
+
+
+class ApiV2RootView(ApiVersionRootView):
+    view_name = _('Version 2')
+
+
+class ApiV1PingView(APIView):
+    """A simple view that reports very basic information about this
+    instance, which is acceptable to be public information.
+    """
+    permission_classes = (AllowAny,)
+    authentication_classes = ()
+    view_name = _('Ping')
+    swagger_topic = 'System Configuration'
+
+    def get(self, request, format=None):
+        """Return some basic information about this instance
+
+        Everything returned here should be considered public / insecure, as
+        this requires no auth and is intended for use by the installer process.
+        """
+        response = {
+            'ha': is_ha_environment(),
+            'version': get_awx_version(),
+            'active_node': settings.CLUSTER_HOST_ID,
+        }
+
+        response['instances'] = []
+        for instance in Instance.objects.all():
+            response['instances'].append(dict(node=instance.hostname, heartbeat=instance.modified,
+                                              capacity=instance.capacity, version=instance.version))
+            response['instances'].sort()
+        response['instance_groups'] = []
+        for instance_group in InstanceGroup.objects.all():
+            response['instance_groups'].append(dict(name=instance_group.name,
+                                                    capacity=instance_group.capacity,
+                                                    instances=[x.hostname for x in instance_group.instances.all()]))
+        return Response(response)
+
+
+class ApiV1ConfigView(APIView):
+
+    permission_classes = (IsAuthenticated,)
+    view_name = _('Configuration')
+    swagger_topic = 'System Configuration'
+
+    def check_permissions(self, request):
+        super(ApiV1ConfigView, self).check_permissions(request)
+        if not request.user.is_superuser and request.method.lower() not in {'options', 'head', 'get'}:
+            self.permission_denied(request)  # Raises PermissionDenied exception.
+
+    def get(self, request, format=None):
+        '''Return various sitewide configuration settings'''
+
+        if request.user.is_superuser or request.user.is_system_auditor:
+            license_data = get_license(show_key=True)
+        else:
+            license_data = get_license(show_key=False)
+        if not license_data.get('valid_key', False):
+            license_data = {}
+        if license_data and 'features' in license_data and 'activity_streams' in license_data['features']:
+            # FIXME: Make the final setting value dependent on the feature?
+            license_data['features']['activity_streams'] &= settings.ACTIVITY_STREAM_ENABLED
+
+        pendo_state = settings.PENDO_TRACKING_STATE if settings.PENDO_TRACKING_STATE in ('off', 'anonymous', 'detailed') else 'off'
+
+        data = dict(
+            time_zone=settings.TIME_ZONE,
+            license_info=license_data,
+            version=get_awx_version(),
+            ansible_version=get_ansible_version(),
+            eula=render_to_string("eula.md") if license_data.get('license_type', 'UNLICENSED') != 'open' else '',
+            analytics_status=pendo_state
+        )
+
+        # If LDAP is enabled, user_ldap_fields will return a list of field
+        # names that are managed by LDAP and should be read-only for users with
+        # a non-empty ldap_dn attribute.
+        if getattr(settings, 'AUTH_LDAP_SERVER_URI', None) and feature_enabled('ldap'):
+            user_ldap_fields = ['username', 'password']
+            user_ldap_fields.extend(getattr(settings, 'AUTH_LDAP_USER_ATTR_MAP', {}).keys())
+            user_ldap_fields.extend(getattr(settings, 'AUTH_LDAP_USER_FLAGS_BY_GROUP', {}).keys())
+            data['user_ldap_fields'] = user_ldap_fields
+
+        if request.user.is_superuser \
+                or request.user.is_system_auditor \
+                or Organization.accessible_objects(request.user, 'admin_role').exists() \
+                or Organization.accessible_objects(request.user, 'auditor_role').exists():
+            data.update(dict(
+                project_base_dir = settings.PROJECTS_ROOT,
+                project_local_paths = Project.get_local_path_choices(),
+                custom_virtualenvs = get_custom_venv_choices()
+            ))
+        elif JobTemplate.accessible_objects(request.user, 'admin_role').exists():
+            data['custom_virtualenvs'] = get_custom_venv_choices()
+
+        return Response(data)
+
+    def post(self, request):
+        if not isinstance(request.data, dict):
+            return Response({"error": _("Invalid license data")}, status=status.HTTP_400_BAD_REQUEST)
+        if "eula_accepted" not in request.data:
+            return Response({"error": _("Missing 'eula_accepted' property")}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            eula_accepted = to_python_boolean(request.data["eula_accepted"])
+        except ValueError:
+            return Response({"error": _("'eula_accepted' value is invalid")}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not eula_accepted:
+            return Response({"error": _("'eula_accepted' must be True")}, status=status.HTTP_400_BAD_REQUEST)
+        request.data.pop("eula_accepted")
+        try:
+            data_actual = json.dumps(request.data)
+        except Exception:
+            logger.info(smart_text(u"Invalid JSON submitted for license."),
+                        extra=dict(actor=request.user.username))
+            return Response({"error": _("Invalid JSON")}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            from awx.main.utils.common import get_licenser
+            license_data = json.loads(data_actual)
+            license_data_validated = get_licenser(**license_data).validate()
+        except Exception:
+            logger.warning(smart_text(u"Invalid license submitted."),
+                           extra=dict(actor=request.user.username))
+            return Response({"error": _("Invalid License")}, status=status.HTTP_400_BAD_REQUEST)
+
+        # If the license is valid, write it to the database.
+        if license_data_validated['valid_key']:
+            settings.LICENSE = license_data
+            settings.TOWER_URL_BASE = "{}://{}".format(request.scheme, request.get_host())
+            return Response(license_data_validated)
+
+        logger.warning(smart_text(u"Invalid license submitted."),
+                       extra=dict(actor=request.user.username))
+        return Response({"error": _("Invalid license")}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request):
+        try:
+            settings.LICENSE = {}
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception:
+            # FIX: Log
+            return Response({"error": _("Failed to remove license (%s)") % has_error}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DashboardView(APIView):
@@ -404,7 +629,7 @@ class InstanceGroupInstanceList(InstanceGroupMembershipMixin, SubListAttachDetac
     search_fields = ('hostname',)
 
 
-class ScheduleList(ListCreateAPIView):
+class ScheduleList(ListAPIView):
 
     view_name = _("Schedules")
     model = Schedule
@@ -547,6 +772,213 @@ class AuthView(APIView):
                     backend_data['error'] = err_message
                 data[name] = backend_data
         return Response(data)
+
+
+class OrganizationList(OrganizationCountsMixin, ListCreateAPIView):
+
+    model = Organization
+    serializer_class = OrganizationSerializer
+
+    def get_queryset(self):
+        qs = Organization.accessible_objects(self.request.user, 'read_role')
+        qs = qs.select_related('admin_role', 'auditor_role', 'member_role', 'read_role')
+        qs = qs.prefetch_related('created_by', 'modified_by')
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        """Create a new organzation.
+
+        If there is already an organization and the license of this
+        instance does not permit multiple organizations, then raise
+        LicenseForbids.
+        """
+        # Sanity check: If the multiple organizations feature is disallowed
+        # by the license, then we are only willing to create this organization
+        # if no organizations exist in the system.
+        if (not feature_enabled('multiple_organizations') and
+                self.model.objects.exists()):
+            raise LicenseForbids(_('Your license only permits a single '
+                                   'organization to exist.'))
+
+        # Okay, create the organization as usual.
+        return super(OrganizationList, self).create(request, *args, **kwargs)
+
+
+class OrganizationDetail(RelatedJobsPreventDeleteMixin, RetrieveUpdateDestroyAPIView):
+
+    model = Organization
+    serializer_class = OrganizationSerializer
+
+    def get_serializer_context(self, *args, **kwargs):
+        full_context = super(OrganizationDetail, self).get_serializer_context(*args, **kwargs)
+
+        if not hasattr(self, 'kwargs') or 'pk' not in self.kwargs:
+            return full_context
+        org_id = int(self.kwargs['pk'])
+
+        org_counts = {}
+        access_kwargs = {'accessor': self.request.user, 'role_field': 'read_role'}
+        direct_counts = Organization.objects.filter(id=org_id).annotate(
+            users=Count('member_role__members', distinct=True),
+            admins=Count('admin_role__members', distinct=True)
+        ).values('users', 'admins')
+
+        if not direct_counts:
+            return full_context
+
+        org_counts = direct_counts[0]
+        org_counts['inventories'] = Inventory.accessible_objects(**access_kwargs).filter(
+            organization__id=org_id).count()
+        org_counts['teams'] = Team.accessible_objects(**access_kwargs).filter(
+            organization__id=org_id).count()
+        org_counts['projects'] = Project.accessible_objects(**access_kwargs).filter(
+            organization__id=org_id).count()
+        org_counts['job_templates'] = JobTemplate.accessible_objects(**access_kwargs).filter(
+            project__organization__id=org_id).count()
+
+        full_context['related_field_counts'] = {}
+        full_context['related_field_counts'][org_id] = org_counts
+
+        return full_context
+
+
+class OrganizationInventoriesList(SubListAPIView):
+
+    model = Inventory
+    serializer_class = InventorySerializer
+    parent_model = Organization
+    relationship = 'inventories'
+
+
+class BaseUsersList(SubListCreateAttachDetachAPIView):
+    def post(self, request, *args, **kwargs):
+        ret = super(BaseUsersList, self).post( request, *args, **kwargs)
+        if ret.status_code != 201:
+            return ret
+        try:
+            if ret.data is not None and request.data.get('is_system_auditor', False):
+                # This is a faux-field that just maps to checking the system
+                # auditor role member list.. unfortunately this means we can't
+                # set it on creation, and thus needs to be set here.
+                user = User.objects.get(id=ret.data['id'])
+                user.is_system_auditor = request.data['is_system_auditor']
+                ret.data['is_system_auditor'] = request.data['is_system_auditor']
+        except AttributeError as exc:
+            print(exc)
+            pass
+        return ret
+
+
+class OrganizationUsersList(BaseUsersList):
+
+    model = User
+    serializer_class = UserSerializer
+    parent_model = Organization
+    relationship = 'member_role.members'
+
+
+class OrganizationAdminsList(BaseUsersList):
+
+    model = User
+    serializer_class = UserSerializer
+    parent_model = Organization
+    relationship = 'admin_role.members'
+
+
+class OrganizationProjectsList(SubListCreateAttachDetachAPIView):
+
+    model = Project
+    serializer_class = ProjectSerializer
+    parent_model = Organization
+    relationship = 'projects'
+    parent_key = 'organization'
+
+
+class OrganizationWorkflowJobTemplatesList(SubListCreateAttachDetachAPIView):
+
+    model = WorkflowJobTemplate
+    serializer_class = WorkflowJobTemplateSerializer
+    parent_model = Organization
+    relationship = 'workflows'
+    parent_key = 'organization'
+
+
+class OrganizationTeamsList(SubListCreateAttachDetachAPIView):
+
+    model = Team
+    serializer_class = TeamSerializer
+    parent_model = Organization
+    relationship = 'teams'
+    parent_key = 'organization'
+
+
+class OrganizationActivityStreamList(ActivityStreamEnforcementMixin, SubListAPIView):
+
+    model = ActivityStream
+    serializer_class = ActivityStreamSerializer
+    parent_model = Organization
+    relationship = 'activitystream_set'
+    search_fields = ('changes',)
+
+
+class OrganizationNotificationTemplatesList(SubListCreateAttachDetachAPIView):
+
+    model = NotificationTemplate
+    serializer_class = NotificationTemplateSerializer
+    parent_model = Organization
+    relationship = 'notification_templates'
+    parent_key = 'organization'
+
+
+class OrganizationNotificationTemplatesAnyList(SubListCreateAttachDetachAPIView):
+
+    model = NotificationTemplate
+    serializer_class = NotificationTemplateSerializer
+    parent_model = Organization
+    relationship = 'notification_templates_any'
+
+
+class OrganizationNotificationTemplatesErrorList(SubListCreateAttachDetachAPIView):
+
+    model = NotificationTemplate
+    serializer_class = NotificationTemplateSerializer
+    parent_model = Organization
+    relationship = 'notification_templates_error'
+
+
+class OrganizationNotificationTemplatesSuccessList(SubListCreateAttachDetachAPIView):
+
+    model = NotificationTemplate
+    serializer_class = NotificationTemplateSerializer
+    parent_model = Organization
+    relationship = 'notification_templates_success'
+
+
+class OrganizationInstanceGroupsList(SubListAttachDetachAPIView):
+
+    model = InstanceGroup
+    serializer_class = InstanceGroupSerializer
+    parent_model = Organization
+    relationship = 'instance_groups'
+
+
+class OrganizationAccessList(ResourceAccessList):
+
+    model = User # needs to be User for AccessLists's
+    parent_model = Organization
+
+
+class OrganizationObjectRolesList(SubListAPIView):
+
+    model = Role
+    serializer_class = RoleSerializer
+    parent_model = Organization
+    search_fields = ('role_field', 'content_type__model',)
+
+    def get_queryset(self):
+        po = self.get_parent_object()
+        content_type = ContentType.objects.get_for_model(self.parent_model)
+        return Role.objects.filter(content_type=content_type, object_id=po.pk)
 
 
 class TeamList(ListCreateAPIView):
@@ -851,6 +1283,18 @@ class SystemJobEventsList(SubListAPIView):
         return super(SystemJobEventsList, self).finalize_response(request, response, *args, **kwargs)
 
 
+class InventoryUpdateEventsList(SubListAPIView):
+
+    model = InventoryUpdateEvent
+    serializer_class = InventoryUpdateEventSerializer
+    parent_model = InventoryUpdate
+    relationship = 'inventory_update_events'
+    view_name = _('Inventory Update Events List')
+    search_fields = ('stdout',)
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response['X-UI-Max-Events'] = settings.MAX_UI_JOB_EVENTS
+        return super(InventoryUpdateEventsList, self).finalize_response(request, response, *args, **kwargs)
 
 
 class ProjectUpdateCancel(RetrieveAPIView):
@@ -877,7 +1321,7 @@ class ProjectUpdateNotificationsList(SubListAPIView):
     search_fields = ('subject', 'notification_type', 'body',)
 
 
-class ProjectUpdateScmInventoryUpdates(SubListAPIView):
+class ProjectUpdateScmInventoryUpdates(SubListCreateAPIView):
 
     view_name = _("Project Update SCM Inventory Updates")
     model = InventoryUpdate
@@ -1070,11 +1514,10 @@ class OAuth2TokenActivityStreamList(ActivityStreamEnforcementMixin, SubListAPIVi
     search_fields = ('changes',)
 
 
-class UserTeamsList(SubListAPIView):
+class UserTeamsList(ListAPIView):
 
-    model = Team
+    model = User
     serializer_class = TeamSerializer
-    parent_model = User
 
     def get_queryset(self):
         u = get_object_or_404(User, pk=self.kwargs['pk'])
@@ -1252,7 +1695,7 @@ class CredentialTypeDetail(RetrieveUpdateDestroyAPIView):
         return super(CredentialTypeDetail, self).destroy(request, *args, **kwargs)
 
 
-class CredentialTypeCredentialList(SubListCreateAPIView):
+class CredentialTypeCredentialList(SubListAPIView):
 
     model = Credential
     parent_model = CredentialType
@@ -1408,6 +1851,177 @@ class CredentialCopy(CopyAPIView):
     copy_return_serializer_class = CredentialSerializer
 
 
+class InventoryScriptList(ListCreateAPIView):
+
+    model = CustomInventoryScript
+    serializer_class = CustomInventoryScriptSerializer
+
+
+class InventoryScriptDetail(RetrieveUpdateDestroyAPIView):
+
+    model = CustomInventoryScript
+    serializer_class = CustomInventoryScriptSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        can_delete = request.user.can_access(self.model, 'delete', instance)
+        if not can_delete:
+            raise PermissionDenied(_("Cannot delete inventory script."))
+        for inv_src in InventorySource.objects.filter(source_script=instance):
+            inv_src.source_script = None
+            inv_src.save()
+        return super(InventoryScriptDetail, self).destroy(request, *args, **kwargs)
+
+
+class InventoryScriptObjectRolesList(SubListAPIView):
+
+    model = Role
+    serializer_class = RoleSerializer
+    parent_model = CustomInventoryScript
+    search_fields = ('role_field', 'content_type__model',)
+
+    def get_queryset(self):
+        po = self.get_parent_object()
+        content_type = ContentType.objects.get_for_model(self.parent_model)
+        return Role.objects.filter(content_type=content_type, object_id=po.pk)
+
+
+class InventoryScriptCopy(CopyAPIView):
+
+    model = CustomInventoryScript
+    copy_return_serializer_class = CustomInventoryScriptSerializer
+
+
+class InventoryList(ListCreateAPIView):
+
+    model = Inventory
+    serializer_class = InventorySerializer
+
+    def get_queryset(self):
+        qs = Inventory.accessible_objects(self.request.user, 'read_role')
+        qs = qs.select_related('admin_role', 'read_role', 'update_role', 'use_role', 'adhoc_role')
+        qs = qs.prefetch_related('created_by', 'modified_by', 'organization')
+        return qs
+
+
+class ControlledByScmMixin(object):
+    '''
+    Special method to reset SCM inventory commit hash
+    if anything that it manages changes.
+    '''
+
+    def _reset_inv_src_rev(self, obj):
+        if self.request.method in SAFE_METHODS or not obj:
+            return
+        project_following_sources = obj.inventory_sources.filter(
+            update_on_project_update=True, source='scm')
+        if project_following_sources:
+            # Allow inventory changes unrelated to variables
+            if self.model == Inventory and (
+                    not self.request or not self.request.data or
+                    parse_yaml_or_json(self.request.data.get('variables', '')) == parse_yaml_or_json(obj.variables)):
+                return
+            project_following_sources.update(scm_last_revision='')
+
+    def get_object(self):
+        obj = super(ControlledByScmMixin, self).get_object()
+        self._reset_inv_src_rev(obj)
+        return obj
+
+    def get_parent_object(self):
+        obj = super(ControlledByScmMixin, self).get_parent_object()
+        self._reset_inv_src_rev(obj)
+        return obj
+
+
+class InventoryDetail(RelatedJobsPreventDeleteMixin, ControlledByScmMixin, RetrieveUpdateDestroyAPIView):
+
+    model = Inventory
+    serializer_class = InventoryDetailSerializer
+
+    def update(self, request, *args, **kwargs):
+        obj = self.get_object()
+        kind = self.request.data.get('kind') or kwargs.get('kind')
+
+        # Do not allow changes to an Inventory kind.
+        if kind is not None and obj.kind != kind:
+            return self.http_method_not_allowed(request, *args, **kwargs)
+        return super(InventoryDetail, self).update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if not request.user.can_access(self.model, 'delete', obj):
+            raise PermissionDenied()
+        self.check_related_active_jobs(obj)  # related jobs mixin
+        try:
+            obj.schedule_deletion(getattr(request.user, 'id', None))
+            return Response(status=status.HTTP_202_ACCEPTED)
+        except RuntimeError as e:
+            return Response(dict(error=_("{0}".format(e))), status=status.HTTP_400_BAD_REQUEST)
+
+
+class InventoryActivityStreamList(ActivityStreamEnforcementMixin, SubListAPIView):
+
+    model = ActivityStream
+    serializer_class = ActivityStreamSerializer
+    parent_model = Inventory
+    relationship = 'activitystream_set'
+    search_fields = ('changes',)
+
+    def get_queryset(self):
+        parent = self.get_parent_object()
+        self.check_parent_access(parent)
+        qs = self.request.user.get_queryset(self.model)
+        return qs.filter(Q(inventory=parent) | Q(host__in=parent.hosts.all()) | Q(group__in=parent.groups.all()))
+
+
+class InventoryInstanceGroupsList(SubListAttachDetachAPIView):
+
+    model = InstanceGroup
+    serializer_class = InstanceGroupSerializer
+    parent_model = Inventory
+    relationship = 'instance_groups'
+
+
+class InventoryAccessList(ResourceAccessList):
+
+    model = User # needs to be User for AccessLists's
+    parent_model = Inventory
+
+
+class InventoryObjectRolesList(SubListAPIView):
+
+    model = Role
+    serializer_class = RoleSerializer
+    parent_model = Inventory
+    search_fields = ('role_field', 'content_type__model',)
+
+    def get_queryset(self):
+        po = self.get_parent_object()
+        content_type = ContentType.objects.get_for_model(self.parent_model)
+        return Role.objects.filter(content_type=content_type, object_id=po.pk)
+
+
+class InventoryJobTemplateList(SubListAPIView):
+
+    model = JobTemplate
+    serializer_class = JobTemplateSerializer
+    parent_model = Inventory
+    relationship = 'jobtemplates'
+
+    def get_queryset(self):
+        parent = self.get_parent_object()
+        self.check_parent_access(parent)
+        qs = self.request.user.get_queryset(self.model)
+        return qs.filter(inventory=parent)
+
+
+class InventoryCopy(CopyAPIView):
+
+    model = Inventory
+    copy_return_serializer_class = InventorySerializer
+
+
 class HostRelatedSearchMixin(object):
 
     @property
@@ -1545,7 +2159,6 @@ class HostFactVersionsList(SystemTrackingEnforcementMixin, ParentMixin, ListAPIV
     serializer_class = FactVersionSerializer
     parent_model = Host
     search_fields = ('facts',)
-    deprecated = True
 
     def get_queryset(self):
         from_spec = self.request.query_params.get('from', None)
@@ -1571,7 +2184,6 @@ class HostFactCompareView(SystemTrackingEnforcementMixin, SubDetailAPIView):
     model = Fact
     parent_model = Host
     serializer_class = FactSerializer
-    deprecated = True
 
     def retrieve(self, request, *args, **kwargs):
         datetime_spec = request.query_params.get('datetime', None)
@@ -1597,15 +2209,7 @@ class HostInsights(GenericAPIView):
     def _get_insights(self, url, username, password):
         session = requests.Session()
         session.auth = requests.auth.HTTPBasicAuth(username, password)
-        license = get_license(show_key=False).get('license_type', 'UNLICENSED')
-        headers = {
-            'Content-Type': 'application/json',
-            'User-Agent': '{} {} ({})'.format(
-                'AWX' if license == 'open' else 'Red Hat Ansible Tower',
-                get_awx_version(),
-                license
-            )
-        }
+        headers = {'Content-Type': 'application/json'}
         return session.get(url, headers=headers, timeout=120)
 
     def get_insights(self, url, username, password):
@@ -1877,16 +2481,6 @@ class InventoryScriptView(RetrieveAPIView):
         hostvars = bool(request.query_params.get('hostvars', ''))
         towervars = bool(request.query_params.get('towervars', ''))
         show_all = bool(request.query_params.get('all', ''))
-        subset = request.query_params.get('subset', '')
-        if subset:
-            if not isinstance(subset, six.string_types):
-                raise ParseError(_('Inventory subset argument must be a string.'))
-            if subset.startswith('slice'):
-                slice_number, slice_count = Inventory.parse_slice_params(subset)
-            else:
-                raise ParseError(_('Subset does not use any supported syntax.'))
-        else:
-            slice_number, slice_count = 1, 1
         if hostname:
             hosts_q = dict(name=hostname)
             if not show_all:
@@ -1896,8 +2490,7 @@ class InventoryScriptView(RetrieveAPIView):
         return Response(obj.get_script_data(
             hostvars=hostvars,
             towervars=towervars,
-            show_all=show_all,
-            slice_number=slice_number, slice_count=slice_count
+            show_all=show_all
         ))
 
 
@@ -2068,14 +2661,6 @@ class InventorySourceHostsList(HostRelatedSearchMixin, SubListDestroyAPIView):
     relationship = 'hosts'
     check_sub_obj_permission = False
 
-    def perform_list_destroy(self, instance_list):
-        # Activity stream doesn't record disassociation here anyway
-        # no signals-related reason to not bulk-delete
-        Host.groups.through.objects.filter(
-            host__inventory_sources=self.get_parent_object()
-        ).delete()
-        return super(InventorySourceHostsList, self).perform_list_destroy(instance_list)
-
 
 class InventorySourceGroupsList(SubListDestroyAPIView):
 
@@ -2084,13 +2669,6 @@ class InventorySourceGroupsList(SubListDestroyAPIView):
     parent_model = InventorySource
     relationship = 'groups'
     check_sub_obj_permission = False
-
-    def perform_list_destroy(self, instance_list):
-        # Same arguments for bulk delete as with host list
-        Group.hosts.through.objects.filter(
-            group__inventory_sources=self.get_parent_object()
-        ).delete()
-        return super(InventorySourceGroupsList, self).perform_list_destroy(instance_list)
 
 
 class InventorySourceUpdatesList(SubListAPIView):
@@ -2363,14 +2941,9 @@ class JobTemplateLaunch(RetrieveAPIView):
             return Response(data, status=status.HTTP_400_BAD_REQUEST)
         else:
             data = OrderedDict()
-            if isinstance(new_job, WorkflowJob):
-                data['workflow_job'] = new_job.id
-                data['ignored_fields'] = self.sanitize_for_response(ignored_fields)
-                data.update(WorkflowJobSerializer(new_job, context=self.get_serializer_context()).to_representation(new_job))
-            else:
-                data['job'] = new_job.id
-                data['ignored_fields'] = self.sanitize_for_response(ignored_fields)
-                data.update(JobSerializer(new_job, context=self.get_serializer_context()).to_representation(new_job))
+            data['job'] = new_job.id
+            data['ignored_fields'] = self.sanitize_for_response(ignored_fields)
+            data.update(JobSerializer(new_job, context=self.get_serializer_context()).to_representation(new_job))
             headers = {'Location': new_job.get_absolute_url(request)}
             return Response(data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -2416,16 +2989,6 @@ class JobTemplateSurveySpec(GenericAPIView):
     obj_permission_type = 'admin'
     serializer_class = EmptySerializer
 
-    ALLOWED_TYPES = {
-        'text': six.string_types,
-        'textarea': six.string_types,
-        'password': six.string_types,
-        'multiplechoice': six.string_types,
-        'multiselect': six.string_types,
-        'integer': int,
-        'float': float
-    }
-
     def get(self, request, *args, **kwargs):
         obj = self.get_object()
         if not feature_enabled('surveys'):
@@ -2452,8 +3015,7 @@ class JobTemplateSurveySpec(GenericAPIView):
         obj.save(update_fields=['survey_spec'])
         return Response()
 
-    @staticmethod
-    def _validate_spec_data(new_spec, old_spec):
+    def _validate_spec_data(self, new_spec, old_spec):
         schema_errors = {}
         for field, expect_type, type_label in [
                 ('name', six.string_types, 'string'),
@@ -2474,75 +3036,40 @@ class JobTemplateSurveySpec(GenericAPIView):
         variable_set = set()
         old_spec_dict = JobTemplate.pivot_spec(old_spec)
         for idx, survey_item in enumerate(new_spec["spec"]):
-            context = dict(
-                idx=six.text_type(idx),
-                survey_item=survey_item
-            )
-            # General element validation
             if not isinstance(survey_item, dict):
                 return Response(dict(error=_("Survey question %s is not a json object.") % str(idx)), status=status.HTTP_400_BAD_REQUEST)
-            for field_name in ['type', 'question_name', 'variable', 'required']:
-                if field_name not in survey_item:
-                    return Response(dict(error=_("'{field_name}' missing from survey question {idx}").format(
-                        field_name=field_name, **context
-                    )), status=status.HTTP_400_BAD_REQUEST)
-                val = survey_item[field_name]
-                allow_types = six.string_types
-                type_label = 'string'
-                if field_name == 'required':
-                    allow_types = bool
-                    type_label = 'boolean'
-                if not isinstance(val, allow_types):
-                    return Response(dict(error=_("'{field_name}' in survey question {idx} expected to be {type_label}.").format(
-                        field_name=field_name, type_label=type_label, **context
-                    )))
+            if "type" not in survey_item:
+                return Response(dict(error=_("'type' missing from survey question %s.") % str(idx)), status=status.HTTP_400_BAD_REQUEST)
+            if "question_name" not in survey_item:
+                return Response(dict(error=_("'question_name' missing from survey question %s.") % str(idx)), status=status.HTTP_400_BAD_REQUEST)
+            if "variable" not in survey_item:
+                return Response(dict(error=_("'variable' missing from survey question %s.") % str(idx)), status=status.HTTP_400_BAD_REQUEST)
             if survey_item['variable'] in variable_set:
                 return Response(dict(error=_("'variable' '%(item)s' duplicated in survey question %(survey)s.") % {
                     'item': survey_item['variable'], 'survey': str(idx)}), status=status.HTTP_400_BAD_REQUEST)
             else:
                 variable_set.add(survey_item['variable'])
+            if "required" not in survey_item:
+                return Response(dict(error=_("'required' missing from survey question %s.") % str(idx)), status=status.HTTP_400_BAD_REQUEST)
 
-            # Type-specific validation
-            # validate question type <-> default type
-            qtype = survey_item["type"]
-            if qtype not in JobTemplateSurveySpec.ALLOWED_TYPES:
-                return Response(dict(error=_(
-                    "'{survey_item[type]}' in survey question {idx} is not one of '{allowed_types}' allowed question types."
-                ).format(
-                    allowed_types=', '.join(JobTemplateSurveySpec.ALLOWED_TYPES.keys()), **context
-                )))
-            if 'default' in survey_item:
-                if not isinstance(survey_item['default'], JobTemplateSurveySpec.ALLOWED_TYPES[qtype]):
-                    type_label = 'string'
-                    if qtype in ['integer', 'float']:
-                        type_label = qtype
+            if survey_item["type"] == "password" and "default" in survey_item:
+                if not isinstance(survey_item['default'], six.string_types):
                     return Response(dict(error=_(
-                        "Default value {survey_item[default]} in survey question {idx} expected to be {type_label}."
+                        "Value {question_default} for '{variable_name}' expected to be a string."
                     ).format(
-                        type_label=type_label, **context
-                    )), status=status.HTTP_400_BAD_REQUEST)
-            # additional type-specific properties, the UI provides these even
-            # if not applicable to the question, TODO: request that they not do this
-            for key in ['min', 'max']:
-                if key in survey_item:
-                    if survey_item[key] is not None and (not isinstance(survey_item[key], int)):
-                        return Response(dict(error=_(
-                            "The {min_or_max} limit in survey question {idx} expected to be integer."
-                        ).format(min_or_max=key, **context)))
-            if qtype in ['multiplechoice', 'multiselect'] and 'choices' not in survey_item:
-                return Response(dict(error=_(
-                    "Survey question {idx} of type {survey_item[type]} must specify choices.".format(**context)
-                )))
+                        question_default=survey_item["default"], variable_name=survey_item["variable"])
+                    ), status=status.HTTP_400_BAD_REQUEST)
 
-            # Process encryption substitution
             if ("default" in survey_item and isinstance(survey_item['default'], six.string_types) and
                     survey_item['default'].startswith('$encrypted$')):
                 # Submission expects the existence of encrypted DB value to replace given default
-                if qtype != "password":
+                if survey_item["type"] != "password":
                     return Response(dict(error=_(
                         "$encrypted$ is a reserved keyword for password question defaults, "
-                        "survey question {idx} is type {survey_item[type]}."
-                    ).format(**context)), status=status.HTTP_400_BAD_REQUEST)
+                        "survey question {question_position} is type {question_type}."
+                    ).format(
+                        question_position=str(idx), question_type=survey_item["type"])
+                    ), status=status.HTTP_400_BAD_REQUEST)
                 old_element = old_spec_dict.get(survey_item['variable'], {})
                 encryptedish_default_exists = False
                 if 'default' in old_element:
@@ -2554,10 +3081,10 @@ class JobTemplateSurveySpec(GenericAPIView):
                             encryptedish_default_exists = True
                 if not encryptedish_default_exists:
                     return Response(dict(error=_(
-                        "$encrypted$ is a reserved keyword, may not be used for new default in position {idx}."
-                    ).format(**context)), status=status.HTTP_400_BAD_REQUEST)
+                        "$encrypted$ is a reserved keyword, may not be used for new default in position {question_position}."
+                    ).format(question_position=str(idx))), status=status.HTTP_400_BAD_REQUEST)
                 survey_item['default'] = old_element['default']
-            elif qtype == "password" and 'default' in survey_item:
+            elif survey_item["type"] == "password" and 'default' in survey_item:
                 # Submission provides new encrypted default
                 survey_item['default'] = encrypt_value(survey_item['default'])
 
@@ -2628,8 +3155,8 @@ class JobTemplateCredentialsList(SubListCreateAttachDetachAPIView):
 
     def is_valid_relation(self, parent, sub, created=False):
         if sub.unique_hash() in [cred.unique_hash() for cred in parent.credentials.all()]:
-            return {"error": _("Cannot assign multiple {credential_type} credentials.").format(
-                credential_type=sub.unique_hash(display=True))}
+            return {"error": _("Cannot assign multiple {credential_type} credentials.".format(
+                credential_type=sub.unique_hash(display=True)))}
         kind = sub.credential_type.kind
         if kind not in ('ssh', 'vault', 'cloud', 'net'):
             return {'error': _('Cannot assign a Credential of kind `{}`.').format(kind)}
@@ -2818,11 +3345,10 @@ class JobTemplateCallback(GenericAPIView):
         if extra_vars is not None and job_template.ask_variables_on_launch:
             extra_vars_redacted, removed = extract_ansible_vars(extra_vars)
             kv['extra_vars'] = extra_vars_redacted
-        kv['_prevent_slicing'] = True  # will only run against 1 host, so no point
         with transaction.atomic():
             job = job_template.create_job(**kv)
 
-        # Send a signal to signify that the job should be started.
+        # Send a signal to celery that the job should be started.
         result = job.signal_start(inventory_sources_already_updated=inventory_sources_already_updated)
         if not result:
             data = dict(msg=_('Error starting job!'))
@@ -2848,15 +3374,6 @@ class JobTemplateJobsList(SubListCreateAPIView):
         if get_request_version(getattr(self, 'request', None)) > 1:
             methods.remove('POST')
         return methods
-
-
-class JobTemplateSliceWorkflowJobsList(SubListCreateAPIView):
-
-    model = WorkflowJob
-    serializer_class = WorkflowJobListSerializer
-    parent_model = JobTemplate
-    relationship = 'slice_workflow_jobs'
-    parent_key = 'job_template'
 
 
 class JobTemplateInstanceGroupsList(SubListAttachDetachAPIView):
@@ -2951,33 +3468,43 @@ class WorkflowJobTemplateNodeChildrenBaseList(WorkflowsEnforcementMixin, Enforce
         return getattr(parent, self.relationship).all()
 
     def is_valid_relation(self, parent, sub, created=False):
+        mutex_list = ('success_nodes', 'failure_nodes') if self.relationship == 'always_nodes' else ('always_nodes',)
+        for relation in mutex_list:
+            if getattr(parent, relation).all().exists():
+                return {'Error': _('Cannot associate {0} when {1} have been associated.').format(self.relationship, relation)}
 
         if created:
             return None
 
-        if parent.id == sub.id:
-            return {"Error": _("Cycle detected.")}
+        workflow_nodes = parent.workflow_job_template.workflow_job_template_nodes.all().\
+            prefetch_related('success_nodes', 'failure_nodes', 'always_nodes')
+        graph = {}
+        for workflow_node in workflow_nodes:
+            graph[workflow_node.pk] = dict(node_object=workflow_node, metadata={'parent': None, 'traversed': False})
 
-        '''
-        Look for parent->child connection in all relationships except the relationship that is
-        attempting to be added; because it's ok to re-add the relationship
-        '''
-        relationships = ['success_nodes', 'failure_nodes', 'always_nodes']
-        relationships.remove(self.relationship)
-        qs = functools.reduce(lambda x, y: (x | y),
-                              (Q(**{'{}__in'.format(rel): [sub.id]}) for rel in relationships))
+        find = False
+        for node_type in ['success_nodes', 'failure_nodes', 'always_nodes']:
+            for workflow_node in workflow_nodes:
+                parent_node = graph[workflow_node.pk]
+                related_nodes = getattr(parent_node['node_object'], node_type).all()
+                for related_node in related_nodes:
+                    sub_node = graph[related_node.pk]
+                    sub_node['metadata']['parent'] = parent_node
+                    if not find and parent == workflow_node and sub == related_node and self.relationship == node_type:
+                        find = True
+        if not find:
+            sub_node = graph[sub.pk]
+            parent_node = graph[parent.pk]
+            if sub_node['metadata']['parent'] is not None:
+                return {"Error": _("Multiple parent relationship not allowed.")}
+            sub_node['metadata']['parent'] = parent_node
+            iter_node = sub_node
+            while iter_node is not None:
+                if iter_node['metadata']['traversed']:
+                    return {"Error": _("Cycle detected.")}
+                iter_node['metadata']['traversed'] = True
+                iter_node = iter_node['metadata']['parent']
 
-        if WorkflowJobTemplateNode.objects.filter(Q(pk=parent.id) & qs).exists():
-            return {"Error": _("Relationship not allowed.")}
-
-        parent_node_type_relationship = getattr(parent, self.relationship)
-        parent_node_type_relationship.add(sub)
-
-        graph = WorkflowDAG(parent.workflow_job_template)
-        if graph.has_cycle():
-            parent_node_type_relationship.remove(sub)
-            return {"Error": _("Cycle detected.")}
-        parent_node_type_relationship.remove(sub)
         return None
 
 
@@ -3105,31 +3632,23 @@ class WorkflowJobTemplateLaunch(WorkflowsEnforcementMixin, RetrieveAPIView):
                 extra_vars.setdefault(v, u'')
             if extra_vars:
                 data['extra_vars'] = extra_vars
-            if obj.ask_inventory_on_launch:
-                data['inventory'] = obj.inventory_id
-            else:
-                data.pop('inventory', None)
         return data
 
     def post(self, request, *args, **kwargs):
         obj = self.get_object()
 
-        if 'inventory_id' in request.data:
-            request.data['inventory'] = request.data['inventory_id']
-
         serializer = self.serializer_class(instance=obj, data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        if not request.user.can_access(JobLaunchConfig, 'add', serializer.validated_data, template=obj):
-            raise PermissionDenied()
+        prompted_fields, ignored_fields, errors = obj._accept_or_ignore_job_kwargs(**request.data)
 
-        new_job = obj.create_unified_job(**serializer.validated_data)
+        new_job = obj.create_unified_job(**prompted_fields)
         new_job.signal_start()
 
         data = OrderedDict()
         data['workflow_job'] = new_job.id
-        data['ignored_fields'] = serializer._ignored_fields
+        data['ignored_fields'] = ignored_fields
         data.update(WorkflowJobSerializer(new_job, context=self.get_serializer_context()).to_representation(new_job))
         headers = {'Location': new_job.get_absolute_url(request)}
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
@@ -3153,11 +3672,6 @@ class WorkflowJobRelaunch(WorkflowsEnforcementMixin, GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         obj = self.get_object()
-        if obj.is_sliced_job:
-            if not obj.job_template_id:
-                raise ParseError(_('Cannot relaunch slice workflow job orphaned from job template.'))
-            elif obj.job_template.job_slice_count != obj.workflow_nodes.count():
-                raise ParseError(_('Cannot relaunch sliced workflow job after slice count has changed.'))
         new_workflow_job = obj.create_relaunch_workflow_job()
         new_workflow_job.signal_start()
 
@@ -3294,7 +3808,8 @@ class WorkflowJobCancel(WorkflowsEnforcementMixin, RetrieveAPIView):
         obj = self.get_object()
         if obj.can_cancel:
             obj.cancel()
-            schedule_task_manager()
+            #TODO: Figure out whether an immediate schedule is needed.
+            run_job_complete.delay(obj.id)
             return Response(status=status.HTTP_202_ACCEPTED)
         else:
             return self.http_method_not_allowed(request, *args, **kwargs)
@@ -3619,11 +4134,6 @@ class JobRelaunch(RetrieveAPIView):
                     'Cannot relaunch because previous job had 0 {status_value} hosts.'
                 ).format(status_value=retry_hosts)}, status=status.HTTP_400_BAD_REQUEST)
             copy_kwargs['limit'] = ','.join(retry_host_list)
-            limit_length = len(copy_kwargs['limit'])
-            if limit_length > 1024:
-                return Response({'limit': _(
-                    'Cannot relaunch because the limit length {limit_length} exceeds the max of {limit_max}.'
-                ).format(limit_length=limit_length, limit_max=1024)}, status=status.HTTP_400_BAD_REQUEST)
 
         new_job = obj.copy_unified_job(**copy_kwargs)
         result = new_job.signal_start(**serializer.validated_data['credential_passwords'])

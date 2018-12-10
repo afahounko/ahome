@@ -1,7 +1,8 @@
 import pytest
 import six
 
-from awx.main.models import JobTemplate, Job, JobHostSummary, WorkflowJob
+from awx.main.models import JobTemplate, Job, JobHostSummary
+from crum import impersonate
 
 
 @pytest.mark.django_db
@@ -15,18 +16,6 @@ def test_awx_virtualenv_from_settings(inventory, project, machine_credential):
     jt.credentials.add(machine_credential)
     job = jt.create_unified_job()
     assert job.ansible_virtualenv_path == '/venv/ansible'
-
-
-@pytest.mark.django_db
-def test_prevent_slicing():
-    jt = JobTemplate.objects.create(
-        name='foo',
-        job_slice_count=4
-    )
-    job = jt.create_unified_job(_prevent_slicing=True)
-    assert job.job_slice_count == 1
-    assert job.job_slice_number == 0
-    assert isinstance(job, Job)
 
 
 @pytest.mark.django_db
@@ -65,6 +54,21 @@ def test_awx_custom_virtualenv_without_jt(project):
 
 
 @pytest.mark.django_db
+def test_update_parent_instance(job_template, alice):
+    # jobs are launched as a particular user, user not saved as modified_by
+    with impersonate(alice):
+        assert job_template.current_job is None
+        assert job_template.status == 'never updated'
+        assert job_template.modified_by is None
+        job = job_template.jobs.create(status='new')
+        job.status = 'pending'
+        job.save()
+        assert job_template.current_job == job
+        assert job_template.status == 'pending'
+        assert job_template.modified_by is None
+
+
+@pytest.mark.django_db
 def test_job_host_summary_representation(host):
     job = Job.objects.create(name='foo')
     jhs = JobHostSummary.objects.create(
@@ -77,23 +81,3 @@ def test_job_host_summary_representation(host):
     jhs = JobHostSummary.objects.get(pk=jhs.id)
     host.delete()
     assert 'N/A changed=1 dark=2 failures=3 ok=4 processed=5 skipped=6' == six.text_type(jhs)
-
-
-@pytest.mark.django_db
-class TestSlicingModels:
-
-    def test_slice_workflow_spawn(self, slice_jt_factory):
-        slice_jt = slice_jt_factory(3)
-        job = slice_jt.create_unified_job()
-        assert isinstance(job, WorkflowJob)
-        assert job.job_template == slice_jt
-        assert job.unified_job_template == slice_jt
-        assert job.workflow_nodes.count() == 3
-
-    def test_slices_with_JT_and_prompts(self, slice_job_factory):
-        job = slice_job_factory(3, jt_kwargs={'ask_limit_on_launch': True}, prompts={'limit': 'foobar'}, spawn=True)
-        assert job.launch_config.prompts_dict() == {'limit': 'foobar'}
-        for node in job.workflow_nodes.all():
-            assert node.limit is None  # data not saved in node prompts
-            job = node.job
-            assert job.limit == 'foobar'

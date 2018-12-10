@@ -80,6 +80,8 @@ export default ['$scope', 'NestedHostsListDefinition', '$rootScope', 'GetBasePat
                     $scope.hostsSelected = null;
                 }
             }
+
+            $scope.systemTrackingDisabled = ($scope.hostsSelected && $scope.hostsSelected.length > 2) ? true : false;
         });
 
     }
@@ -155,6 +157,15 @@ export default ['$scope', 'NestedHostsListDefinition', '$rootScope', 'GetBasePat
 
         HostsService.put(host).then(function(){
             $state.go($state.current, null, {reload: true});
+        });
+    };
+
+    $scope.systemTracking = function(){
+        var hostIds = _.map($scope.hostsSelected, (host) => host.id);
+        $state.go('systemTracking', {
+            inventoryId: $state.params.inventory_id,
+            hosts: $scope.hostsSelected,
+            hostIds: hostIds
         });
     };
 

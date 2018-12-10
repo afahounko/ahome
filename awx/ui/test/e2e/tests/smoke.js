@@ -98,12 +98,6 @@ module.exports = {
         projects.waitForElementVisible('div.spinny', 120000);
         projects.waitForElementNotVisible('div.spinny');
         projects.expect.element('i[class$="success"]').visible;
-
-        projects.expect.element('#project_cancel_btn').visible;
-        projects.click('#project_cancel_btn');
-        client.refresh();
-        client.waitForElementVisible('div.spinny');
-        client.waitForElementNotVisible('div.spinny');
     },
     'create inventory': client => {
         const inventories = client.page.inventories();
@@ -146,7 +140,7 @@ module.exports = {
         client.waitForElementVisible('div.spinny');
         client.waitForElementNotVisible('div.spinny');
 
-        client.expect.element('#hosts_tab').css('background-color').contain('100, 105, 114');
+        client.expect.element('#hosts_tab').css('background-color').contain('132, 137, 146');
 
         client.useCss();
         client.waitForElementVisible(addHost);

@@ -128,7 +128,7 @@
   delegate_to: localhost
 
 - name: Stage nginx.conf
-  template:
+  copy:
     src: nginx.conf
     dest: "{{ docker_base_path }}/nginx.conf"
   delegate_to: localhost
@@ -217,5 +217,5 @@
   file:
     path: "{{ docker_base_path }}"
     state: absent
-  when: cleanup_docker_base|default(True)|bool
+  when: cleanup_docker_base|default(True)
   delegate_to: localhost

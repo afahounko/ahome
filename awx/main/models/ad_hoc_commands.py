@@ -136,7 +136,8 @@ class AdHocCommand(UnifiedJob, JobNotificationMixin):
         else:
             return []
 
-    def _get_parent_field_name(self):
+    @classmethod
+    def _get_parent_field_name(cls):
         return ''
 
     @classmethod

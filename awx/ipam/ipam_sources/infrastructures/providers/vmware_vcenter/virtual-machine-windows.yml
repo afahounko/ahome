@@ -1,0 +1,237 @@
+---
+name: VmWare Windows virtual machine
+group: Cloud
+version: 1.0
+description: |
+     VmWare Windows virtual machine
+
+hosts: all
+
+cloud: false
+inventory_type: Windows
+
+project:
+    name_prefix: 'Git_'
+    description: ''
+    scm_type: 'git'
+    scm_branch: ''
+    scm_url: 'https://git.afahounko.com/caas/vmware.windows.git'
+    scm_clean: true
+    scm_delete_on_update: true
+    credential: null
+    timeout: 0
+    organization: 1
+    scm_update_on_launch: true
+    scm_update_cache_timeout: 0
+
+configure_job:
+    name_prefix: 'Run_'
+    playbook: 'create_vm.yml'
+    description: ''
+    job_type: "run"
+    inventory: 1
+    forks: 0
+    limit: ''
+    verbosity: 0
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    job_tags: ''
+    force_handlers: false
+    skip_tags: ''
+    start_at_task: ''
+    timeout: 0
+    use_fact_cache: false
+    host_config_key: ''
+    ask_diff_mode_on_launch: false
+    ask_variables_on_launch: false
+    ask_limit_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_inventory_on_launch: false
+    ask_credential_on_launch: false
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    allow_simultaneous: false
+
+poweroff_job:
+    name_prefix: 'Poweroff_'
+    playbook: 'destroy_vm.yml'
+    description: ''
+    job_type: "run"
+    inventory: 1
+    forks: 0
+    limit: ''
+    verbosity: 0
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    job_tags: ''
+    force_handlers: false
+    skip_tags: ''
+    start_at_task: ''
+    timeout: 0
+    use_fact_cache: false
+    host_config_key: ''
+    ask_diff_mode_on_launch: false
+    ask_variables_on_launch: false
+    ask_limit_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_inventory_on_launch: false
+    ask_credential_on_launch: false
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    allow_simultaneous: false
+
+remove_job:
+    name_prefix: 'Remove_'
+    playbook: 'remove_vm.yml'
+    description: ''
+    job_type: "run"
+    inventory: 1
+    forks: 0
+    limit: ''
+    verbosity: 0
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    job_tags: ''
+    force_handlers: false
+    skip_tags: ''
+    start_at_task: ''
+    timeout: 0
+    use_fact_cache: false
+    host_config_key: ''
+    ask_diff_mode_on_launch: false
+    ask_variables_on_launch: false
+    ask_limit_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_inventory_on_launch: false
+    ask_credential_on_launch: false
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    allow_simultaneous: false
+
+addTitle: 'NEW WINDOWS VMWARE VM'
+editTitle: '{{ name }}'
+name: 'vmware_windows_virtual_machine'
+title: 'Windows Virtual Machine'
+logo: '/static/assets/logo/logo-windows.png'
+basePath: 'ipam_infrastructure_jobs'
+stateTree: 'infraJobsList.providers.vmware_vcenter'
+#basePath: 'ipam_providers'
+#stateTree: 'infraProviders'
+breadcrumbName: 'VMWARE WINDOWS VIRTUAL MACHINE'
+showActions: true
+launchclick: 'addNew("vmware_windows_virtual_machine")'
+
+wizards: 
+    basic: 
+      index: 1
+      name: 'Variable'
+      type: 'collection'
+      title: 'Variable'
+    
+    relation: 
+      index: 2
+      name: 'Relation'
+      type: 'collection'
+      title: Relation
+    opts:
+      index: 3
+      name: 'Option'
+      type: 'collection'
+      title: 'Option'
+
+fields:
+  name: 
+      label: 'Name'
+      type: 'text'
+      ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+      required: true
+      ngShow: 'tabId == 1'
+
+  description: 
+    label: Description
+    type: 'text'
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 1'
+
+  token:
+    label: 'Token'
+    type: 'text'
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 1'
+
+  datacenter: 
+    label: 'Datacenter'
+    type: 'select'
+    defaultText: 'Choose a Datacenter'
+    ngModel: 'datacenter'
+    ngOptions: 'item as item.label for item in datacenter_type_options'
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 2'
+
+  credential : 
+    label: 'Credential'
+    type: 'select'
+    defaultText: 'Choose a Credential'
+    ngModel: 'credential'
+    ngOptions: 'item as item.label for item in credential_type_options'
+    ngDisabled: 'true'
+    ngShow: 'tabId == 2'
+#  multiCredential:
+#    label: 'Credential'
+#    type: 'custom'
+#    control: '<multi-credential credentials="credentials" prompt="ask_credential_on_launch" credential-not-present="credentialNotPresent" selected-credentials="multiCredential.selectedCredentials" credential-types="multiCredential.credentialTypes"> </multi-credential>'
+#    awPopOver: 'Select credentials that allow Tower to access the nodes this job will be ran against. You can only select one credential of each type. For machine credentials (SSH) checking  "Prompt on launch" without selecting credentials will require you to select a machine credential at run time. If you select credentials and check <Prompt on launch> the selected credential(s) become the defaults that can be updated at run time.'
+#    dataTitle: 'Credentials'
+#    dataPlacement: 'right'
+#    dataContainer: 'body'
+#    subCheckbox:
+#      variable: 'ask_credential_on_launch'
+#      text: 'Prompt on launch'
+#      ngDisabled: '!(job_template_obj.summary_fields.user_capabilities.edit || canAddJobTemplate)'
+#    ngShow: 'tabId == 2'
+
+  opts: 
+    label: Input Opts'
+    class: 'Form-textAreaLabel Form-formGroup--fullWidth'
+    type: 'textarea'
+    rows: 15
+    default: '---'
+    showParseTypeToggle: true
+    parseTypeName: 'parseTypeOpts'
+    awPopOverWatch: "opts_help_text"
+    dataTitle: 'Input Opts'
+    dataPlacement: 'right'
+    dataContainer: "body"
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 3'
+
+buttons: 
+  wizardcancel:
+    ngClick: 'formCancel()'
+    ngShow: 'tabId == 1'
+
+  previous:
+    ngClick: 'WizardClick(1)'
+    ngShow: 'tabId > 1'
+
+  next:
+    ngClick: 'WizardClick(2)'
+    ngShow: 'tabId < 3'
+
+  save:
+    title: 'Finish'
+    ngClick: 'formSave()'
+    ngShow: 'tabId == 3'
+    ngDisabled: true

@@ -1,4 +1,4 @@
-import instanceGroupsMultiselectController from './instance-groups-multiselect.controller';
+import instanceGroupsMultiselectController from './instance-groups.controller';
 export default ['templateUrl', '$compile',
     function(templateUrl, $compile) {
         return {

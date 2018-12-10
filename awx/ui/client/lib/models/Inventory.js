@@ -1,17 +1,10 @@
 let Base;
 let JobTemplate;
-let WorkflowJobTemplate;
 
 function setDependentResources (id) {
     this.dependentResources = [
         {
             model: new JobTemplate(),
-            params: {
-                inventory: id
-            }
-        },
-        {
-            model: new WorkflowJobTemplate(),
             params: {
                 inventory: id
             }
@@ -28,18 +21,16 @@ function InventoryModel (method, resource, config) {
     return this.create(method, resource, config);
 }
 
-function InventoryModelLoader (BaseModel, JobTemplateModel, WorkflowJobTemplateModel) {
+function InventoryModelLoader (BaseModel, JobTemplateModel) {
     Base = BaseModel;
     JobTemplate = JobTemplateModel;
-    WorkflowJobTemplate = WorkflowJobTemplateModel;
 
     return InventoryModel;
 }
 
 InventoryModelLoader.$inject = [
     'BaseModel',
-    'JobTemplateModel',
-    'WorkflowJobTemplateModel',
+    'JobTemplateModel'
 ];
 
 export default InventoryModelLoader;

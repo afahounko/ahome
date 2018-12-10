@@ -524,7 +524,7 @@ class UserAccess(BaseAccess):
         # A user can be changed if they are themselves, or by org admins or
         # superusers.  Change permission implies changing only certain fields
         # that a user should be able to edit for themselves.
-        if not settings.MANAGE_ORGANIZATION_AUTH and not self.user.is_superuser:
+        if not settings.MANAGE_ORGANIZATION_AUTH:
             return False
         return bool(self.user == obj or self.can_admin(obj, data))
 
@@ -577,7 +577,7 @@ class UserAccess(BaseAccess):
         return False
 
     def can_attach(self, obj, sub_obj, relationship, *args, **kwargs):
-        if not settings.MANAGE_ORGANIZATION_AUTH and not self.user.is_superuser:
+        if not settings.MANAGE_ORGANIZATION_AUTH:
             return False
 
         # Reverse obj and sub_obj, defer to RoleAccess if this is a role assignment.
@@ -587,7 +587,7 @@ class UserAccess(BaseAccess):
         return super(UserAccess, self).can_attach(obj, sub_obj, relationship, *args, **kwargs)
 
     def can_unattach(self, obj, sub_obj, relationship, *args, **kwargs):
-        if not settings.MANAGE_ORGANIZATION_AUTH and not self.user.is_superuser:
+        if not settings.MANAGE_ORGANIZATION_AUTH:
             return False
 
         if relationship == 'roles':
@@ -1157,10 +1157,13 @@ class TeamAccess(BaseAccess):
     def can_attach(self, obj, sub_obj, relationship, *args, **kwargs):
         """Reverse obj and sub_obj, defer to RoleAccess if this is an assignment
         of a resource role to the team."""
-        # MANAGE_ORGANIZATION_AUTH setting checked in RoleAccess
+        if not settings.MANAGE_ORGANIZATION_AUTH:
+            return False
         if isinstance(sub_obj, Role):
             if sub_obj.content_object is None:
                 raise PermissionDenied(_("The {} role cannot be assigned to a team").format(sub_obj.name))
+            elif isinstance(sub_obj.content_object, User):
+                raise PermissionDenied(_("The admin_role for a User cannot be assigned to a team"))
 
             if isinstance(sub_obj.content_object, ResourceMixin):
                 role_access = RoleAccess(self.user)
@@ -1172,7 +1175,9 @@ class TeamAccess(BaseAccess):
                                                   *args, **kwargs)
 
     def can_unattach(self, obj, sub_obj, relationship, *args, **kwargs):
-        # MANAGE_ORGANIZATION_AUTH setting checked in RoleAccess
+        if not settings.MANAGE_ORGANIZATION_AUTH:
+            return False
+
         if isinstance(sub_obj, Role):
             if isinstance(sub_obj.content_object, ResourceMixin):
                 role_access = RoleAccess(self.user)
@@ -1208,7 +1213,7 @@ class ProjectAccess(BaseAccess):
     @check_superuser
     def can_add(self, data):
         if not data:  # So the browseable API will work
-            return Organization.accessible_objects(self.user, 'project_admin_role').exists()
+            return Organization.accessible_objects(self.user, 'admin_role').exists()
         return (self.check_related('organization', Organization, data, role_field='project_admin_role', mandatory=True) and
                 self.check_related('credential', Credential, data, role_field='use_role'))
 
@@ -1389,7 +1394,7 @@ class JobTemplateAccess(BaseAccess):
             'job_tags', 'force_handlers', 'skip_tags', 'ask_variables_on_launch',
             'ask_tags_on_launch', 'ask_job_type_on_launch', 'ask_skip_tags_on_launch',
             'ask_inventory_on_launch', 'ask_credential_on_launch', 'survey_enabled',
-            'custom_virtualenv', 'diff_mode', 'timeout', 'job_slice_count',
+            'custom_virtualenv', 'diff_mode',
 
             # These fields are ignored, but it is convenient for QA to allow clients to post them
             'last_job_run', 'created', 'modified',
@@ -1784,7 +1789,7 @@ class WorkflowJobNodeAccess(BaseAccess):
 
     def filtered_queryset(self):
         return self.model.objects.filter(
-            workflow_job__unified_job_template__in=UnifiedJobTemplate.accessible_pk_qs(
+            workflow_job__workflow_job_template__in=WorkflowJobTemplate.accessible_objects(
                 self.user, 'read_role'))
 
     @check_superuser
@@ -1835,10 +1840,8 @@ class WorkflowJobTemplateAccess(BaseAccess):
         if 'survey_enabled' in data and data['survey_enabled']:
             self.check_license(feature='surveys')
 
-        return (
-            self.check_related('organization', Organization, data, role_field='workflow_admin_role', mandatory=True) and
-            self.check_related('inventory', Inventory, data, role_field='use_role')
-        )
+        return self.check_related('organization', Organization, data, role_field='workflow_admin_role',
+                                  mandatory=True)
 
     def can_copy(self, obj):
         if self.save_messages:
@@ -1892,11 +1895,8 @@ class WorkflowJobTemplateAccess(BaseAccess):
         if self.user.is_superuser:
             return True
 
-        return (
-            self.check_related('organization', Organization, data, role_field='workflow_admin_role', obj=obj) and
-            self.check_related('inventory', Inventory, data, role_field='use_role', obj=obj) and
-            self.user in obj.admin_role
-        )
+        return (self.check_related('organization', Organization, data, role_field='workflow_admin_role', obj=obj) and
+                self.user in obj.admin_role)
 
     def can_delete(self, obj):
         return self.user.is_superuser or self.user in obj.admin_role
@@ -1915,7 +1915,7 @@ class WorkflowJobAccess(BaseAccess):
 
     def filtered_queryset(self):
         return WorkflowJob.objects.filter(
-            unified_job_template__in=UnifiedJobTemplate.accessible_pk_qs(
+            workflow_job_template__in=WorkflowJobTemplate.accessible_objects(
                 self.user, 'read_role'))
 
     def can_add(self, data):
@@ -1947,39 +1947,27 @@ class WorkflowJobAccess(BaseAccess):
         if self.user.is_superuser:
             return True
 
-        template = obj.workflow_job_template
-        if not template and obj.job_template_id:
-            template = obj.job_template
+        wfjt = obj.workflow_job_template
         # only superusers can relaunch orphans
-        if not template:
+        if not wfjt:
             return False
 
-        # Obtain prompts used to start original job
-        JobLaunchConfig = obj._meta.get_field('launch_config').related_model
-        try:
-            config = JobLaunchConfig.objects.get(job=obj)
-        except JobLaunchConfig.DoesNotExist:
-            if self.save_messages:
-                self.messages['detail'] = _('Workflow Job was launched with unknown prompts.')
-            return False
+        # If job was launched by another user, it could have survey passwords
+        if obj.created_by_id != self.user.pk:
+            # Obtain prompts used to start original job
+            JobLaunchConfig = obj._meta.get_field('launch_config').related_model
+            try:
+                config = JobLaunchConfig.objects.get(job=obj)
+            except JobLaunchConfig.DoesNotExist:
+                config = None
 
-        # Check if access to prompts to prevent relaunch
-        if config.prompts_dict():
-            if obj.created_by_id != self.user.pk:
+            if config is None or config.prompts_dict():
                 if self.save_messages:
                     self.messages['detail'] = _('Job was launched with prompts provided by another user.')
                 return False
-            if not JobLaunchConfigAccess(self.user).can_add({'reference_obj': config}):
-                if self.save_messages:
-                    self.messages['detail'] = _('Job was launched with prompts you lack access to.')
-                return False
-            if config.has_unprompted(template):
-                if self.save_messages:
-                    self.messages['detail'] = _('Job was launched with prompts no longer accepted.')
-                return False
 
         # execute permission to WFJT is mandatory for any relaunch
-        return (self.user in template.execute_role)
+        return (self.user in wfjt.execute_role)
 
     def can_recreate(self, obj):
         node_qs = obj.workflow_job_nodes.all().prefetch_related('inventory', 'credentials', 'unified_job_template')
@@ -2562,13 +2550,14 @@ class RoleAccess(BaseAccess):
         # Unsupported for now
         return False
 
-    def can_attach(self, obj, sub_obj, relationship, *args, **kwargs):
-        return self.can_unattach(obj, sub_obj, relationship, *args, **kwargs)
+    def can_attach(self, obj, sub_obj, relationship, data,
+                   skip_sub_obj_read_check=False):
+        return self.can_unattach(obj, sub_obj, relationship, data, skip_sub_obj_read_check)
 
     @check_superuser
     def can_unattach(self, obj, sub_obj, relationship, data=None, skip_sub_obj_read_check=False):
         if isinstance(obj.content_object, Team):
-            if not settings.MANAGE_ORGANIZATION_AUTH and not self.user.is_superuser:
+            if not settings.MANAGE_ORGANIZATION_AUTH:
                 return False
 
         if not skip_sub_obj_read_check and relationship in ['members', 'member_role.parents', 'parents']:

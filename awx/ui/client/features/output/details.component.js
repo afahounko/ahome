@@ -120,39 +120,10 @@ function getSourceWorkflowJobDetails () {
         return null;
     }
 
-    const label = strings.get('labels.SOURCE_WORKFLOW_JOB');
-    const value = sourceWorkflowJob.name;
     const link = `/#/workflows/${sourceWorkflowJob.id}`;
     const tooltip = strings.get('tooltips.SOURCE_WORKFLOW_JOB');
 
-    return { label, value, link, tooltip };
-}
-
-function getSliceJobDetails () {
-    const count = resource.model.get('job_slice_count');
-
-    if (!count) {
-        return null;
-    }
-
-    if (count === 1) {
-        return null;
-    }
-
-    const number = resource.model.get('job_slice_number');
-
-    if (!number) {
-        return null;
-    }
-
-    const label = strings.get('labels.SLICE_JOB');
-    const offset = `${number}/${count}`;
-    const tooltip = strings.get('tooltips.SLICE_JOB_DETAILS');
-
-    if (label && offset && tooltip) {
-        return { label, offset, tooltip };
-    }
-    return null;
+    return { link, tooltip };
 }
 
 function getJobTemplateDetails () {
@@ -700,7 +671,6 @@ function JobDetailsController (
         vm.jobType = getJobTypeDetails();
         vm.jobTemplate = getJobTemplateDetails();
         vm.sourceWorkflowJob = getSourceWorkflowJobDetails();
-        vm.sliceJobDetails = getSliceJobDetails();
         vm.inventory = getInventoryDetails();
         vm.project = getProjectDetails();
         vm.projectUpdate = getProjectUpdateDetails();

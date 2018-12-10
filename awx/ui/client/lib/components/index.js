@@ -37,8 +37,6 @@ import toggleTag from '~components/toggle-tag/toggle-tag.directive';
 import topNavItem from '~components/layout/top-nav-item.directive';
 import truncate from '~components/truncate/truncate.directive';
 import atCodeMirror from '~components/code-mirror';
-import card from '~components/cards/card.directive';
-import cardGroup from '~components/cards/group.directive';
 
 import BaseInputController from '~components/input/base.controller';
 import ComponentsStrings from '~components/components.strings';
@@ -86,8 +84,6 @@ angular
     .directive('atToggleTag', toggleTag)
     .directive('atTopNavItem', topNavItem)
     .directive('atTruncate', truncate)
-    .directive('atCard', card)
-    .directive('atCardGroup', cardGroup)
     .service('BaseInputController', BaseInputController)
     .service('ComponentsStrings', ComponentsStrings);
 

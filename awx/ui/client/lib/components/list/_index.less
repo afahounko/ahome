@@ -139,9 +139,6 @@
 
 .at-RowItem-status {
     margin-right: @at-margin-right-list-row-item-status;
-    & > a {
-        cursor: pointer;
-    }
 }
 
 .at-RowItem--isHeader {
@@ -190,7 +187,6 @@
     padding: @at-padding-list-row-item-tag;
     line-height: @at-line-height-list-row-item-tag;
     word-break: keep-all;
-    display: inline-flex;
 }
 
 .at-RowItem-tag--primary {
@@ -198,7 +194,7 @@
     color: @at-color-list-row-item-tag-primary;
 }
 
-.at-RowItem-tag--header, .at-RowItem-tag--secondary {
+.at-RowItem-tag--header {
     line-height: inherit;
 }
 
@@ -217,7 +213,7 @@
 }
 
 .at-RowItem-badge {
-    background-color: @at-gray-646972;
+    background-color: @at-gray-848992;
     border-radius: @at-border-radius;
     color: @at-white;
     font-size: 11px;
@@ -256,12 +252,6 @@
 
 .at-RowAction--danger:hover {
     background-color: @at-color-list-row-action-hover-danger;
-}
-
-.at-RowAction--disabled {
-    pointer-events: none;
-    opacity: 0.5;
-    cursor: not-allowed;
 }
 
 .at-Row .at-Row-checkbox {

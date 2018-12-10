@@ -12,7 +12,6 @@ function TemplatesStrings (BaseString) {
         PANEL_TITLE: t.s('TEMPLATES'),
         ADD_DD_JT_LABEL: t.s('Job Template'),
         ADD_DD_WF_LABEL: t.s('Workflow Template'),
-        OPEN_WORKFLOW_VISUALIZER: t.s('Click here to open the workflow visualizer'),
         ROW_ITEM_LABEL_ACTIVITY: t.s('Activity'),
         ROW_ITEM_LABEL_INVENTORY: t.s('Inventory'),
         ROW_ITEM_LABEL_PROJECT: t.s('Project'),
@@ -103,35 +102,23 @@ function TemplatesStrings (BaseString) {
         ALWAYS: t.s('Always'),
         PROJECT_SYNC: t.s('Project Sync'),
         INVENTORY_SYNC: t.s('Inventory Sync'),
-        WORKFLOW: t.s('Workflow'),
         WARNING: t.s('Warning'),
-        TOTAL_NODES: t.s('TOTAL NODES'),
+        TOTAL_TEMPLATES: t.s('TOTAL TEMPLATES'),
         ADD_A_TEMPLATE: t.s('ADD A TEMPLATE'),
         EDIT_TEMPLATE: t.s('EDIT TEMPLATE'),
         JOBS: t.s('JOBS'),
         PLEASE_CLICK_THE_START_BUTTON: t.s('Please click the start button to build your workflow.'),
         PLEASE_HOVER_OVER_A_TEMPLATE: t.s('Please hover over a template for additional options.'),
-        EDIT_LINK_TOOLTIP: t.s('Click to edit link'),
-        VIEW_LINK_TOOLTIP: t.s('Click to view link'),
         RUN: t.s('RUN'),
         CHECK: t.s('CHECK'),
         SELECT: t.s('SELECT'),
+        EDGE_CONFLICT: t.s('EDGE CONFLICT'),
         DELETED: t.s('DELETED'),
         START: t.s('START'),
         DETAILS: t.s('DETAILS'),
-        TITLE: t.s('WORKFLOW VISUALIZER'),
-        INVENTORY_WILL_OVERRIDE: t.s('The inventory of this node will be overridden by the parent workflow inventory.'),
-        INVENTORY_WILL_NOT_OVERRIDE: t.s('The inventory of this node will not be overridden by the parent workflow inventory.'),
-        INVENTORY_PROMPT_WILL_OVERRIDE: t.s('The inventory of this node will be overridden if a parent workflow inventory is provided at launch.'),
-        INVENTORY_PROMPT_WILL_NOT_OVERRIDE: t.s('The inventory of this node will not be overridden if a parent workflow inventory is provided at launch.'),
-        ADD_LINK: t.s('ADD LINK'),
-        EDIT_LINK: t.s('EDIT LINK'),
-        VIEW_LINK: t.s('VIEW LINK'),
-        NEW_LINK: t.s('Please click on an available node to form a new link.'),
-        UNLINK: t.s('UNLINK'),
-        READ_ONLY_PROMPT_VALUES: t.s('The following promptable values were provided when this node was created:'),
-        READ_ONLY_NO_PROMPT_VALUES: t.s('No promptable values were provided when this node was created.')
-    };
+        TITLE: t.s('WORKFLOW VISUALIZER')
+    }
+
 }
 
 TemplatesStrings.$inject = ['BaseStringService'];

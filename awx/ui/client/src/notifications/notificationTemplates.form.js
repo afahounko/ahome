@@ -136,7 +136,7 @@ export default ['i18n', function(i18n) {
                 label: i18n._('Destination Channels'),
                 type: 'textarea',
                 rows: 3,
-                awPopOver: i18n._('Enter one Slack channel per line. The pound symbol (#) is required for channels.'),
+                awPopOver: i18n._('Enter one Slack channel per line. The pound symbol (#) is not required.'),
                 dataTitle: i18n._('Destination Channels'),
                 dataPlacement: 'right',
                 dataContainer: "body",

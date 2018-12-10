@@ -3,6 +3,7 @@ import Entities from 'html-entities';
 
 import {
     EVENT_START_PLAY,
+    EVENT_START_PLAYBOOK,
     EVENT_STATS_PLAY,
     EVENT_START_TASK,
     OUTPUT_ANSI_COLORMAP,
@@ -33,13 +34,9 @@ const pattern = [
 const re = new RegExp(pattern);
 const hasAnsi = input => re.test(input);
 
-let $scope;
-
-function JobRenderService ($q, $compile, $sce, $window) {
-    this.init = (_$scope_, { toggles }) => {
-        $scope = _$scope_;
-        this.setScope();
-
+function JobRenderService ($q, $sce, $window) {
+    this.init = ({ compile, toggles }) => {
+        this.hooks = { compile };
         this.el = $(OUTPUT_ELEMENT_TBODY);
         this.parent = null;
 
@@ -212,7 +209,7 @@ function JobRenderService ($q, $compile, $sce, $window) {
         const lines = stdout.split('\r\n');
         const record = this.createRecord(event, lines);
 
-        if (lines.length === 1 && lines[0] === '') {
+        if (event.event === EVENT_START_PLAYBOOK) {
             return { html: '', count: 0 };
         }
 
@@ -263,17 +260,17 @@ function JobRenderService ($q, $compile, $sce, $window) {
             return this.records[event.counter];
         }
 
-        let isClickable = false;
-        if (typeof event.host === 'number' || event.event_data && event.event_data.res) {
-            isClickable = true;
+        let isHost = false;
+        if (typeof event.host === 'number') {
+            isHost = true;
         } else if (event.type === 'project_update_event' &&
             event.event !== 'runner_on_skipped' &&
             event.event_data.host) {
-            isClickable = true;
+            isHost = true;
         }
 
         const record = {
-            isClickable,
+            isHost,
             id: event.id,
             line: event.start_line + 1,
             name: event.event,
@@ -347,7 +344,6 @@ function JobRenderService ($q, $compile, $sce, $window) {
         let tdToggle = '';
         let tdEvent = '';
         let classList = '';
-        let directives = '';
 
         if (record.isMissing) {
             return `<div id="${record.uuid}" class="at-Stdout-row">
@@ -372,6 +368,10 @@ function JobRenderService ($q, $compile, $sce, $window) {
                 }
 
                 tdToggle = `<div class="at-Stdout-toggle" ng-click="vm.toggleCollapse('${id}')"><i class="fa ${icon} can-toggle"></i></div>`;
+            }
+
+            if (record.isHost) {
+                tdEvent = `<div class="at-Stdout-event--host" ng-click="vm.showHostDetails('${record.id}', '${record.uuid}')"><span ng-non-bindable>${content}</span></div>`;
             }
 
             if (record.time && record.line === ln) {
@@ -401,16 +401,11 @@ function JobRenderService ($q, $compile, $sce, $window) {
             }
         }
 
-        if (record && record.isClickable) {
-            classList += ' at-Stdout-row--clickable';
-            directives = `ng-click="vm.showHostDetails('${record.id}', '${record.uuid}')"`;
-        }
-
         return `
-            <div id="${id}" class="at-Stdout-row ${classList}" ${directives}>
+            <div id="${id}" class="at-Stdout-row ${classList}">
                 ${tdToggle}
                 <div class="at-Stdout-line">${ln}</div>
-                <div class="at-Stdout-event"><span ng-non-bindable>${content}</span></div>
+                ${tdEvent}
                 <div class="at-Stdout-time">${timestamp}</div>
             </div>`;
     };
@@ -440,16 +435,8 @@ function JobRenderService ($q, $compile, $sce, $window) {
         });
     });
 
-    this.setScope = () => {
-        if (this.scope) this.scope.$destroy();
-        delete this.scope;
-
-        this.scope = $scope.$new();
-    };
-
-    this.compile = () => {
-        this.setScope();
-        $compile(this.el)(this.scope);
+    this.compile = content => {
+        this.hooks.compile(content);
 
         return this.requestAnimationFrame();
     };
@@ -485,7 +472,10 @@ function JobRenderService ($q, $compile, $sce, $window) {
         const result = this.prependEventGroup(events);
         const html = this.trustHtml(result.html);
 
-        return this.requestAnimationFrame(() => this.el.prepend(html))
+        const newElements = angular.element(html);
+
+        return this.requestAnimationFrame(() => this.el.prepend(newElements))
+            .then(() => this.compile(newElements))
             .then(() => result.lines);
     };
 
@@ -497,7 +487,10 @@ function JobRenderService ($q, $compile, $sce, $window) {
         const result = this.appendEventGroup(events);
         const html = this.trustHtml(result.html);
 
-        return this.requestAnimationFrame(() => this.el.append(html))
+        const newElements = angular.element(html);
+
+        return this.requestAnimationFrame(() => this.el.append(newElements))
+            .then(() => this.compile(newElements))
             .then(() => result.lines);
     };
 
@@ -608,6 +601,6 @@ function JobRenderService ($q, $compile, $sce, $window) {
     this.getCapacity = () => OUTPUT_EVENT_LIMIT - (this.getTailCounter() - this.getHeadCounter());
 }
 
-JobRenderService.$inject = ['$q', '$compile', '$sce', '$window'];
+JobRenderService.$inject = ['$q', '$sce', '$window'];
 
 export default JobRenderService;

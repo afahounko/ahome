@@ -25,7 +25,7 @@
         tag: "{{ awx_version }}"
         state: absent
   delegate_to: localhost
-  when: docker_remove_local_images|default(False)|bool
+  when: docker_remove_local_images|default(False)
 
 - name: Tag and Push Container Images
   block:

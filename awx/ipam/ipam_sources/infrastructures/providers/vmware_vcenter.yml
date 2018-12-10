@@ -1,0 +1,271 @@
+---
+name: VmWare vCenter
+group: Cloud
+version: 1.0
+description: |
+     VmWare vCenter
+
+hosts: all
+
+cloud: true
+credential_types: '7'
+credential_prefix: 'Machine_'
+#subitem_auto: 1
+
+label_prefix: ''
+url: 'https://github.com/afahounko'
+project: 'https://github.com/ansible/ansible-tower-samples.git'
+playbook: 'local.yml'
+
+subitem_label_prefix: 'Configure'
+subitem_url: 'https://github.com/afahounko'
+subitem_project: 'https://github.com/ansible/ansible-tower-samples.git'
+subitem_playbook: 'local.yml'
+
+
+project:
+    name_prefix: 'Git_'
+    description: ''
+    scm_type: 'git'
+    scm_branch: ''
+    scm_url: 'https://git.afahounko.com/caas/providers/vmware_vcenter.git'
+    scm_clean: true
+    scm_delete_on_update: true
+    credential: null
+    timeout: 0
+    organization: 1
+    scm_update_on_launch: true
+    scm_update_cache_timeout: 0
+
+configure_job:
+    name_prefix: 'Configure_'
+    playbook: 'configure.yml'
+    description: ''
+    job_type: "run"
+    inventory: 1
+    forks: 0
+    limit: ''
+    verbosity: 0
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    job_tags: ''
+    force_handlers: false
+    skip_tags: ''
+    start_at_task: ''
+    timeout: 0
+    use_fact_cache: false
+    host_config_key: ''
+    ask_diff_mode_on_launch: false
+    ask_variables_on_launch: false
+    ask_limit_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_inventory_on_launch: false
+    ask_credential_on_launch: false
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    allow_simultaneous: false
+    network_credential: null
+    cloud_credential: null
+    vault_credential: null
+
+poweroff_job:
+    name_prefix: 'Poweroff_'
+    playbook: 'poweroff.yml'
+    description: ''
+    job_type: "run"
+    inventory: 1
+    forks: 0
+    limit: ''
+    verbosity: 0
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    job_tags: ''
+    force_handlers: false
+    skip_tags: ''
+    start_at_task: ''
+    timeout: 0
+    use_fact_cache: false
+    host_config_key: ''
+    ask_diff_mode_on_launch: false
+    ask_variables_on_launch: false
+    ask_limit_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_inventory_on_launch: false
+    ask_credential_on_launch: false
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    allow_simultaneous: false
+    cloud_credential: null
+    network_credential: null
+    vault_credential: null
+
+remove_job:
+    name_prefix: 'Remove_'
+    playbook: 'remove.yml'
+    description: ''
+    job_type: "run"
+    inventory: 1
+    forks: 0
+    limit: ''
+    verbosity: 0
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    job_tags: ''
+    force_handlers: false
+    skip_tags: ''
+    start_at_task: ''
+    timeout: 0
+    use_fact_cache: false
+    host_config_key: ''
+    ask_diff_mode_on_launch: false
+    ask_variables_on_launch: false
+    ask_limit_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_inventory_on_launch: false
+    ask_credential_on_launch: false
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    allow_simultaneous: false
+    cloud_credential: null
+    network_credential: null
+    vault_credential: null
+
+addTitle: 'NEW PROVIDER'
+editTitle: '{{ name }}'
+name: 'vmware_vcenter'
+title: 'VMWare VCenter'
+logo: '/static/assets/logo/providers/logo-vmware.png'
+basePath: 'ipam_providers'
+stateTree: 'infraProviders'
+breadcrumbName: 'INFRA PROVIDER'
+showActions: true
+launchclick: 'addNew("vmware_vcenter")'
+steps: 4
+
+wizards: 
+    basic: 
+      index: 1
+      name: 'Variable'
+      type: 'collection'
+      title: 'Informations'
+
+    relation: 
+      index: 2
+      name: 'Credentials'
+      type: 'collection'
+      title: 'Credentials'
+
+    inventory:
+      index: 3
+      name: 'Inventory'
+      type: 'collection'
+      title: Inventory
+
+    opts:
+      index: 4
+      name: 'Option'
+      type: 'collection'
+      title: 'Options'
+
+fields:
+  name: 
+      label: 'Name'
+      type: 'text'
+      required: true
+      ngShow: 'tabId == 1'
+
+  description: 
+    label: Description
+    type: 'text'
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 1'
+
+  datacenter: 
+    label: 'Datacenter'
+    type: 'select'
+    defaultText: 'Choose a Datacenter'
+    ngModel: 'datacenter'
+    ngOptions: 'item as item.label for item in datacenter_type_options'
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 1'
+    ngFilter: 
+      id: '2'
+
+  credential_host:
+    label: VMWare Host
+    type: 'text'
+    dataTitle: 'Choose a Credential'
+    awPopOverWatch: 'Enter the hostname or IP address that corresponds to your VMware vCenter.'
+    required: true
+    ngShow: 'tabId == 2'
+
+  credential_username: 
+    label: 'Username'
+    type: 'text'
+    required: true
+    ngShow: 'tabId == 2'
+
+  credential_password: 
+    label: 'Password'
+    type: 'sensitive'
+    hasShowInputButton: true
+    required: true
+    ngShow: 'tabId == 2'
+
+  inventory_hosts:
+     label: 'Inventory Host'
+     type: 'custom'
+     sourceModel: 'hosts'
+     basePath: 'hosts'
+     awPopOver: "<p> Select the Inventory Hosts for this Inventory to run on. </p>"
+     dataTitle: 'Inventory Host'
+     dataPlacement: 'right'
+     dataContainer: 'body'
+     control: '<inventory-hosts-multiselect  bind="inventory_hosts" field-is-disabled="cloud"></inventory-hosts-multiselect>'
+     ngShow: 'tabId == 3'
+
+  opts: 
+    label: Input Opts'
+    class: 'Form-textAreaLabel Form-formGroup--fullWidth'
+    type: 'textarea'
+    rows: 15
+    default: '---'
+    showParseTypeToggle: true
+    parseTypeName: 'parseTypeOpts'
+    awPopOverWatch: "opts_help_text"
+    dataTitle: 'Input Opts'
+    dataPlacement: 'right'
+    dataContainer: "body"
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 4'
+
+buttons: 
+  wizardcancel:
+    ngClick: 'formCancel()'
+    ngShow: 'tabId == 1'
+
+  previous:
+    ngClick: 'WizardClick(1)'
+    ngShow: 'tabId > 1'
+
+  next:
+    ngClick: 'WizardClick(2)'
+    ngShow: 'tabId < 4'
+
+  save:
+    title: 'Finish'
+    ngClick: 'formSave()'
+    ngShow: 'tabId == 4'
+    ngDisabled: true

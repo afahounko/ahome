@@ -119,12 +119,12 @@ To complete a deployment to OpenShift, you will obviously need access to an Open
 
 You will also need to have the `oc` command in your PATH. The `install.yml` playbook will call out to `oc` when logging into, and creating objects on the cluster.
 
-The default resource requests per-deployment requires:
+The default resource requests per-pod requires:
 
 > Memory: 6GB
 > CPU: 3 cores
 
-This can be tuned by overriding the variables found in [/installer/roles/kubernetes/defaults/main.yml](/installer/roles/kubernetes/defaults/main.yml). Special care should be taken when doing this as undersized instances will experience crashes and resource exhaustion.
+This can be tuned by overriding the variables found in [/installer/openshift/defaults/main.yml](/installer/openshift/defaults/main.yml). Special care should be taken when doing this as undersized instances will experience crashes and resource exhaustion.
 
 For more detail on how resource requests are formed see: [https://docs.openshift.com/container-platform/latest/dev_guide/compute_resources.html#dev-compute-resources](https://docs.openshift.com/container-platform/latest/dev_guide/compute_resources.html#dev-compute-resources)
 
@@ -236,7 +236,7 @@ Using /etc/ansible/ansible.cfg as config file
 }
 Operations to perform:
   Synchronize unmigrated apps: solo, api, staticfiles, messages, channels, django_extensions, ui, rest_framework, polymorphic
-  Apply all migrations: sso, taggit, sessions, sites, kombu_transport_django, social_auth, contenttypes, auth, conf, main
+  Apply all migrations: sso, taggit, sessions, djcelery, sites, kombu_transport_django, social_auth, contenttypes, auth, conf, main
 Synchronizing apps without migrations:
   Creating tables...
     Running deferred SQL...
@@ -426,7 +426,7 @@ If you choose to use the official images then the remote host will be the one to
 
 > As mentioned above, in [Prerequisites](#prerequisites-1), the prerequisites are required on the remote host.
 
-> When deploying to a remote host, the playbook does not execute tasks with the `become` option. For this reason, make sure the user that connects to the remote host has privileges to run the `docker` command. This typically means that non-privileged users need to be part of the `docker` group.
+> When deploying to a remote host, the playook does not execute tasks with the `become` option. For this reason, make sure the user that connects to the remote host has privileges to run the `docker` command. This typically means that non-privileged users need to be part of the `docker` group.
 
 
 #### Inventory variables
@@ -448,10 +448,6 @@ Before starting the build process, review the [inventory](./installer/inventory)
 *docker_compose_dir*
 
 When using docker-compose, the `docker-compose.yml` file will be created there (default `/var/lib/awx`).
-
-*ca_trust_dir*
-
-> If you're using a non trusted CA, provide a path where the untrusted Certs are stored on your Host.
 
 #### Docker registry
 
@@ -552,7 +548,7 @@ Using /etc/ansible/ansible.cfg as config file
 }
 Operations to perform:
   Synchronize unmigrated apps: solo, api, staticfiles, messages, channels, django_extensions, ui, rest_framework, polymorphic
-  Apply all migrations: sso, taggit, sessions, sites, kombu_transport_django, social_auth, contenttypes, auth, conf, main
+  Apply all migrations: sso, taggit, sessions, djcelery, sites, kombu_transport_django, social_auth, contenttypes, auth, conf, main
 Synchronizing apps without migrations:
   Creating tables...
     Running deferred SQL...

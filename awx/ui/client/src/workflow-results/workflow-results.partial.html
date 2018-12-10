@@ -75,33 +75,6 @@
                          </div>
                      </div>
 
-                    <!-- EXPLANATION DETAIL -->
-                    <div class="WorkflowResults-resultRow" ng-show="workflow.job_explanation">
-                        <label class="WorkflowResults-resultRowLabel">
-                            {{ strings.labels.JOB_EXPLANATION }}
-                        </label>
-
-                        <div class="WorkflowResults-resultRowText"
-                            ng-show="!job_explanation.showMore">
-                            {{ job_explanation.less }}
-                            <span ng-show="job_explanation.hasMoreToShow">...</span>
-                            <span ng-show="job_explanation.hasMoreToShow"
-                                class="WorkflowResults-seeMoreLess"
-                                ng-click="job_explanation.showMore = true">
-                                {{ strings.details.SHOW_MORE }}
-                            </span>
-                        </div>
-
-                        <div class="WorkflowResults-resultRowText"
-                            ng-show="job_explanation.showMore">
-                            {{ job_explanation.more }}
-                            <span class="WorkflowResults-seeMoreLess"
-                                ng-click="job_explanation.showMore = false">
-                                {{ strings.details.SHOW_LESS }}
-                            </span>
-                        </div>
-                    </div>
-
                     <!-- START TIME DETAIL -->
                     <div class="WorkflowResults-resultRow"
                         ng-show="workflow.started">
@@ -122,21 +95,6 @@
                         <div class="WorkflowResults-resultRowText">
                             {{ (workflow.finished |
                                 longDate) || strings.details.NOT_FINISHED }}
-                        </div>
-                    </div>
-
-                    <!-- INVENTORY DETAIL -->
-                    <div class="WorkflowResults-resultRow"
-                        ng-show="workflow.summary_fields.inventory">
-                        <label class="WorkflowResults-resultRowLabel">
-                            {{ strings.labels.INVENTORY }}
-                        </label>
-                        <div class="WorkflowResults-resultRowText">
-                            <a href="{{ inventory_link }}"
-                                aw-tool-tip="{{ strings.tooltips.EDIT_WORKFLOW }}"
-                                data-placement="top">
-                                {{ workflow.summary_fields.inventory.name }}
-                            </a>
                         </div>
                     </div>
 
@@ -182,37 +140,6 @@
                                 aw-tool-tip="{{ strings.tooltips.EDIT_SCHEDULE }}"
                                 data-placement="top">
                                 {{ workflow.summary_fields.schedule.name }}
-                            </a>
-                        </div>
-                    </div>
-
-                  <!-- SLIIIIIICE -->
-                  <div class="WorkflowResults-resultRow"
-                      ng-show="workflow.summary_fields.job_template.name">
-                      <label
-                          class="WorkflowResults-resultRowLabel">
-                          {{ strings.labels.SLICE_TEMPLATE }}
-                      </label>
-                      <div class="WorkflowResults-resultRowText">
-                          <a href="{{ slice_job_template_link }}"
-                              aw-tool-tip="{{ strings.tooltips.EDIT_SLICE_TEMPLATE }}"
-                              data-placement="top">
-                              {{ workflow.summary_fields.job_template.name }}
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- SOURCE WORKFLOW JOB DETAIL -->
-                    <div class="WorkflowResults-resultRow"
-                        ng-if="workflow.summary_fields.source_workflow_job">
-                        <label class="WorkflowResults-resultRowLabel">
-                            {{ strings.labels.SOURCE_WORKFLOW_JOB }}
-                        </label>
-                        <div class="WorkflowResults-resultRowText">
-                            <a href="{{ source_workflow_job_link }}"
-                            aw-tool-tip="{{ strings.tooltips.SOURCE_WORKFLOW_JOB }}"
-                            data-placement="top">
-                                {{ workflow.summary_fields.source_workflow_job.name }}
                             </a>
                         </div>
                     </div>
@@ -291,7 +218,7 @@
                         <div class="WorkflowResults-badgeRow">
                             <!-- PLAYS COUNT -->
                             <div class="WorkflowResults-badgeTitle">
-                                {{ strings.results.TOTAL_NODES }}
+                                {{ strings.results.TOTAL_JOBS }}
                             </div>
                             <span class="badge List-titleBadge">
                                 {{ workflow_nodes.length || 0}}
@@ -325,36 +252,27 @@
                 <workflow-status-bar></workflow-status-bar>
                 <div class="WorkflowLegend-details">
                     <div class="WorkflowLegend-details--left">
-                        <i ng-class="{{ keyClassList }}" class="fa fa-compass Key-menuIcon" ng-click="toggleKey()"></i>
-                        <ul ng-show="showKey" class="Key-list noselect">
-                            <li class="Key-listItem">
-                                <p class="Key-heading">{{strings.legend.KEY}}</p>
-                            </li>
-                            <li class="Key-listItem">
-                                <div class="Key-icon Key-icon--success"></div>
-                                <p class="Key-listItemContent">{{strings.legend.ON_SUCCESS}}</p>
-                            </li>
-                            <li class="Key-listItem">
-                                <div class="Key-icon Key-icon--fail"></div>
-                                <p class="Key-listItemContent">{{strings.legend.ON_FAILURE}}</p>
-                            </li>
-                            <li class="Key-listItem">
-                                <div class="Key-icon Key-icon--always"></div>
-                                <p class="Key-listItemContent">{{strings.legend.ALWAYS}}</p>
-                            </li>
-                            <li class="Key-listItem">
-                                <div class="Key-icon Key-icon--circle Key-icon--default">P</div>
-                                <p class="Key-listItemContent Key-listItemContent--circle">{{strings.legend.PROJECT_SYNC}}</p>
-                            </li>
-                            <li class="Key-listItem">
-                                <div class="Key-icon Key-icon--circle Key-icon--default">I</div>
-                                <p class="Key-listItemContent Key-listItemContent--circle">{{strings.legend.INVENTORY_SYNC}}</p>
-                            </li>
-                            <li class="Key-listItem">
-                                <div class="Key-icon Key-icon--circle Key-icon--default">W</div>
-                                <p class="Key-listItemContent Key-listItemContent--circle">{{strings.legend.WORKFLOW}}</p>
-                            </li>
-                        </ul>
+                        <div class="WorkflowLegend-legendItem">{{ strings.legend.KEY }}:</div>
+                        <div class="WorkflowLegend-legendItem">
+                            <div class="WorkflowLegend-onSuccessLegend"></div>
+                            <div>{{ strings.legend.ON_SUCCESS }}</div>
+                        </div>
+                        <div class="WorkflowLegend-legendItem">
+                            <div class="WorkflowLegend-onFailLegend"></div>
+                            <div>{{ strings.legend.ON_FAIL }}</div>
+                        </div>
+                        <div class="WorkflowLegend-legendItem">
+                            <div class="WorkflowLegend-alwaysLegend"></div>
+                            <div>{{ strings.legend.ALWAYS }}</div>
+                        </div>
+                        <div class="WorkflowLegend-legendItem">
+                            <div class="WorkflowLegend-letterCircle">P</div>
+                            <div>{{ strings.legend.PROJECT_SYNC }}</div>
+                        </div>
+                        <div class="WorkflowLegend-legendItem">
+                            <div class="WorkflowLegend-letterCircle">I</div>
+                            <div>{{ strings.legend.INVENTORY_SYNC }}</div>
+                        </div>
                     </div>
                     <div class="WorkflowLegend-details--right">
                         <i ng-class="{'WorkflowMaker-manualControlsIcon--active': showManualControls}" class="fa fa-cog WorkflowMaker-manualControlsIcon" aria-hidden="true" alt="Controls" ng-click="toggleManualControls()"></i>
@@ -363,14 +281,7 @@
                         </div>
                     </div>
                 </div>
-                <workflow-chart
-                    graph-state="graphState"
-                    workflow-zoomed="workflowZoomed(zoom)"
-                    can-add-workflow-job-template="canAddWorkflowJobTemplate"
-                    mode="details"
-                    read-only="readOnly"
-                    class="WorkflowMaker-chart">
-                </workflow-chart>
+                <workflow-chart tree-data="treeData.data" workflow-zoomed="workflowZoomed(zoom)" can-add-workflow-job-template="canAddWorkflowJobTemplate" mode="details" class="WorkflowMaker-chart"></workflow-chart>
             </div>
 
         </div>

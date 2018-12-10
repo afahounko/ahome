@@ -67,7 +67,7 @@ def test_work_success_callback_missing_job():
     task_data = {'type': 'project_update', 'id': 9999}
     with mock.patch('django.db.models.query.QuerySet.get') as get_mock:
         get_mock.side_effect = ProjectUpdate.DoesNotExist()
-        assert tasks.handle_work_success(task_data) is None
+        assert tasks.handle_work_success(None, task_data) is None
 
 
 def test_send_notifications_list(mocker):
@@ -246,8 +246,6 @@ class TestJobExecution(object):
             # If `Job.update_model` is called, we're not actually persisting
             # to the database; just update the status, which is usually
             # the update we care about for testing purposes
-            if kwargs.get('result_traceback'):
-                raise Exception('Task encountered error:\n{}'.format(kwargs['result_traceback']))
             if 'status' in kwargs:
                 self.instance.status = kwargs['status']
             if 'job_env' in kwargs:
@@ -893,9 +891,9 @@ class TestJobCredentials(TestJobExecution):
             (k.pattern, v) for k, v in call_kwargs['expect_passwords'].items()
             if 'Vault' in k.pattern
         )
-        assert vault_passwords['Vault password \(prod\):\\s*?$'] == 'pass@prod'  # noqa
-        assert vault_passwords['Vault password \(dev\):\\s*?$'] == 'pass@dev'  # noqa
-        assert vault_passwords['Vault password:\\s*?$'] == ''  # noqa
+        assert vault_passwords['Vault password \(prod\):\\s*?$'] == 'pass@prod'
+        assert vault_passwords['Vault password \(dev\):\\s*?$'] == 'pass@dev'
+        assert vault_passwords['Vault password:\\s*?$'] == ''
         assert '--ask-vault-pass' not in ' '.join(args)
         assert '--vault-id dev@prompt' in ' '.join(args)
         assert '--vault-id prod@prompt' in ' '.join(args)
@@ -937,9 +935,9 @@ class TestJobCredentials(TestJobExecution):
             (k.pattern, v) for k, v in call_kwargs['expect_passwords'].items()
             if 'Vault' in k.pattern
         )
-        assert vault_passwords['Vault password \(prod\):\\s*?$'] == 'provided-at-launch@prod'  # noqa
-        assert vault_passwords['Vault password \(dev\):\\s*?$'] == 'provided-at-launch@dev'  # noqa
-        assert vault_passwords['Vault password:\\s*?$'] == ''  # noqa
+        assert vault_passwords['Vault password \(prod\):\\s*?$'] == 'provided-at-launch@prod'
+        assert vault_passwords['Vault password \(dev\):\\s*?$'] == 'provided-at-launch@dev'
+        assert vault_passwords['Vault password:\\s*?$'] == ''
         assert '--ask-vault-pass' not in ' '.join(args)
         assert '--vault-id dev@prompt' in ' '.join(args)
         assert '--vault-id prod@prompt' in ' '.join(args)
@@ -1032,11 +1030,10 @@ class TestJobCredentials(TestJobExecution):
 
         def run_pexpect_side_effect(*args, **kwargs):
             args, cwd, env, stdout = args
-            json_data = json.load(open(env['GCE_CREDENTIALS_FILE_PATH'], 'rb'))
-            assert json_data['type'] == 'service_account'
-            assert json_data['private_key'] == self.EXAMPLE_PRIVATE_KEY
-            assert json_data['client_email'] == 'bob'
-            assert json_data['project_id'] == 'some-project'
+            assert env['GCE_EMAIL'] == 'bob'
+            assert env['GCE_PROJECT'] == 'some-project'
+            ssh_key_data = env['GCE_PEM_FILE_PATH']
+            assert open(ssh_key_data, 'rb').read() == self.EXAMPLE_PRIVATE_KEY
             return ['successful', 0]
 
         self.run_pexpect.side_effect = run_pexpect_side_effect
@@ -2049,12 +2046,11 @@ class TestInventoryUpdateCredentials(TestJobExecution):
 
         def run_pexpect_side_effect(*args, **kwargs):
             args, cwd, env, stdout = args
+            assert env['GCE_EMAIL'] == 'bob'
+            assert env['GCE_PROJECT'] == 'some-project'
             assert env['GCE_ZONE'] == expected_gce_zone
-            json_data = json.load(open(env['GCE_CREDENTIALS_FILE_PATH'], 'rb'))
-            assert json_data['type'] == 'service_account'
-            assert json_data['private_key'] == self.EXAMPLE_PRIVATE_KEY
-            assert json_data['client_email'] == 'bob'
-            assert json_data['project_id'] == 'some-project'
+            ssh_key_data = env['GCE_PEM_FILE_PATH']
+            assert open(ssh_key_data, 'rb').read() == self.EXAMPLE_PRIVATE_KEY
 
             config = ConfigParser.ConfigParser()
             config.read(env['GCE_INI_PATH'])

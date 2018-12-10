@@ -133,10 +133,10 @@ export default ['Rest', 'GetBasePath', '$q', 'NextPage', function(Rest, GetBaseP
       getWorkflowJobTemplateNodes: function(id, page) {
           var url = GetBasePath('workflow_job_templates');
 
-          url = url + id + '/workflow_nodes?page_size=200';
+          url = url + id + '/workflow_nodes';
 
           if(page) {
-              url += '/&page=' + page;
+              url += '/?page=' + page;
           }
 
           Rest.setUrl(url);
@@ -151,7 +151,7 @@ export default ['Rest', 'GetBasePath', '$q', 'NextPage', function(Rest, GetBaseP
           url = url + params.id;
 
           Rest.setUrl(url);
-          return Rest.patch(params.data);
+          return Rest.put(params.data);
       },
       getWorkflowJobTemplate: function(id) {
           var url = GetBasePath('workflow_job_templates');

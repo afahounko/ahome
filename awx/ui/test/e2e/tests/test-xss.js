@@ -508,36 +508,36 @@ module.exports = {
         client.expect.element('#project_form').visible;
     },
     'check project list for unsanitized content': client => {
-        const itemRow = `#row-${data.project.id}`;
-        const itemName = `${itemRow} .at-RowItem-header`;
+        const itemRow = `#projects_table tr[id="${data.project.id}"]`;
+        const itemName = `${itemRow} td[class*="name-"] a`;
 
-        client.expect.element('.at-Panel smart-search').visible;
-        client.expect.element('.at-Panel smart-search input').enabled;
+        client.expect.element('div[class^="Panel"] smart-search').visible;
+        client.expect.element('div[class^="Panel"] smart-search input').enabled;
 
-        client.sendKeys('.at-Panel smart-search input', `id:>${data.project.id - 1} id:<${data.project.id + 1}`);
-        client.sendKeys('.at-Panel smart-search input', client.Keys.ENTER);
+        client.sendKeys('div[class^="Panel"] smart-search input', `id:>${data.project.id - 1} id:<${data.project.id + 1}`);
+        client.sendKeys('div[class^="Panel"] smart-search input', client.Keys.ENTER);
 
+        client.expect.element('div.spinny').visible;
         client.expect.element('div.spinny').not.visible;
 
-        client.expect.element('.at-Panel-headingTitleBadge').text.equal('1');
+        client.expect.element('.List-titleBadge').text.equal('1');
         client.expect.element(itemName).visible;
 
-        // TODO: uncomment when tooltips are added
-        // client.moveToElement(itemName, 0, 0, () => {
-        //     client.expect.element(itemName).attribute('aria-describedby');
-        //
-        //     client.getAttribute(itemName, 'aria-describedby', ({ value }) => {
-        //         const tooltip = `#${value}`;
-        //
-        //         client.expect.element(tooltip).present;
-        //         client.expect.element(tooltip).visible;
-        //
-        //         client.expect.element('#xss').not.present;
-        //         client.expect.element('[class=xss]').not.present;
-        //         client.expect.element(tooltip).attribute('innerHTML')
-        //             .contains('&lt;div id="xss" class="xss"&gt;test&lt;/div&gt;');
-        //     });
-        // });
+        client.moveToElement(itemName, 0, 0, () => {
+            client.expect.element(itemName).attribute('aria-describedby');
+
+            client.getAttribute(itemName, 'aria-describedby', ({ value }) => {
+                const tooltip = `#${value}`;
+
+                client.expect.element(tooltip).present;
+                client.expect.element(tooltip).visible;
+
+                client.expect.element('#xss').not.present;
+                client.expect.element('[class=xss]').not.present;
+                client.expect.element(tooltip).attribute('innerHTML')
+                    .contains('&lt;div id="xss" class="xss"&gt;test&lt;/div&gt;');
+            });
+        });
 
         client.click(`${itemRow} i[class*="trash"]`);
 

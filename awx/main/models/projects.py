@@ -254,6 +254,10 @@ class Project(UnifiedJobTemplate, ProjectOptions, ResourceMixin, CustomVirtualEn
         on_delete=models.CASCADE,
         related_name='projects',
     )
+    scm_delete_on_next_update = models.BooleanField(
+        default=False,
+        editable=False,
+    )
     scm_update_on_launch = models.BooleanField(
         default=False,
         help_text=_('Update the project when a job is launched that uses the project.'),
@@ -327,6 +331,13 @@ class Project(UnifiedJobTemplate, ProjectOptions, ResourceMixin, CustomVirtualEn
         # if it hasn't been specified, then we're just doing a normal save.
         update_fields = kwargs.get('update_fields', [])
         skip_update = bool(kwargs.pop('skip_update', False))
+        # Check if scm_type or scm_url changes.
+        if self.pk:
+            project_before = self.__class__.objects.get(pk=self.pk)
+            if project_before.scm_type != self.scm_type or project_before.scm_url != self.scm_url:
+                self.scm_delete_on_next_update = True
+                if 'scm_delete_on_next_update' not in update_fields:
+                    update_fields.append('scm_delete_on_next_update')
         # Create auto-generated local path if project uses SCM.
         if self.pk and self.scm_type and not self.local_path.startswith('_'):
             slug_name = slugify(six.text_type(self.name)).replace(u'-', u'_')
@@ -386,6 +397,19 @@ class Project(UnifiedJobTemplate, ProjectOptions, ResourceMixin, CustomVirtualEn
     def _can_update(self):
         return bool(self.scm_type)
 
+    def _update_unified_job_kwargs(self, create_kwargs, kwargs):
+        '''
+        :param create_kwargs: key-worded arguments to be updated and later used for creating unified job.
+        :type create_kwargs: dict
+        :param kwargs: request parameters used to override unified job template fields with runtime values.
+        :type kwargs: dict
+        :return: modified create_kwargs.
+        :rtype: dict
+        '''
+        if self.scm_delete_on_next_update:
+            create_kwargs['scm_delete_on_update'] = True
+        return create_kwargs
+
     def create_project_update(self, **kwargs):
         return self.create_unified_job(**kwargs)
 
@@ -442,14 +466,6 @@ class Project(UnifiedJobTemplate, ProjectOptions, ResourceMixin, CustomVirtualEn
             models.Q(ProjectUpdate___project=self)
         )
 
-    def delete(self, *args, **kwargs):
-        path_to_delete = self.get_project_path(check_if_exists=False)
-        r = super(Project, self).delete(*args, **kwargs)
-        if self.scm_type and path_to_delete:  # non-manual, concrete path
-            from awx.main.tasks import delete_project_files
-            delete_project_files.delay(path_to_delete)
-        return r
-
 
 class ProjectUpdate(UnifiedJob, ProjectOptions, JobNotificationMixin, TaskManagerProjectUpdateMixin):
     '''
@@ -472,23 +488,9 @@ class ProjectUpdate(UnifiedJob, ProjectOptions, JobNotificationMixin, TaskManage
         default='check',
     )
 
-    def _get_parent_field_name(self):
+    @classmethod
+    def _get_parent_field_name(cls):
         return 'project'
-
-    def _update_parent_instance(self):
-        if not self.project:
-            return  # no parent instance to update
-        if self.job_type == PERM_INVENTORY_DEPLOY:
-            # Do not update project status if this is sync job
-            # unless no other updates have happened or started
-            first_update = False
-            if self.project.status == 'never updated' and self.status == 'running':
-                first_update = True
-            elif self.project.current_job == self:
-                first_update = True
-            if not first_update:
-                return
-        return super(ProjectUpdate, self)._update_parent_instance()
 
     @classmethod
     def _get_task_class(cls):
@@ -539,6 +541,17 @@ class ProjectUpdate(UnifiedJob, ProjectOptions, JobNotificationMixin, TaskManage
 
     def get_ui_url(self):
         return urlparse.urljoin(settings.TOWER_URL_BASE, "/#/jobs/project/{}".format(self.pk))
+
+    def _update_parent_instance(self):
+        parent_instance = self._get_parent_instance()
+        if parent_instance and self.job_type == 'check':
+            update_fields = self._update_parent_instance_no_save(parent_instance)
+            if self.status in ('successful', 'failed', 'error', 'canceled'):
+                if not self.failed and parent_instance.scm_delete_on_next_update:
+                    parent_instance.scm_delete_on_next_update = False
+                    if 'scm_delete_on_next_update' not in update_fields:
+                        update_fields.append('scm_delete_on_next_update')
+            parent_instance.save(update_fields=update_fields)
 
     def cancel(self, job_explanation=None, is_chain=False):
         res = super(ProjectUpdate, self).cancel(job_explanation=job_explanation, is_chain=is_chain)

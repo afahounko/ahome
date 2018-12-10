@@ -5,7 +5,7 @@
 *************************************************/
 
 
-export default ['$q', 'Prompt', '$filter', 'Wait', 'Rest', '$state', 'ProcessErrors', 'WorkflowJobModel', '$interval', 'moment', 'ComponentsStrings', function ($q, Prompt, $filter, Wait, Rest, $state, ProcessErrors, WorkflowJob, $interval, moment, strings) {
+export default ['$q', 'Prompt', '$filter', 'Wait', 'Rest', '$state', 'ProcessErrors', 'WorkflowJobModel', '$interval', 'moment', function ($q, Prompt, $filter, Wait, Rest, $state, ProcessErrors, WorkflowJob, $interval, moment) {
     var val = {
         getCounts: function(workflowNodes){
             var nodeArr = [];
@@ -113,11 +113,6 @@ export default ['$q', 'Prompt', '$filter', 'Wait', 'Rest', '$state', 'ProcessErr
                 id: scope.workflow.id
             }).then((launchRes) => {
                 $state.go('workflowResults', { id: launchRes.data.id }, { reload: true });
-            }).catch(({ data, status, config }) => {
-                ProcessErrors(scope, data, status, null, {
-                    hdr: strings.get('error.HEADER'),
-                    msg: strings.get('error.CALL', { path: `${config.url}`, status })
-                });
             });
         },
         createOneSecondTimer: function(startTime, fn) {

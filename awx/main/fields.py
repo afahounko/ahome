@@ -573,10 +573,10 @@ class CredentialInputField(JSONSchemaField):
                 # string)
                 match = re.search(
                     # 'foo' is a dependency of 'bar'
-                    r"'"         # apostrophe
-                    r"([^']+)"   # one or more non-apostrophes (first group)
-                    r"'[\w ]+'"  # one or more words/spaces
-                    r"([^']+)",  # second group
+                    "'"         # apostrophe
+                    "([^']+)"   # one or more non-apostrophes (first group)
+                    "'[\w ]+'"  # one or more words/spaces
+                    "([^']+)",  # second group
                     error.message,
                 )
                 if match:
@@ -755,7 +755,7 @@ class CredentialTypeInjectorField(JSONSchemaField):
                 'file': {
                     'type': 'object',
                     'patternProperties': {
-                        r'^template(\.[a-zA-Z_]+[a-zA-Z0-9_]*)?$': {'type': 'string'},
+                        '^template(\.[a-zA-Z_]+[a-zA-Z0-9_]*)?$': {'type': 'string'},
                     },
                     'additionalProperties': False,
                 },

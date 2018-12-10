@@ -154,11 +154,12 @@ def test_memoize_delete(memoized_function, mock_cache):
 
 
 def test_memoize_parameter_error():
+    @common.memoize(cache_key='foo', track_function=True)
+    def fn():
+        return
 
     with pytest.raises(common.IllegalArgumentError):
-        @common.memoize(cache_key='foo', track_function=True)
-        def fn():
-            return
+        fn()
 
 
 def test_extract_ansible_vars():

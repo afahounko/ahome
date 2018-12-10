@@ -15,11 +15,12 @@ export default ['$scope', '$stateParams', '$state', '$filter', 'GetBasePath', 'Q
             "<i class=\"fa fa-angle-down DashboardGraphs-filterIcon\"></i>\n");
 
             if ($scope.querySet){
-                $scope.querySet = _.merge($scope.querySet, { page_size: `${pageSize}`});
+                let origQuerySet = _.cloneDeep($scope.querySet);
+                queryset = _.merge(origQuerySet, { page_size: pageSize });
             } else {
-                $scope.querySet = _.merge($stateParams[`${$scope.iterator}_search`], { page_size: `${pageSize}`});
+                queryset = _.merge($stateParams[`${$scope.iterator}_search`], { page_size: pageSize, page: 1 });
             }
-            $scope.toPage(1);
+            $scope.toPage();
         };
 
         $scope.toPage = function(page) {

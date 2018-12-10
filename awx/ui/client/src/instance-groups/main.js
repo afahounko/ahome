@@ -3,6 +3,8 @@ import CapacityAdjuster from './capacity-adjuster/capacity-adjuster.directive';
 import CapacityBar from './capacity-bar/capacity-bar.directive';
 import instanceGroupsMultiselect from '../shared/instance-groups-multiselect/instance-groups.directive';
 import instanceGroupsModal from '../shared/instance-groups-multiselect/instance-groups-modal/instance-groups-modal.directive';
+import inventoryHostsMultiselect from '../shared/inventory-hosts-multiselect/inventory-hosts-multiselect.directive';
+import inventoryHostsModal from '../shared/inventory-hosts-multiselect/inventory-hosts-modal/inventory-hosts-modal.directive';
 
 import AddEditTemplate from './add-edit/add-edit-instance-groups.view.html';
 import AddInstanceGroupController from './add-edit/add-instance-group.controller';
@@ -18,6 +20,7 @@ import InstanceModalTemplate from './instances/instance-modal.partial.html';
 import InstanceModalController from './instances/instance-modal.controller.js';
 
 import list from './instance-groups.list';
+import multilist from './multiselect-template.list';
 import service from './instance-groups.service';
 
 import InstanceGroupsStrings from './instance-groups.strings';
@@ -271,10 +274,13 @@ InstanceGroupsRun.$inject = [
 angular.module(MODULE_NAME, [])
     .service('InstanceGroupsService', service)
     .factory('InstanceGroupList', list)
+    .factory('MultiselectList', multilist)
     .controller('InstanceGroupsListController', InstanceGroupsListController)
     .controller('InstanceListController', InstanceListController)
     .directive('instanceGroupsMultiselect', instanceGroupsMultiselect)
     .directive('instanceGroupsModal', instanceGroupsModal)
+    .directive('inventoryHostsMultiselect', inventoryHostsMultiselect)
+    .directive('inventoryHostsModal', inventoryHostsModal)
     .directive('capacityAdjuster', CapacityAdjuster)
     .directive('capacityBar', CapacityBar)
     .service('InstanceGroupsStrings', InstanceGroupsStrings)

@@ -41,10 +41,6 @@ function ModelsStrings (BaseString) {
 
     };
 
-    ns.workflow_job_templates = {
-        LABEL: t.s('Workflow Job Templates')
-    };
-
     ns.workflow_job_template_nodes = {
         LABEL: t.s('Workflow Job Template Nodes')
 

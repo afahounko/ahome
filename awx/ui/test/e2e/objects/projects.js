@@ -56,10 +56,10 @@ module.exports = {
             }
         },
         list: {
-            selector: '.at-Panel',
+            selector: '.Panel',
             elements: {
-                badge: '.at-Panel-headingTitleBadge',
-                title: '.at-Panel-headingTitle',
+                badge: 'span[class~="badge"]',
+                title: 'div[class="List-titleText"]',
                 add: '#button-add'
             },
             sections: {

@@ -91,6 +91,7 @@ function JobStatusGraph($window, adjustGraphSize, templateUrl, i18n, moment, gra
                     });
 
                     job_status_chart
+                    .x(function(d,i) { return i; })
                     .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
                     .showLegend(false)       //Show the legend, allowing users to turn on/off line series.
                     .showYAxis(true)        //Show the y-axis
@@ -103,13 +104,15 @@ function JobStatusGraph($window, adjustGraphSize, templateUrl, i18n, moment, gra
                     job_status_chart.xAxis
                     .axisLabel(i18n._("TIME"))//.showMaxMin(true)
                     .tickFormat(function(d) {
-                        if (d) {
-                            const tickDate = new Date(Number(d + '000'));
-                            return moment(tickDate).format(timeFormat);
-                        }
-                        else {
+                        const dx = graphData[0].values[d] && graphData[0].values[d].x || 0;
+
+                        if (!dx) {
                             return '';
                         }
+
+                        const tickDate = new Date(Number(dx + '000'));
+
+                        return moment(tickDate).format(timeFormat);
                     });
 
                     job_status_chart.yAxis     //Chart y-axis settings

@@ -10,17 +10,6 @@ function atSideNavLink (scope, element, attrs, ctrl) {
             scope.$emit('clickOutsideSideNav');
         }
     });
-
-    element.find('.at-SettingsSubPane').hover(() => {
-        scope.vm.onSettingsSubPane = true;
-    }, () => {
-        scope.vm.onSettingsSubPane = false;
-        setTimeout(() => {
-            if (!scope.vm.onSettingsNavItem) {
-                scope.vm.showSettingsSubMenu = false;
-            }
-        }, 100);
-    });
 }
 
 function AtSideNavController ($scope, $window) {

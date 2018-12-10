@@ -16,9 +16,9 @@
 
 export default
     ['$http', '$rootScope', '$cookies', 'GetBasePath', 'Store', '$q',
-    '$injector', '$location',
+    '$injector',
     function ($http, $rootScope, $cookies, GetBasePath, Store, $q,
-    $injector, $location) {
+    $injector) {
         return {
             setToken: function (token, expires) {
                 $cookies.remove('token_expires');
@@ -29,7 +29,6 @@ export default
                 $cookies.put('sessionExpired', false);
 
                 $rootScope.userLoggedIn = true;
-                $rootScope.userLoggedOut = false;
                 $rootScope.token_expires = expires;
                 $rootScope.sessionExpired = false;
             },
@@ -111,7 +110,6 @@ export default
                     $rootScope.token_expires = null;
                     $rootScope.login_username = null;
                     $rootScope.login_password = null;
-                    $rootScope.userLoggedOut = true;
                     if ($rootScope.sessionTimer) {
                         $rootScope.sessionTimer.clearTimers();
                     }
@@ -149,11 +147,7 @@ export default
             setUserInfo: function (response) {
                 // store the response values in $rootScope so we can get to them later
                 $rootScope.current_user = response.results[0];
-                if ($location.protocol() === 'https') {
-                  $cookies.putObject('current_user', response.results[0], {secure: true}); //keep in session cookie in the event of browser refresh
-                } else {
-                $cookies.putObject('current_user', response.results[0], {secure: false});
-              }
+                $cookies.putObject('current_user', response.results[0]); //keep in session cookie in the event of browser refresh
             },
 
             restoreUserInfo: function () {

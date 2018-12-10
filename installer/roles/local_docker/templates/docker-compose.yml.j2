@@ -12,7 +12,7 @@ services:
       {% endif %}
     ports:
       - "{{ host_port }}:8052"
-    hostname: {{ awx_web_hostname }}
+    hostname: awxweb
     user: root
     restart: unless-stopped
     {% if (project_data_dir is defined) or (ca_trust_dir is defined) %}
@@ -59,8 +59,8 @@ services:
       RABBITMQ_VHOST: awx
       MEMCACHED_HOST: memcached
       MEMCACHED_PORT: 11211
-      AWX_ADMIN_USER: {{ admin_user|default('admin') }}
-      AWX_ADMIN_PASSWORD: {{ admin_password|default('password') }}
+      AWX_ADMIN_USER: {{ default_admin_user|default('admin') }}
+      AWX_ADMIN_PASSWORD: {{ default_admin_password|default('password') }}
 
   task:
     image: {{ awx_task_docker_actual_image }}
@@ -71,7 +71,7 @@ services:
       {% if pg_hostname is not defined %}
       - postgres
       {% endif %}
-    hostname: {{ awx_task_hostname }}
+    hostname: awx
     user: root
     restart: unless-stopped
     {% if (project_data_dir is defined) or (ca_trust_dir is defined) %}
@@ -118,8 +118,8 @@ services:
       RABBITMQ_VHOST: awx
       MEMCACHED_HOST: memcached
       MEMCACHED_PORT: 11211
-      AWX_ADMIN_USER: {{ admin_user|default('admin') }}
-      AWX_ADMIN_PASSWORD: {{ admin_password|default('password') }}
+      AWX_ADMIN_USER: {{ default_admin_user|default('admin') }}
+      AWX_ADMIN_PASSWORD: {{ default_admin_password|default('password') }}
 
   rabbitmq:
     image: {{ rabbitmq_image }}

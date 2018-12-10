@@ -6,8 +6,9 @@ function(Rest, GetBasePath, ProcessErrors) {
             .then(({data}) => {
                 var val = {};
                 data.results.forEach(type => {
-                    val[type.kind] = type.id;
+                    val[type.name] = type.id;
                 });
+                console.log(val);
                 return val;
             })
             .catch(({data, status}) => {

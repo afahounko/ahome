@@ -2,7 +2,7 @@
 # All Rights Reserved
 
 # Python
-from datetime import timedelta
+from datetime import datetime, timedelta
 import logging
 import uuid
 import json
@@ -11,13 +11,18 @@ import random
 from sets import Set
 
 # Django
-from django.db import transaction, connection
+from django.conf import settings
+from django.core.cache import cache
+from django.db import transaction, connection, DatabaseError
 from django.utils.translation import ugettext_lazy as _
-from django.utils.timezone import now as tz_now
+from django.utils.timezone import now as tz_now, utc
+from django.db.models import Q
+from django.contrib.contenttypes.models import ContentType
 
 # AWX
 from awx.main.models import (
     AdHocCommand,
+    Instance,
     InstanceGroup,
     InventorySource,
     InventoryUpdate,
@@ -25,15 +30,20 @@ from awx.main.models import (
     Project,
     ProjectUpdate,
     SystemJob,
+    UnifiedJob,
     WorkflowJob,
-    WorkflowJobTemplate
 )
 from awx.main.scheduler.dag_workflow import WorkflowDAG
 from awx.main.utils.pglock import advisory_lock
-from awx.main.utils import get_type_for_model, task_manager_bulk_reschedule, schedule_task_manager
+from awx.main.utils import get_type_for_model
 from awx.main.signals import disable_activity_stream
+
 from awx.main.scheduler.dependency_graph import DependencyGraph
 from awx.main.utils import decrypt_field
+
+# Celery
+from celery import Celery
+from celery.app.control import Inspect
 
 
 logger = logging.getLogger('awx.main.scheduler')
@@ -75,6 +85,79 @@ class TaskManager():
                            key=lambda task: task.created)
         return all_tasks
 
+    '''
+    Tasks that are running and SHOULD have a celery task.
+    {
+        'execution_node': [j1, j2,...],
+        'execution_node': [j3],
+        ...
+    }
+    '''
+    def get_running_tasks(self):
+        execution_nodes = {}
+        waiting_jobs = []
+        now = tz_now()
+        workflow_ctype_id = ContentType.objects.get_for_model(WorkflowJob).id
+        jobs = UnifiedJob.objects.filter((Q(status='running') |
+                                         Q(status='waiting', modified__lte=now - timedelta(seconds=60))) &
+                                         ~Q(polymorphic_ctype_id=workflow_ctype_id))
+        for j in jobs:
+            if j.execution_node:
+                execution_nodes.setdefault(j.execution_node, []).append(j)
+            else:
+                waiting_jobs.append(j)
+        return (execution_nodes, waiting_jobs)
+
+    '''
+    Tasks that are currently running in celery
+
+    Transform:
+    {
+        "celery@ec2-54-204-222-62.compute-1.amazonaws.com": [],
+        "celery@ec2-54-163-144-168.compute-1.amazonaws.com": [{
+            ...
+            "id": "5238466a-f8c7-43b3-9180-5b78e9da8304",
+            ...
+        }, {
+            ...,
+        }, ...]
+    }
+
+    to:
+    {
+        "ec2-54-204-222-62.compute-1.amazonaws.com": [
+            "5238466a-f8c7-43b3-9180-5b78e9da8304",
+            "5238466a-f8c7-43b3-9180-5b78e9da8306",
+            ...
+        ]
+    }
+    '''
+    def get_active_tasks(self):
+        if not hasattr(settings, 'IGNORE_CELERY_INSPECTOR'):
+            app = Celery('awx')
+            app.config_from_object('django.conf:settings')
+            inspector = Inspect(app=app)
+            active_task_queues = inspector.active()
+        else:
+            logger.warn("Ignoring celery task inspector")
+            active_task_queues = None
+
+        queues = None
+
+        if active_task_queues is not None:
+            queues = {}
+            for queue in active_task_queues:
+                active_tasks = set()
+                map(lambda at: active_tasks.add(at['id']), active_task_queues[queue])
+
+                # celery worker name is of the form celery@myhost.com
+                queue_name = queue.split('@')
+                queue_name = queue_name[1 if len(queue_name) > 1 else 0]
+                queues[queue_name] = active_tasks
+        else:
+            return (None, None)
+
+        return (active_task_queues, queues)
 
     def get_latest_project_update_tasks(self, all_sorted_tasks):
         project_ids = Set()
@@ -104,15 +187,8 @@ class TaskManager():
 
     def spawn_workflow_graph_jobs(self, workflow_jobs):
         for workflow_job in workflow_jobs:
-            if workflow_job.cancel_flag:
-                logger.debug('Not spawning jobs for %s because it is pending cancelation.', workflow_job.log_format)
-                continue
             dag = WorkflowDAG(workflow_job)
             spawn_nodes = dag.bfs_nodes_to_run()
-            if spawn_nodes:
-                logger.info('Spawning jobs for %s', workflow_job.log_format)
-            else:
-                logger.debug('No nodes to spawn for %s', workflow_job.log_format)
             for spawn_node in spawn_nodes:
                 if spawn_node.unified_job_template is None:
                     continue
@@ -120,82 +196,41 @@ class TaskManager():
                 job = spawn_node.unified_job_template.create_unified_job(**kv)
                 spawn_node.job = job
                 spawn_node.save()
-                logger.info('Spawned %s in %s for node %s', job.log_format, workflow_job.log_format, spawn_node.pk)
-                can_start = True
-                if isinstance(spawn_node.unified_job_template, WorkflowJobTemplate):
-                    workflow_ancestors = job.get_ancestor_workflows()
-                    if spawn_node.unified_job_template in set(workflow_ancestors):
-                        can_start = False
-                        logger.info('Refusing to start recursive workflow-in-workflow id={}, wfjt={}, ancestors={}'.format(
-                            job.id, spawn_node.unified_job_template.pk, [wa.pk for wa in workflow_ancestors]))
-                        display_list = [spawn_node.unified_job_template] + workflow_ancestors
-                        job.job_explanation = _(
-                            "Workflow Job spawned from workflow could not start because it "
-                            "would result in recursion (spawn order, most recent first: {})"
-                        ).format(six.text_type(', ').join([six.text_type('<{}>').format(tmp) for tmp in display_list]))
-                    else:
-                        logger.debug('Starting workflow-in-workflow id={}, wfjt={}, ancestors={}'.format(
-                            job.id, spawn_node.unified_job_template.pk, [wa.pk for wa in workflow_ancestors]))
-                if not job._resources_sufficient_for_launch():
-                    can_start = False
-                    job.job_explanation = _("Job spawned from workflow could not start because it "
-                                            "was missing a related resource such as project or inventory")
-                if can_start:
-                    if workflow_job.start_args:
-                        start_args = json.loads(decrypt_field(workflow_job, 'start_args'))
-                    else:
-                        start_args = {}
-                    can_start = job.signal_start(**start_args)
+                if job._resources_sufficient_for_launch():
+                    can_start = job.signal_start()
                     if not can_start:
                         job.job_explanation = _("Job spawned from workflow could not start because it "
                                                 "was not in the right state or required manual credentials")
+                else:
+                    can_start = False
+                    job.job_explanation = _("Job spawned from workflow could not start because it "
+                                            "was missing a related resource such as project or inventory")
                 if not can_start:
                     job.status = 'failed'
                     job.save(update_fields=['status', 'job_explanation'])
-                    job.websocket_emit_status('failed')
+                    connection.on_commit(lambda: job.websocket_emit_status('failed'))
 
                 # TODO: should we emit a status on the socket here similar to tasks.py awx_periodic_scheduler() ?
                 #emit_websocket_notification('/socket.io/jobs', '', dict(id=))
 
+    # See comment in tasks.py::RunWorkflowJob::run()
     def process_finished_workflow_jobs(self, workflow_jobs):
         result = []
         for workflow_job in workflow_jobs:
             dag = WorkflowDAG(workflow_job)
-            status_changed = False
             if workflow_job.cancel_flag:
-                workflow_job.workflow_nodes.filter(do_not_run=False, job__isnull=True).update(do_not_run=True)
-                logger.debug('Canceling spawned jobs of %s due to cancel flag.', workflow_job.log_format)
-                cancel_finished = dag.cancel_node_jobs()
-                if cancel_finished:
-                    logger.info('Marking %s as canceled, all spawned jobs have concluded.', workflow_job.log_format)
-                    workflow_job.status = 'canceled'
-                    workflow_job.start_args = ''  # blank field to remove encrypted passwords
-                    workflow_job.save(update_fields=['status', 'start_args'])
-                    status_changed = True
+                workflow_job.status = 'canceled'
+                workflow_job.save()
+                dag.cancel_node_jobs()
+                connection.on_commit(lambda: workflow_job.websocket_emit_status(workflow_job.status))
             else:
-                workflow_nodes = dag.mark_dnr_nodes()
-                map(lambda n: n.save(update_fields=['do_not_run']), workflow_nodes)
-                is_done = dag.is_workflow_done()
+                is_done, has_failed = dag.is_workflow_done()
                 if not is_done:
                     continue
-                has_failed, reason = dag.has_workflow_failed()
-                logger.info('Marking %s as %s.', workflow_job.log_format, 'failed' if has_failed else 'successful')
                 result.append(workflow_job.id)
-                new_status = 'failed' if has_failed else 'successful'
-                logger.debug(six.text_type("Transitioning {} to {} status.").format(workflow_job.log_format, new_status))
-                update_fields = ['status', 'start_args']
-                workflow_job.status = new_status
-                if reason:
-                    logger.info(reason)
-                    workflow_job.job_explanation = "No error handling paths found, marking workflow as failed"
-                    update_fields.append('job_explanation')
-                workflow_job.start_args = ''  # blank field to remove encrypted passwords
-                workflow_job.save(update_fields=update_fields)
-                status_changed = True
-            if status_changed:
-                workflow_job.websocket_emit_status(workflow_job.status)
-                if workflow_job.spawned_by_workflow:
-                    schedule_task_manager()
+                workflow_job.status = 'failed' if has_failed else 'successful'
+                workflow_job.save()
+                connection.on_commit(lambda: workflow_job.websocket_emit_status(workflow_job.status))
         return result
 
     def get_dependent_jobs_for_inv_and_proj_update(self, job_obj):
@@ -221,6 +256,9 @@ class TaskManager():
                              rampart_group.name, task.log_format))
                 return
 
+        error_handler = handle_work_error.s(subtasks=[task_actual] + dependencies)
+        success_handler = handle_work_success.s(task_actual=task_actual)
+
         task.status = 'waiting'
 
         (start_status, opts) = task.pre_start()
@@ -235,7 +273,6 @@ class TaskManager():
             if type(task) is WorkflowJob:
                 task.status = 'running'
                 logger.info('Transitioning %s to running status.', task.log_format)
-                schedule_task_manager()
             elif not task.supports_isolation() and rampart_group.controller_id:
                 # non-Ansible jobs on isolated instances run on controller
                 task.instance_group = rampart_group.controller
@@ -262,25 +299,13 @@ class TaskManager():
                 self.consume_capacity(task, rampart_group.name)
 
         def post_commit():
-            if task.status != 'failed' and type(task) is not WorkflowJob:
-                task_cls = task._get_task_class()
-                task_cls.apply_async(
-                    [task.pk],
-                    opts,
-                    queue=task.get_queue_name(),
-                    uuid=task.celery_task_id,
-                    callbacks=[{
-                        'task': handle_work_success.name,
-                        'kwargs': {'task_actual': task_actual}
-                    }],
-                    errbacks=[{
-                        'task': handle_work_error.name,
-                        'args': [task.celery_task_id],
-                        'kwargs': {'subtasks': [task_actual] + dependencies}
-                    }],
-                )
+            task.websocket_emit_status(task.status)
+            if task.status != 'failed':
+                task.start_celery_task(opts,
+                                       error_callback=error_handler,
+                                       success_callback=success_handler,
+                                       queue=task.get_celery_queue_name())
 
-        task.websocket_emit_status(task.status)  # adds to on_commit
         connection.on_commit(post_commit)
 
     def process_running_tasks(self, running_tasks):
@@ -294,11 +319,6 @@ class TaskManager():
         project_task.created = task.created - timedelta(seconds=1)
         project_task.status = 'pending'
         project_task.save()
-        logger.info(
-            'Spawned {} as dependency of {}'.format(
-                project_task.log_format, task.log_format
-            )
-        )
         return project_task
 
     def create_inventory_update(self, task, inventory_source_task):
@@ -308,11 +328,6 @@ class TaskManager():
         inventory_task.created = task.created - timedelta(seconds=2)
         inventory_task.status = 'pending'
         inventory_task.save()
-        logger.info(
-            'Spawned {} as dependency of {}'.format(
-                inventory_task.log_format, task.log_format
-            )
-        )
         # inventory_sources = self.get_inventory_source_tasks([task])
         # self.process_inventory_sources(inventory_sources)
         return inventory_task
@@ -468,7 +483,7 @@ class TaskManager():
                 logger.debug(six.text_type("Dependent {} couldn't be scheduled on graph, waiting for next cycle").format(task.log_format))
 
     def process_pending_tasks(self, pending_tasks):
-        running_workflow_templates = set([wf.unified_job_template_id for wf in self.get_running_workflow_jobs()])
+        running_workflow_templates = set([wf.workflow_job_template_id for wf in self.get_running_workflow_jobs()])
         for task in pending_tasks:
             self.process_dependencies(task, self.generate_dependencies(task))
             if self.is_job_blocked(task):
@@ -478,12 +493,12 @@ class TaskManager():
             found_acceptable_queue = False
             idle_instance_that_fits = None
             if isinstance(task, WorkflowJob):
-                if task.unified_job_template_id in running_workflow_templates:
+                if task.workflow_job_template_id in running_workflow_templates:
                     if not task.allow_simultaneous:
                         logger.debug(six.text_type("{} is blocked from running, workflow already running").format(task.log_format))
                         continue
                 else:
-                    running_workflow_templates.add(task.unified_job_template_id)
+                    running_workflow_templates.add(task.workflow_job_template_id)
                 self.start_task(task, None, task.get_jobs_fail_chain(), None)
                 continue
             for rampart_group in preferred_instance_groups:
@@ -513,6 +528,105 @@ class TaskManager():
                                  rampart_group.name, task.log_format, task.task_impact))
             if not found_acceptable_queue:
                 logger.debug(six.text_type("{} couldn't be scheduled on graph, waiting for next cycle").format(task.log_format))
+
+    def fail_jobs_if_not_in_celery(self, node_jobs, active_tasks, celery_task_start_time,
+                                   isolated=False):
+        for task in node_jobs:
+            if (task.celery_task_id not in active_tasks and not hasattr(settings, 'IGNORE_CELERY_INSPECTOR')):
+                if isinstance(task, WorkflowJob):
+                    continue
+                if task.modified > celery_task_start_time:
+                    continue
+                new_status = 'failed'
+                if isolated:
+                    new_status = 'error'
+                task.status = new_status
+                task.start_args = ''  # blank field to remove encrypted passwords
+                if isolated:
+                    # TODO: cancel and reap artifacts of lost jobs from heartbeat
+                    task.job_explanation += ' '.join((
+                        'Task was marked as running in Tower but its ',
+                        'controller management daemon was not present in',
+                        'the job queue, so it has been marked as failed.',
+                        'Task may still be running, but contactability is unknown.'
+                    ))
+                else:
+                    task.job_explanation += ' '.join((
+                        'Task was marked as running in Tower but was not present in',
+                        'the job queue, so it has been marked as failed.',
+                    ))
+                try:
+                    task.save(update_fields=['status', 'start_args', 'job_explanation'])
+                except DatabaseError:
+                    logger.error("Task {} DB error in marking failed. Job possibly deleted.".format(task.log_format))
+                    continue
+                if hasattr(task, 'send_notification_templates'):
+                    task.send_notification_templates('failed')
+                task.websocket_emit_status(new_status)
+                logger.error("{}Task {} has no record in celery. Marking as failed".format(
+                    'Isolated ' if isolated else '', task.log_format))
+
+    def cleanup_inconsistent_celery_tasks(self):
+        '''
+        Rectify tower db <-> celery inconsistent view of jobs state
+        '''
+        last_cleanup = cache.get('last_celery_task_cleanup') or datetime.min.replace(tzinfo=utc)
+        if (tz_now() - last_cleanup).seconds < settings.AWX_INCONSISTENT_TASK_INTERVAL:
+            return
+
+        logger.debug("Failing inconsistent running jobs.")
+        celery_task_start_time = tz_now()
+        active_task_queues, active_queues = self.get_active_tasks()
+        cache.set('last_celery_task_cleanup', tz_now())
+
+        if active_queues is None:
+            logger.error('Failed to retrieve active tasks from celery')
+            return None
+
+        '''
+        Only consider failing tasks on instances for which we obtained a task
+        list from celery for.
+        '''
+        running_tasks, waiting_tasks = self.get_running_tasks()
+        all_celery_task_ids = []
+        for node, node_jobs in active_queues.iteritems():
+            all_celery_task_ids.extend(node_jobs)
+
+        self.fail_jobs_if_not_in_celery(waiting_tasks, all_celery_task_ids, celery_task_start_time)
+
+        for node, node_jobs in running_tasks.iteritems():
+            isolated = False
+            if node in active_queues:
+                active_tasks = active_queues[node]
+            else:
+                '''
+                Node task list not found in celery. We may branch into cases:
+                 - instance is unknown to tower, system is improperly configured
+                 - instance is reported as down, then fail all jobs on the node
+                 - instance is an isolated node, then check running tasks
+                   among all allowed controller nodes for management process
+                 - valid healthy instance not included in celery task list
+                   probably a netsplit case, leave it alone
+                '''
+                instance = Instance.objects.filter(hostname=node).first()
+
+                if instance is None:
+                    logger.error("Execution node Instance {} not found in database. "
+                                 "The node is currently executing jobs {}".format(
+                                     node, [j.log_format for j in node_jobs]))
+                    active_tasks = []
+                elif instance.capacity == 0:
+                    active_tasks = []
+                elif instance.rampart_groups.filter(controller__isnull=False).exists():
+                    active_tasks = all_celery_task_ids
+                    isolated = True
+                else:
+                    continue
+
+            self.fail_jobs_if_not_in_celery(
+                node_jobs, active_tasks, celery_task_start_time,
+                isolated=isolated
+            )
 
     def calculate_capacity_consumed(self, tasks):
         self.graph = InstanceGroup.objects.capacity_values(tasks=tasks, graph=self.graph)
@@ -559,14 +673,6 @@ class TaskManager():
             running_workflow_tasks = self.get_running_workflow_jobs()
             finished_wfjs = self.process_finished_workflow_jobs(running_workflow_tasks)
 
-            previously_running_workflow_tasks = running_workflow_tasks
-            running_workflow_tasks = []
-            for workflow_job in previously_running_workflow_tasks:
-                if workflow_job.status == 'running':
-                    running_workflow_tasks.append(workflow_job)
-                else:
-                    logger.debug('Removed %s from job spawning consideration.', workflow_job.log_format)
-
             self.spawn_workflow_graph_jobs(running_workflow_tasks)
 
             self.process_tasks(all_sorted_tasks)
@@ -581,8 +687,8 @@ class TaskManager():
                     return
                 logger.debug("Starting Scheduler")
 
-                with task_manager_bulk_reschedule():
-                    finished_wfjs = self._schedule()
+                self.cleanup_inconsistent_celery_tasks()
+                finished_wfjs = self._schedule()
 
                 # Operations whose queries rely on modifications made during the atomic scheduling session
                 for wfj in WorkflowJob.objects.filter(id__in=finished_wfjs):

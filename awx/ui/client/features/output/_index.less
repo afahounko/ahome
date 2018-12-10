@@ -1,7 +1,7 @@
 @import 'host-event/_index';
 .at-Stdout {
     &-menuTop {
-        color: @at-gray-646972;
+        color: @at-gray-848992;
         border: 1px solid @at-gray-b7;
         border-top-left-radius: 4px;
         border-top-right-radius: 4px;
@@ -72,22 +72,14 @@
     &-row {
         display: flex;
 
-        &:hover {
-            background-color: white;
-        }
-
         &:hover div {
             background-color: white;
         }
     }
 
-    &-row--clickable {
-        cursor: pointer;
-    }
-
     &-toggle {
         background-color: @at-gray-eb;
-        color: @at-gray-646972;
+        color: @at-gray-848992;
         display: flex;
         flex: 0 0 30px;
         font-size: 18px;
@@ -118,6 +110,12 @@
 
     &-event {
         .at-mixin-event();
+    }
+
+    &-event--host {
+        .at-mixin-event();
+
+        cursor: pointer;
     }
 
     &-time {
@@ -177,6 +175,7 @@
 }
 
 .at-mixin-event() {
+    flex: 1;
     padding: 0 10px;
     white-space: pre-wrap;
     word-break: break-all;
@@ -204,7 +203,7 @@
     color: @login-notice-text;
     border-radius: @at-border-radius;
     border: 1px solid @at-gray-b7;
-    // color: @at-gray-646972;
+    // color: @at-gray-848992;
     padding: 6px @at-padding-input 6px @at-padding-input;
 }
 
@@ -334,7 +333,7 @@
 .JobResults-container {
     display: grid;
     grid-gap: 20px;
-    grid-template-columns: minmax(400px, 1fr) minmax(500px, 2fr);
+    grid-template-columns: minmax(300px, 1fr) minmax(500px, 2fr);
     grid-template-rows: minmax(500px, ~"calc(100vh - 130px)");
 
     .at-Panel {
@@ -457,6 +456,5 @@
     .JobResults-container {
         display: flex;
         flex-direction: column;
-        min-width: 400px;
     }
 }

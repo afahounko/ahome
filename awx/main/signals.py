@@ -396,7 +396,7 @@ model_serializer_mapping = {
     Credential: CredentialSerializer,
     Team: TeamSerializer,
     Project: ProjectSerializer,
-    JobTemplate: JobTemplateWithSpecSerializer,
+    JobTemplate: JobTemplateSerializer,
     Job: JobSerializer,
     AdHocCommand: AdHocCommandSerializer,
     NotificationTemplate: NotificationTemplateSerializer,
@@ -404,7 +404,7 @@ model_serializer_mapping = {
     CredentialType: CredentialTypeSerializer,
     Schedule: ScheduleSerializer,
     Label: LabelSerializer,
-    WorkflowJobTemplate: WorkflowJobTemplateWithSpecSerializer,
+    WorkflowJobTemplate: WorkflowJobTemplateSerializer,
     WorkflowJobTemplateNode: WorkflowJobTemplateNodeSerializer,
     WorkflowJob: WorkflowJobSerializer,
     OAuth2AccessToken: OAuth2TokenSerializer,
@@ -425,11 +425,6 @@ def activity_stream_create(sender, instance, created, **kwargs):
         changes = model_to_dict(instance, model_serializer_mapping)
         # Special case where Job survey password variables need to be hidden
         if type(instance) == Job:
-            changes['credentials'] = [
-                six.text_type('{} ({})').format(c.name, c.id)
-                for c in instance.credentials.iterator()
-            ]
-            changes['labels'] = [l.name for l in instance.labels.iterator()]
             if 'extra_vars' in changes:
                 changes['extra_vars'] = instance.display_extra_vars()
         if type(instance) == OAuth2AccessToken:
@@ -492,21 +487,12 @@ def activity_stream_delete(sender, instance, **kwargs):
     # If we trigger this handler there we may fall into db-integrity-related race conditions.
     # So we add flag verification to prevent normal signal handling. This funciton will be
     # explicitly called with flag on in Inventory.schedule_deletion.
-    changes = {}
-    if isinstance(instance, Inventory):
-        if not kwargs.get('inventory_delete_flag', False):
-            return
-        # Add additional data about child hosts / groups that will be deleted
-        changes['coalesced_data'] = {
-            'hosts_deleted': instance.hosts.count(),
-            'groups_deleted': instance.groups.count()
-        }
-    elif isinstance(instance, (Host, Group)) and instance.inventory.pending_deletion:
-        return  # accounted for by inventory entry, above
+    if isinstance(instance, Inventory) and not kwargs.get('inventory_delete_flag', False):
+        return
     _type = type(instance)
     if getattr(_type, '_deferred', False):
         return
-    changes.update(model_to_dict(instance, model_serializer_mapping))
+    changes = model_to_dict(instance)
     object1 = camelcase_to_underscore(instance.__class__.__name__)
     if type(instance) == OAuth2AccessToken:
         changes['token'] = CENSOR_VALUE

@@ -18,10 +18,13 @@ import contextlib
 import tempfile
 import six
 import psutil
-from functools import reduce, wraps
+from functools import reduce
 from StringIO import StringIO
 
 from decimal import Decimal
+
+# Decorator
+from decorator import decorator
 
 # Django
 from django.core.exceptions import ObjectDoesNotExist
@@ -49,8 +52,7 @@ __all__ = ['get_object_or_400', 'get_object_or_403', 'camelcase_to_underscore', 
            'extract_ansible_vars', 'get_search_fields', 'get_system_task_capacity', 'get_cpu_capacity', 'get_mem_capacity',
            'wrap_args_with_proot', 'build_proot_temp_dir', 'check_proot_installed', 'model_to_dict',
            'model_instance_diff', 'timestamp_apiformat', 'parse_yaml_or_json', 'RequireDebugTrueOrTest',
-           'has_model_field_prefetched', 'set_environ', 'IllegalArgumentError', 'get_custom_venv_choices', 'get_external_account',
-           'task_manager_bulk_reschedule', 'schedule_task_manager']
+           'has_model_field_prefetched', 'set_environ', 'IllegalArgumentError', 'get_custom_venv_choices', 'get_external_account']
 
 
 def get_object_or_400(klass, *args, **kwargs):
@@ -134,35 +136,31 @@ def memoize(ttl=60, cache_key=None, track_function=False):
     '''
     Decorator to wrap a function and cache its result.
     '''
-    if cache_key and track_function:
-        raise IllegalArgumentError("Can not specify cache_key when track_function is True")
     cache = get_memoize_cache()
 
-    def memoize_decorator(f):
-        @wraps(f)
-        def _memoizer(*args, **kwargs):
-            if track_function:
-                cache_dict_key = slugify('%r %r' % (args, kwargs))
-                key = slugify("%s" % f.__name__)
-                cache_dict = cache.get(key) or dict()
-                if cache_dict_key not in cache_dict:
-                    value = f(*args, **kwargs)
-                    cache_dict[cache_dict_key] = value
-                    cache.set(key, cache_dict, ttl)
-                else:
-                    value = cache_dict[cache_dict_key]
+    def _memoizer(f, *args, **kwargs):
+        if cache_key and track_function:
+            raise IllegalArgumentError("Can not specify cache_key when track_function is True")
+
+        if track_function:
+            cache_dict_key = slugify('%r %r' % (args, kwargs))
+            key = slugify("%s" % f.__name__)
+            cache_dict = cache.get(key) or dict()
+            if cache_dict_key not in cache_dict:
+                value = f(*args, **kwargs)
+                cache_dict[cache_dict_key] = value
+                cache.set(key, cache_dict, ttl)
             else:
-                key = cache_key or slugify('%s %r %r' % (f.__name__, args, kwargs))
-                value = cache.get(key)
-                if value is None:
-                    value = f(*args, **kwargs)
-                    cache.set(key, value, ttl)
+                value = cache_dict[cache_dict_key]
+        else:
+            key = cache_key or slugify('%s %r %r' % (f.__name__, args, kwargs))
+            value = cache.get(key)
+            if value is None:
+                value = f(*args, **kwargs)
+                cache.set(key, value, ttl)
 
-            return value
-
-        return _memoizer
-
-    return memoize_decorator
+        return value
+    return decorator(_memoizer)
 
 
 def memoize_delete(function_name):
@@ -728,7 +726,6 @@ def get_system_task_capacity(scale=Decimal(1.0), cpu_capacity=None, mem_capacity
 
 
 _inventory_updates = threading.local()
-_task_manager = threading.local()
 
 
 @contextlib.contextmanager
@@ -742,37 +739,6 @@ def ignore_inventory_computed_fields():
         yield
     finally:
         _inventory_updates.is_updating = previous_value
-
-
-def _schedule_task_manager():
-    from awx.main.scheduler.tasks import run_task_manager
-    from django.db import connection
-    # runs right away if not in transaction
-    connection.on_commit(lambda: run_task_manager.delay())
-
-
-@contextlib.contextmanager
-def task_manager_bulk_reschedule():
-    """Context manager to avoid submitting task multiple times.
-    """
-    try:
-        previous_flag = getattr(_task_manager, 'bulk_reschedule', False)
-        previous_value = getattr(_task_manager, 'needs_scheduling', False)
-        _task_manager.bulk_reschedule = True
-        _task_manager.needs_scheduling = False
-        yield
-    finally:
-        _task_manager.bulk_reschedule = previous_flag
-        if _task_manager.needs_scheduling:
-            _schedule_task_manager()
-        _task_manager.needs_scheduling = previous_value
-
-
-def schedule_task_manager():
-    if getattr(_task_manager, 'bulk_reschedule', False):
-        _task_manager.needs_scheduling = True
-        return
-    _schedule_task_manager()
 
 
 @contextlib.contextmanager

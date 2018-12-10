@@ -8,13 +8,13 @@ import tempfile
 import shutil
 from datetime import timedelta
 from six.moves import xrange
-from mock import PropertyMock
 
 # Django
 from django.core.urlresolvers import resolve
 from django.utils.six.moves.urllib.parse import urlparse
 from django.utils import timezone
 from django.contrib.auth.models import User
+from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.backends.sqlite3.base import SQLiteCursorWrapper
 from jsonbfield.fields import JSONField
@@ -64,6 +64,17 @@ __SWAGGER_REQUESTS__ = {}
 @pytest.fixture(scope="session")
 def swagger_autogen(requests=__SWAGGER_REQUESTS__):
     return requests
+
+
+@pytest.fixture(scope="session", autouse=True)
+def celery_memory_broker():
+    '''
+    FIXME: Not sure how "far" just setting the BROKER_URL will get us.
+    We may need to incluence CELERY's configuration like we do in the old unit tests (see base.py)
+
+    Allows django signal code to execute without the need for redis
+    '''
+    settings.BROKER_URL='memory://localhost/'
 
 
 @pytest.fixture
@@ -672,24 +683,6 @@ def job_template_labels(organization, job_template):
 
 
 @pytest.fixture
-def jt_linked(job_template_factory, credential, net_credential, vault_credential):
-    '''
-    A job template with a reasonably complete set of related objects to
-    test RBAC and other functionality affected by related objects
-    '''
-    objects = job_template_factory(
-        'testJT', organization='org1', project='proj1', inventory='inventory1',
-        credential='cred1')
-    jt = objects.job_template
-    jt.credentials.add(vault_credential)
-    jt.save()
-    # Add AWS cloud credential and network credential
-    jt.credentials.add(credential)
-    jt.credentials.add(net_credential)
-    return jt
-
-
-@pytest.fixture
 def workflow_job_template(organization):
     wjt = WorkflowJobTemplate(name='test-workflow_job_template', organization=organization)
     wjt.save()
@@ -771,42 +764,3 @@ def sqlite_copy_expert(request):
     request.addfinalizer(lambda: delattr(SQLiteCursorWrapper, 'copy_expert'))
     return path
 
-
-@pytest.fixture
-def disable_database_settings(mocker):
-    m = mocker.patch('awx.conf.settings.SettingsWrapper.all_supported_settings', new_callable=PropertyMock)
-    m.return_value = []
-
-
-@pytest.fixture
-def slice_jt_factory(inventory):
-    def r(N, jt_kwargs=None):
-        for i in range(N):
-            inventory.hosts.create(name='foo{}'.format(i))
-        if not jt_kwargs:
-            jt_kwargs = {}
-        return JobTemplate.objects.create(
-            name='slice-jt-from-factory',
-            job_slice_count=N,
-            inventory=inventory,
-            **jt_kwargs
-        )
-    return r
-
-
-@pytest.fixture
-def slice_job_factory(slice_jt_factory):
-    def r(N, jt_kwargs=None, prompts=None, spawn=False):
-        slice_jt = slice_jt_factory(N, jt_kwargs=jt_kwargs)
-        if not prompts:
-            prompts = {}
-        slice_job = slice_jt.create_unified_job(**prompts)
-        if spawn:
-            for node in slice_job.workflow_nodes.all():
-                # does what the task manager does for spawning workflow jobs
-                kv = node.get_job_kwargs()
-                job = node.unified_job_template.create_unified_job(**kv)
-                node.job = job
-                node.save()
-        return slice_job
-    return r

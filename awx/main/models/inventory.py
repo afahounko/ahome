@@ -9,6 +9,7 @@ import copy
 from urlparse import urljoin
 import os.path
 import six
+from distutils.version import LooseVersion
 
 # Django
 from django.conf import settings
@@ -18,9 +19,6 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils.timezone import now
 from django.db.models import Q
-
-# REST Framework
-from rest_framework.exceptions import ParseError
 
 # AWX
 from awx.api.versioning import reverse
@@ -44,7 +42,7 @@ from awx.main.models.notifications import (
     NotificationTemplate,
     JobNotificationMixin,
 )
-from awx.main.utils import _inventory_updates, region_sorting
+from awx.main.utils import _inventory_updates, get_ansible_version, region_sorting
 
 
 __all__ = ['Inventory', 'Host', 'Group', 'InventorySource', 'InventoryUpdate',
@@ -220,89 +218,67 @@ class Inventory(CommonModelNameNotUnique, ResourceMixin, RelatedJobsMixin):
             group_children.add(from_group_id)
         return group_children_map
 
-    @staticmethod
-    def parse_slice_params(slice_str):
-        m = re.match(r"slice(?P<number>\d+)of(?P<step>\d+)", slice_str)
-        if not m:
-            raise ParseError(_('Could not parse subset as slice specification.'))
-        number = int(m.group('number'))
-        step = int(m.group('step'))
-        if number > step:
-            raise ParseError(_('Slice number must be less than total number of slices.'))
-        elif number < 1:
-            raise ParseError(_('Slice number must be 1 or higher.'))
-        return (number, step)
-
-    def get_script_data(self, hostvars=False, towervars=False, show_all=False, slice_number=1, slice_count=1):
-        hosts_kw = dict()
-        if not show_all:
-            hosts_kw['enabled'] = True
-        fetch_fields = ['name', 'id', 'variables']
-        if towervars:
-            fetch_fields.append('enabled')
-        hosts = self.hosts.filter(**hosts_kw).order_by('name').only(*fetch_fields)
-        if slice_count > 1:
-            offset = slice_number - 1
-            hosts = hosts[offset::slice_count]
-
+    def get_script_data(self, hostvars=False, towervars=False, show_all=False):
+        if show_all:
+            hosts_q = dict()
+        else:
+            hosts_q = dict(enabled=True)
         data = dict()
-        all_group = data.setdefault('all', dict())
-        all_hostnames = set(host.name for host in hosts)
 
         if self.variables_dict:
+            all_group = data.setdefault('all', dict())
             all_group['vars'] = self.variables_dict
-
         if self.kind == 'smart':
-            all_group['hosts'] = [host.name for host in hosts]
+            if len(self.hosts.all()) == 0:
+                return {}
+            else:
+                all_group = data.setdefault('all', dict())
+                smart_hosts_qs = self.hosts.filter(**hosts_q).all()
+                smart_hosts = list(smart_hosts_qs.values_list('name', flat=True))
+                all_group['hosts'] = smart_hosts
         else:
-            # Keep track of hosts that are members of a group
-            grouped_hosts = set([])
+            # Add hosts without a group to the all group.
+            groupless_hosts_qs = self.hosts.filter(groups__isnull=True, **hosts_q)
+            groupless_hosts = list(groupless_hosts_qs.values_list('name', flat=True))
+            if groupless_hosts:
+                all_group = data.setdefault('all', dict())
+                all_group['hosts'] = groupless_hosts
 
             # Build in-memory mapping of groups and their hosts.
-            group_hosts_qs = Group.hosts.through.objects.filter(
-                group__inventory_id=self.id,
-                host__inventory_id=self.id
-            ).values_list('group_id', 'host_id', 'host__name')
+            group_hosts_kw = dict(group__inventory_id=self.id, host__inventory_id=self.id)
+            if 'enabled' in hosts_q:
+                group_hosts_kw['host__enabled'] = hosts_q['enabled']
+            group_hosts_qs = Group.hosts.through.objects.filter(**group_hosts_kw)
+            group_hosts_qs = group_hosts_qs.values_list('group_id', 'host_id', 'host__name')
             group_hosts_map = {}
             for group_id, host_id, host_name in group_hosts_qs:
-                if host_name not in all_hostnames:
-                    continue  # host might not be in current shard
                 group_hostnames = group_hosts_map.setdefault(group_id, [])
                 group_hostnames.append(host_name)
-                grouped_hosts.add(host_name)
 
             # Build in-memory mapping of groups and their children.
             group_parents_qs = Group.parents.through.objects.filter(
                 from_group__inventory_id=self.id,
                 to_group__inventory_id=self.id,
-            ).values_list('from_group_id', 'from_group__name', 'to_group_id')
+            )
+            group_parents_qs = group_parents_qs.values_list('from_group_id', 'from_group__name',
+                                                            'to_group_id')
             group_children_map = {}
             for from_group_id, from_group_name, to_group_id in group_parents_qs:
                 group_children = group_children_map.setdefault(to_group_id, [])
                 group_children.append(from_group_name)
 
             # Now use in-memory maps to build up group info.
-            for group in self.groups.only('name', 'id', 'variables'):
+            for group in self.groups.all():
                 group_info = dict()
                 group_info['hosts'] = group_hosts_map.get(group.id, [])
                 group_info['children'] = group_children_map.get(group.id, [])
                 group_info['vars'] = group.variables_dict
                 data[group.name] = group_info
 
-            # Add ungrouped hosts to all group
-            all_group['hosts'] = [host.name for host in hosts if host.name not in grouped_hosts]
-
-        # Remove any empty groups
-        for group_name in list(data.keys()):
-            if group_name == 'all':
-                continue
-            if not (data.get(group_name, {}).get('hosts', []) or data.get(group_name, {}).get('children', [])):
-                data.pop(group_name)
-
         if hostvars:
             data.setdefault('_meta', dict())
             data['_meta'].setdefault('hostvars', dict())
-            for host in hosts:
+            for host in self.hosts.filter(**hosts_q):
                 data['_meta']['hostvars'][host.name] = host.variables_dict
                 if towervars:
                     tower_dict = dict(remote_tower_enabled=str(host.enabled).lower(),
@@ -1602,6 +1578,12 @@ class InventorySource(UnifiedJobTemplate, InventorySourceOptions, RelatedJobsMix
                                     "Instead, configure the corresponding source project to update on launch."))
         return self.update_on_launch
 
+    def clean_overwrite_vars(self):  # TODO: remove when Ansible 2.4 becomes unsupported, obviously
+        if self.source == 'scm' and not self.overwrite_vars:
+            if get_ansible_version() < LooseVersion('2.5'):
+                raise ValidationError(_("SCM type sources must set `overwrite_vars` to `true` until Ansible 2.5."))
+        return self.overwrite_vars
+
     def clean_source_path(self):
         if self.source != 'scm' and self.source_path:
             raise ValidationError(_("Cannot set source_path if not SCM type."))
@@ -1649,7 +1631,8 @@ class InventoryUpdate(UnifiedJob, InventorySourceOptions, JobNotificationMixin, 
         null=True
     )
 
-    def _get_parent_field_name(self):
+    @classmethod
+    def _get_parent_field_name(cls):
         return 'inventory_source'
 
     @classmethod

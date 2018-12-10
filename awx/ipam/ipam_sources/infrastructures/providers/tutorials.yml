@@ -1,0 +1,365 @@
+---
+name: Tutorials
+group: Cloud
+version: 1.0
+description: |
+     This box is for tutorial purposes
+
+hosts: all
+
+cloud: false
+credential_type: Windows
+credential_input:
+    fields:
+      - type: string
+        id: username
+        label: Username
+      - secret: true
+        type: string
+        id: password
+        label: Password
+      - help_text: |
+          ansible_connection: winrm ansible_winrm_server_cert_validation: ignore
+        multiline: true
+        type: string
+        id: windows_options
+        label: Connection options
+    required:
+      - username
+      - password
+credential_prefix: 'Machine_'
+
+label_prefix: ''
+url: 'https://github.com/afahounko'
+project: 'https://github.com/ansible/ansible-tower-samples.git'
+playbook: 'local.yml'
+
+subitem_label_prefix: 'Configure'
+subitem_url: 'https://github.com/afahounko'
+subitem_project: 'https://github.com/ansible/ansible-tower-samples.git'
+subitem_playbook: 'local.yml'
+
+project:
+    name_prefix: 'Git_'
+    description: ''
+    scm_type: 'git'
+    scm_branch: ''
+    scm_url: 'https://git.afahounko.com/caas/ms_build_factory.git'
+    scm_clean: true
+    scm_delete_on_update: true
+    credential: null
+    timeout: 0
+    organization: 1
+    scm_update_on_launch: true
+    scm_update_cache_timeout: 0
+
+configure_job:
+    name_prefix: 'Configure_'
+    playbook: 'win_custom_iso.yml'
+    description: ''
+    job_type: "run"
+    inventory: 1
+    forks: 0
+    limit: ''
+    verbosity: 0
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    job_tags: ''
+    force_handlers: false
+    skip_tags: ''
+    start_at_task: ''
+    timeout: 0
+    use_fact_cache: false
+    host_config_key: ''
+    ask_diff_mode_on_launch: false
+    ask_variables_on_launch: false
+    ask_limit_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_inventory_on_launch: false
+    ask_credential_on_launch: false
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    allow_simultaneous: false
+    network_credential: null
+    cloud_credential: null
+    vault_credential: null
+
+poweroff_job:
+    name_prefix: 'Poweroff_'
+    playbook: 'win_custom_iso.yml'
+    description: ''
+    job_type: "run"
+    inventory: 1
+    forks: 0
+    limit: ''
+    verbosity: 0
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    job_tags: ''
+    force_handlers: false
+    skip_tags: ''
+    start_at_task: ''
+    timeout: 0
+    use_fact_cache: false
+    host_config_key: ''
+    ask_diff_mode_on_launch: false
+    ask_variables_on_launch: false
+    ask_limit_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_inventory_on_launch: false
+    ask_credential_on_launch: false
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    allow_simultaneous: false
+    cloud_credential: null
+    network_credential: null
+    vault_credential: null
+
+remove_job:
+    name_prefix: 'Remove_'
+    playbook: 'win_custom_iso.yml'
+    description: ''
+    job_type: "run"
+    inventory: 1
+    forks: 0
+    limit: ''
+    verbosity: 0
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    job_tags: ''
+    force_handlers: false
+    skip_tags: ''
+    start_at_task: ''
+    timeout: 0
+    use_fact_cache: false
+    host_config_key: ''
+    ask_diff_mode_on_launch: false
+    ask_variables_on_launch: false
+    ask_limit_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_inventory_on_launch: false
+    ask_credential_on_launch: false
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    allow_simultaneous: false
+    cloud_credential: null
+    network_credential: null
+    vault_credential: null
+
+addTitle: 'TUTORIAL (SHOW PURPOSE)'
+editTitle: '{{ name }}'
+name: 'tutorials'
+title: 'TUTORIALS'
+#logo: '/static/assets/logo/providers/buildfactory.png'  Set as Default
+basePath: 'ipam_providers'
+stateTree: 'infraProviders'
+breadcrumbName: 'TUTORIALS'
+showActions: true
+launchclick: 'addNew("tutorials")'
+steps: 4
+
+wizards: 
+    basic: 
+      index: 1
+      name: 'Input Styles'
+      type: 'collection'
+      title: 'Input Styles'
+
+    relation: 
+      index: 2
+      name: 'Special Inputs'
+      type: 'collection'
+      title: 'Special Inputs'
+
+    inventory:
+      index: 3
+      name: 'Custom'
+      type: 'collection'
+      title: Custom
+
+    opts:
+      index: 4
+      name: 'Option'
+      type: 'collection'
+      title: 'Options'
+
+fields:
+  name: 
+      label: 'Name (Text & required)'
+      type: 'text'
+      required: true
+      ngShow: 'tabId == 1'
+
+  description: 
+    label: Description
+    awPopOver: '<p> General Text, But Not Required. </p>'
+    type: 'text'
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 1'
+
+  username: 
+    label: 'UserName (AutoFill)'
+    type: 'text'
+    ngShow: "tabId == 1"
+    autocomplete: false
+
+  password: 
+    label: 'Password'
+    type: 'sensitive'
+    ngShow: "tabId == 1"
+    clear: false
+    autocomplete: false
+    hasShowInputButton: true
+
+  vid:
+    label: 'Number'
+    type: 'number'
+    integer: true
+    min: 1
+    spinner: true
+    'class': "input-small"
+    column: 1
+    ngShow: 'tabId == 1'
+
+  sub_checkbox: 
+    label: 'Sub CheckBox'
+    type: 'text'
+    ngShow: "tabId == 1"
+    dataPlacement: 'right'
+    dataContainer: "body"
+    subCheckbox: 
+        variable: 'become_password_ask'
+        text: 'Ask at runtime'
+    autocomplete: false
+
+  datacenter: 
+    label: 'Datacenter from API'
+    type: 'select'
+    defaultText: 'Choose a Datacenter'
+    ngModel: 'datacenter'
+    ngOptions: 'item as item.label for item in datacenter_type_options'
+    ngShow: 'tabId == 2'
+
+  status:
+    label: 'Fixed Data Status'
+    type: 'select'
+    ngValues: 'Status1,Status2'
+    ngOptions: 'item as item.label for item in status_type_options'
+    disableChooseOption: true
+    ngChange: 'statusChange()'
+    awPopOver: '<p> Select the Status. </p>'
+    dataTitle: 'Fixed Status'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    ngShow: 'tabId == 2'
+
+  checkbox_TrueDefault:
+    name: 'scm_clean'
+    label: 'CheckBox1'
+    type: 'checkbox'
+    awPopOver: '<p> CheckBox1.</p>'
+    dataTitle: 'CheckBox1'
+    dataContainer: 'body'
+    dataPlacement: 'right'
+    labelClass: 'checkbox-options stack-inline'
+    default: true
+    ngShow: 'tabId == 1'
+
+  checkbox2_FalseDefault:
+    name: 'scm_clean2'
+    label: 'CheckBox2'
+    type: 'checkbox'
+    awPopOver: '<p> CheckBox2.</p>'
+    dataTitle: 'CheckBox2'
+    dataContainer: 'body'
+    dataPlacement: 'right'
+    labelClass: 'checkbox-options stack-inline'
+    default: 'false'
+    ngShow: 'tabId == 1'
+
+  enforce_unique_TrueDefault:
+    label: 'CHECKBOX2'
+    type: 'toggleSwitch'
+    toggleSource: 'enforce_unique_TrueDefault'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    awPopOver: "<p> If enabled, ENFORCE_UNIQUE is enabled. </p>"
+    default: true
+    ngShow: 'tabId == 1'
+
+  enforce_unique_FalseDefault:
+    label: 'CHECKBOX BIS'
+    type: 'toggleSwitch'
+    toggleSource: 'enforce_unique_FalseDefault'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    awPopOver: "<p> If enabled, ENFORCE_UNIQUE is enabled. </p>"
+    ngShow: 'tabId == 1'
+
+  organization:
+    label: 'Lookup'
+    type: 'lookup'
+    list: 'OrganizationList'
+    sourceModel: 'organization'
+    basePath: 'organizations'
+    sourceField: 'name'
+    dataTitle: 'Lookup'
+    dataContainer: 'body'
+    dataPlacement: 'right'
+    ngShow: 'tabId == 3'
+
+  instance_groups:
+    label: 'Custom'
+    type: 'custom'
+    awPopOver: "<p> Customized Lookup for multi-select. </p>"
+    dataTitle: 'Custom'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    control: '<instance-groups-multiselect instance-groups="instance_groups" field-is-disabled="!(inventory_obj.summary_fields.user_capabilities.edit || canAdd)"></instance-groups-multiselect>'
+    ngShow: 'tabId == 3'
+
+  opts: 
+    label: Input Opts'
+    class: 'Form-textAreaLabel Form-formGroup--fullWidth'
+    type: 'textarea'
+    rows: 15
+    default: '---'
+    showParseTypeToggle: true
+    parseTypeName: 'parseTypeOpts'
+    awPopOverWatch: "opts_help_text"
+    dataTitle: 'Input Opts'
+    dataPlacement: 'right'
+    dataContainer: "body"
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 4'
+
+buttons: 
+  wizardcancel:
+    ngClick: 'formCancel()'
+    ngShow: 'tabId == 1'
+
+  previous:
+    ngClick: 'WizardClick(1)'
+    ngShow: 'tabId > 1'
+
+  next:
+    ngClick: 'WizardClick(2)'
+    ngShow: 'tabId < 4'
+
+  save:
+    title: 'Finish'
+    ngClick: 'formSave()'
+    ngShow: 'tabId == 4'
+    ngDisabled: true

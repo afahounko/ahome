@@ -4,7 +4,7 @@
     name: postgres
     state: started
     restart_policy: unless-stopped
-    image: "{{ postgresql_image }}"
+    image: postgres:9.6
     volumes:
       - "{{ postgres_data_dir }}:/var/lib/postgresql/data:Z"
     env:
@@ -22,10 +22,8 @@
     restart_policy: unless-stopped
     image: "{{ rabbitmq_image }}"
     env:
-      RABBITMQ_DEFAULT_VHOST: "{{ rabbitmq_default_vhost }}"
-      RABBITMQ_ERLANG_COOKIE: "{{ rabbitmq_erlang_cookie }}"
-      RABBITMQ_DEFAULT_USER: "{{ rabbitmq_default_username }}"
-      RABBITMQ_DEFAULT_PASS: "{{ rabbitmq_default_password }}"
+      RABBITMQ_DEFAULT_VHOST: "awx"
+      RABBITMQ_ERLANG_COOKIE: "cookiemonster"
   register: rabbitmq_container_activate
 
 - name: Activate memcached container
@@ -84,14 +82,14 @@
     image: "{{ awx_web_docker_actual_image }}"
     volumes: >
       {{
-        ([project_data_dir + ':/var/lib/awx/projects:z'] if project_data_dir is defined else [])
-        + ([ca_trust_dir + ':/etc/pki/ca-trust/source/anchors:ro'] if ca_trust_dir is defined else [])
+        [project_data_dir + ':/var/lib/awx/projects:rw'] if project_data_dir is defined else []
+        + [ca_trust_dir + ':/etc/pki/ca-trust/source/anchors:ro'] if ca_trust_dir is defined else []
       }}
     user: root
     ports:
       - "{{ host_port }}:8052"
     links: "{{ awx_web_container_links|list }}"
-    hostname: "{{ awx_web_hostname }}"
+    hostname: awxweb
     dns_search_domains: "{{ awx_container_search_domains.split(',') if awx_container_search_domains is defined else omit }}"
     dns_servers: "{{ awx_alternate_dns_servers.split(',') if awx_alternate_dns_servers is defined else omit }}"
     env:
@@ -104,20 +102,15 @@
       DATABASE_PASSWORD: "{{ pg_password }}"
       DATABASE_PORT: "{{ pg_port }}"
       DATABASE_HOST: "{{ pg_hostname_actual }}"
-      RABBITMQ_USER: "{{ rabbitmq_default_username }}"
-      RABBITMQ_PASSWORD: "{{ rabbitmq_default_password }}"
+      RABBITMQ_USER: "guest"
+      RABBITMQ_PASSWORD: "guest"
       RABBITMQ_HOST: "rabbitmq"
-      RABBITMQ_PORT: "{{ rabbitmq_port }}"
-      RABBITMQ_VHOST: "{{ rabbitmq_default_vhost }}"
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_VHOST: "awx"
       MEMCACHED_HOST: "memcached"
       MEMCACHED_PORT: "11211"
-      AWX_ADMIN_USER: "{{ admin_user|default('admin') }}"
-      AWX_ADMIN_PASSWORD: "{{ admin_password|default('password') }}"
-  register: awx_web_container
-
-- name: Update CA trust in awx_web container
-  command: docker exec awx_web '/usr/bin/update-ca-trust'
-  when: awx_web_container.changed
+      AWX_ADMIN_USER: "{{ default_admin_user|default('admin') }}"
+      AWX_ADMIN_PASSWORD: "{{ default_admin_password|default('password') }}"
 
 - name: Activate AWX Task Container
   docker_container:
@@ -127,12 +120,12 @@
     image: "{{ awx_task_docker_actual_image }}"
     volumes: >
       {{
-        ([project_data_dir + ':/var/lib/awx/projects:z'] if project_data_dir is defined else [])
-        + ([ca_trust_dir + ':/etc/pki/ca-trust/source/anchors:ro'] if ca_trust_dir is defined else [])
+        [project_data_dir + ':/var/lib/awx/projects:rw'] if project_data_dir is defined else []
+        + [ca_trust_dir + ':/etc/pki/ca-trust/source/anchors:ro'] if ca_trust_dir is defined else []
       }}
     links: "{{ awx_task_container_links|list }}"
     user: root
-    hostname: "{{ awx_task_hostname }}"
+    hostname: awx
     dns_search_domains: "{{ awx_container_search_domains.split(',') if awx_container_search_domains is defined else omit }}"
     dns_servers: "{{ awx_alternate_dns_servers.split(',') if awx_alternate_dns_servers is defined else omit }}"
     env:
@@ -145,12 +138,12 @@
       DATABASE_PASSWORD: "{{ pg_password }}"
       DATABASE_HOST: "{{ pg_hostname_actual }}"
       DATABASE_PORT: "{{ pg_port }}"
-      RABBITMQ_USER: "{{ rabbitmq_default_username }}"
-      RABBITMQ_PASSWORD: "{{ rabbitmq_default_password }}"
+      RABBITMQ_USER: "guest"
+      RABBITMQ_PASSWORD: "guest"
       RABBITMQ_HOST: "rabbitmq"
-      RABBITMQ_PORT: "{{ rabbitmq_port }}"
-      RABBITMQ_VHOST: "{{ rabbitmq_default_vhost }}"
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_VHOST: "awx"
       MEMCACHED_HOST: "memcached"
       MEMCACHED_PORT: "11211"
-      AWX_ADMIN_USER: "{{ admin_user|default('admin') }}"
-      AWX_ADMIN_PASSWORD: "{{ admin_password|default('password') }}"
+      AWX_ADMIN_USER: "{{ default_admin_user|default('admin') }}"
+      AWX_ADMIN_PASSWORD: "{{ default_admin_password|default('password') }}"

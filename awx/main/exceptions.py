@@ -4,6 +4,11 @@
 import six
 
 
+# Celery does not respect exception type when using a serializer different than pickle;
+# and awx uses the json serializer
+# https://github.com/celery/celery/issues/3586
+
+
 class _AwxTaskError():
     def build_exception(self, task, message=None):
         if message is None:
@@ -31,3 +36,5 @@ class _AwxTaskError():
 
 
 AwxTaskError = _AwxTaskError()
+
+

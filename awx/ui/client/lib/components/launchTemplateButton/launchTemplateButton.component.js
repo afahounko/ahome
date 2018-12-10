@@ -28,6 +28,7 @@ function atLaunchTemplateCtrl (
         };
 
     vm.startLaunchTemplate = () => {
+    	console.log(vm);
         if (vm.template.type === 'job_template') {
             const selectedJobTemplate = jobTemplate.create();
             const preLaunchPromises = [
@@ -41,13 +42,7 @@ function atLaunchTemplateCtrl (
                         selectedJobTemplate
                             .postLaunch({ id: vm.template.id })
                             .then(({ data }) => {
-                                /* Slice Jobs: Redirect to WF Details page if returned
-                                job type is a WF job */
-                                if (data.type === 'workflow_job' && data.workflow_job !== null) {
-                                    $state.go('workflowResults', { id: data.workflow_job }, { reload: true });
-                                } else {
-                                    $state.go('output', { id: data.job, type: 'playbook' }, { reload: true });
-                                }
+                                $state.go('output', { id: data.job, type: 'playbook' }, { reload: true });
                             });
                     } else {
                         const promptData = {
@@ -93,15 +88,16 @@ function atLaunchTemplateCtrl (
                                 $state.go('workflowResults', { id: data.workflow_job }, { reload: true });
                             });
                     } else {
-                        launchData.data.defaults.extra_vars = wfjtData.data.extra_vars;
-
+                        launchData.data.defaults = {
+                            extra_vars: wfjtData.data.extra_vars
+                        };
                         const promptData = {
-                            launchConf: selectedWorkflowJobTemplate.getLaunchConf(),
+                            launchConf: launchData.data,
                             launchOptions: launchOptions.data,
                             template: vm.template.id,
                             templateType: vm.template.type,
                             prompts: PromptService.processPromptValues({
-                                launchConf: selectedWorkflowJobTemplate.getLaunchConf(),
+                                launchConf: launchData.data,
                                 launchOptions: launchOptions.data
                             }),
                             triggerModalOpen: true,
@@ -147,13 +143,7 @@ function atLaunchTemplateCtrl (
                 id: vm.promptData.template,
                 launchData: jobLaunchData
             }).then((launchRes) => {
-                /* Slice Jobs: Redirect to WF Details page if returned
-                job type is a WF job */
-                if (launchRes.data.type === 'workflow_job' && launchRes.data.workflow_job !== null) {
-                    $state.go('workflowResults', { id: launchRes.data.workflow_job }, { reload: true });
-                } else {
-                    $state.go('output', { id: launchRes.data.job, type: 'playbook' }, { reload: true });
-                }
+                $state.go('output', { id: launchRes.data.job, type: 'playbook' }, { reload: true });
             }).catch(createErrorHandler('launch job template', 'POST'));
         } else if (vm.promptData.templateType === 'workflow_job_template') {
             workflowTemplate.create().postLaunch({

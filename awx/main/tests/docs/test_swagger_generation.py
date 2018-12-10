@@ -49,8 +49,7 @@ class TestSwaggerGeneration():
             data.update(response.accepted_renderer.get_customizations() or {})
 
             data['host'] = None
-            if not pytest.config.getoption("--genschema"):
-                data['modified'] = datetime.datetime.utcnow().isoformat()
+            data['modified'] = datetime.datetime.utcnow().isoformat()
             data['schemes'] = ['https']
             data['consumes'] = ['application/json']
 
@@ -120,9 +119,9 @@ class TestSwaggerGeneration():
     def test_autogen_response_examples(self, swagger_autogen):
         for pattern, node in TestSwaggerGeneration.JSON['paths'].items():
             pattern = pattern.replace('{id}', '[0-9]+')
-            pattern = pattern.replace(r'{category_slug}', r'[a-zA-Z0-9\-]+')
+            pattern = pattern.replace('{category_slug}', '[a-zA-Z0-9\-]+')
             for path, result in swagger_autogen.items():
-                if re.match(r'^{}$'.format(pattern), path):
+                if re.match('^{}$'.format(pattern), path):
                     for key, value in result.items():
                         method, status_code = key
                         content_type, resp, request_data = value
@@ -140,14 +139,11 @@ class TestSwaggerGeneration():
                                 for param in node[method].get('parameters'):
                                     if param['in'] == 'body':
                                         node[method]['parameters'].remove(param)
-                                if pytest.config.getoption("--genschema"):
-                                    pytest.skip("In schema generator skipping swagger generator", allow_module_level=True)
-                                else:
-                                    node[method].setdefault('parameters', []).append({
-                                        'name': 'data',
-                                        'in': 'body',
-                                        'schema': {'example': request_data},
-                                    })
+                                node[method].setdefault('parameters', []).append({
+                                    'name': 'data',
+                                    'in': 'body',
+                                    'schema': {'example': request_data},
+                                })
 
                             # Build response examples
                             if resp:
@@ -168,13 +164,8 @@ class TestSwaggerGeneration():
             # replace ISO dates w/ the same value so we don't generate
             # needless diffs
             data = re.sub(
-                r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]+Z',
-                r'2018-02-01T08:00:00.000000Z',
-                data
-            )
-            data = re.sub(
-                r'''(\s+"client_id": ")([a-zA-Z0-9]{40})("\,\s*)''',
-                r'\1xxxx\3',
+                '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]+Z',
+                '2018-02-01T08:00:00.000000Z',
                 data
             )
             f.write(data)

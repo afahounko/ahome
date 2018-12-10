@@ -69,7 +69,7 @@
           -e POSTGRESQL_PASSWORD={{ pg_password }} \
           -e POSTGRESQL_ADMIN_PASSWORD={{ pg_password }} \
           -e POSTGRESQL_DATABASE={{ pg_database }} \
-          -e POSTGRESQL_VERSION=9.6 \
+          -e POSTGRESQL_VERSION=9.5 \
           -n {{ kubernetes_namespace }}
       register: openshift_pg_activate
       no_log: yes
@@ -81,11 +81,10 @@
 - name: Deploy and Activate Postgres (Kubernetes)
   shell: |
     helm install --name {{ kubernetes_deployment_name }} --namespace {{ kubernetes_namespace }} \
-      --set postgresqlUsername={{ pg_username }} \
-      --set postgresqlPassword={{ pg_password }} \
-      --set postgresqlDatabase={{ pg_database }} \
+      --set postgresUser={{ pg_username }} \
+      --set postgresPassword={{ pg_password }} \
+      --set postgresDatabase={{ pg_database }} \
       --set persistence.size={{ pg_volume_capacity|default('5')}}Gi \
-      --tiller-namespace={{ tiller_namespace | default('kube-system') }} \
       stable/postgresql
   when:
     - pg_hostname is not defined or pg_hostname == ''
@@ -193,7 +192,6 @@
       bash -c "awx-manage create_preload_data"
   register: cdo
   changed_when: "'added' in cdo.stdout"
-  when: create_preload_data | bool
 
 - name: Delete management pod
   shell: |

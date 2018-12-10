@@ -2,9 +2,7 @@ version: '2'
 services:
   # Primary AWX Development Container
   awx:
-    user: ${CURRENT_UID}
     image: ${DEV_DOCKER_TAG_BASE}/awx_devel:${TAG}
-    container_name: tools_awx_1
     hostname: awx
     environment:
       RABBITMQ_HOST: rabbitmq
@@ -16,9 +14,10 @@ services:
     ports:
       - "8888:8888"
       - "8080:8080"
+      - "5555:5555"
       - "8013:8013"
       - "8043:8043"
-      - "6899-6999:6899-6999"  # default port range for sdb-listen
+      - "6899-6999:6899-6999"  # default port range for celery.contrib.rdb
     links:
       - postgres
       - memcached
@@ -38,16 +37,13 @@ services:
   # Postgres Database Container
   postgres:
     image: postgres:9.6
-    container_name: tools_postgres_1
     ports:
         - "5432:5432"
   memcached:
     image: memcached:alpine
-    container_name: tools_memcached_1
     ports:
       - "11211:11211"
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: tools_rabbitmq_1
     ports:
       - "15672:15672"

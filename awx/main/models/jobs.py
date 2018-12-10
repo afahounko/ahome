@@ -34,7 +34,7 @@ from awx.main.models.notifications import (
     JobNotificationMixin,
 )
 from awx.main.utils import parse_yaml_or_json, getattr_dne
-from awx.main.fields import ImplicitRoleField, JSONField, AskForField
+from awx.main.fields import ImplicitRoleField
 from awx.main.models.mixins import (
     ResourceMixin,
     SurveyJobTemplateMixin,
@@ -43,6 +43,7 @@ from awx.main.models.mixins import (
     CustomVirtualEnvMixin,
     RelatedJobsMixin,
 )
+from awx.main.fields import JSONField, AskForField
 
 
 logger = logging.getLogger('awx.main.models.jobs')
@@ -276,13 +277,6 @@ class JobTemplate(UnifiedJobTemplate, JobOptions, SurveyJobTemplateMixin, Resour
         default=False,
         allows_field='credentials'
     )
-    job_slice_count = models.PositiveIntegerField(
-        blank=True,
-        default=1,
-        help_text=_("The number of jobs to slice into at runtime. "
-                    "Will cause the Job Template to launch a workflow if value is greater than 1."),
-    )
-
     admin_role = ImplicitRoleField(
         parent_role=['project.organization.job_template_admin_role', 'inventory.organization.job_template_admin_role']
     )
@@ -301,8 +295,7 @@ class JobTemplate(UnifiedJobTemplate, JobOptions, SurveyJobTemplateMixin, Resour
     @classmethod
     def _get_unified_job_field_names(cls):
         return set(f.name for f in JobOptions._meta.fields) | set(
-            ['name', 'description', 'schedule', 'survey_passwords', 'labels', 'credentials',
-             'job_slice_number', 'job_slice_count']
+            ['name', 'description', 'schedule', 'survey_passwords', 'labels', 'credentials']
         )
 
     @property
@@ -314,7 +307,7 @@ class JobTemplate(UnifiedJobTemplate, JobOptions, SurveyJobTemplateMixin, Resour
         if self.inventory is None and not self.ask_inventory_on_launch:
             validation_errors['inventory'] = [_("Job Template must provide 'inventory' or allow prompting for it."),]
         if self.project is None:
-            validation_errors['project'] = [_("Job Templates must have a project assigned."),]
+            validation_errors['project'] = [_("Job types 'run' and 'check' must have assigned a project."),]
         return validation_errors
 
     @property
@@ -326,34 +319,6 @@ class JobTemplate(UnifiedJobTemplate, JobOptions, SurveyJobTemplateMixin, Resour
         Create a new job based on this template.
         '''
         return self.create_unified_job(**kwargs)
-
-    def create_unified_job(self, **kwargs):
-        prevent_slicing = kwargs.pop('_prevent_slicing', False)
-        slice_event = bool(self.job_slice_count > 1 and (not prevent_slicing))
-        if slice_event:
-            # A Slice Job Template will generate a WorkflowJob rather than a Job
-            from awx.main.models.workflow import WorkflowJobTemplate, WorkflowJobNode
-            kwargs['_unified_job_class'] = WorkflowJobTemplate._get_unified_job_class()
-            kwargs['_parent_field_name'] = "job_template"
-            kwargs.setdefault('_eager_fields', {})
-            kwargs['_eager_fields']['is_sliced_job'] = True
-        elif prevent_slicing:
-            kwargs.setdefault('_eager_fields', {})
-            kwargs['_eager_fields'].setdefault('job_slice_count', 1)
-        job = super(JobTemplate, self).create_unified_job(**kwargs)
-        if slice_event:
-            try:
-                wj_config = job.launch_config
-            except JobLaunchConfig.DoesNotExist:
-                wj_config = JobLaunchConfig()
-            actual_inventory = wj_config.inventory if wj_config.inventory else self.inventory
-            for idx in xrange(min(self.job_slice_count,
-                                  actual_inventory.hosts.count())):
-                create_kwargs = dict(workflow_job=job,
-                                     unified_job_template=self,
-                                     ancestor_artifacts=dict(job_slice=idx + 1))
-                WorkflowJobNode.objects.create(**create_kwargs)
-        return job
 
     def get_absolute_url(self, request=None):
         return reverse('api:job_template_detail', kwargs={'pk': self.pk}, request=request)
@@ -487,7 +452,7 @@ class JobTemplate(UnifiedJobTemplate, JobOptions, SurveyJobTemplateMixin, Resour
     RelatedJobsMixin
     '''
     def _get_related_jobs(self):
-        return UnifiedJob.objects.filter(unified_job_template=self)
+        return Job.objects.filter(job_template=self)
 
 
 class Job(UnifiedJob, JobOptions, SurveyJobMixin, JobNotificationMixin, TaskManagerJobMixin):
@@ -536,21 +501,10 @@ class Job(UnifiedJob, JobOptions, SurveyJobMixin, JobNotificationMixin, TaskMana
         on_delete=models.SET_NULL,
         help_text=_('The SCM Refresh task used to make sure the playbooks were available for the job run'),
     )
-    job_slice_number = models.PositiveIntegerField(
-        blank=True,
-        default=0,
-        help_text=_("If part of a sliced job, the ID of the inventory slice operated on. "
-                    "If not part of sliced job, parameter is not used."),
-    )
-    job_slice_count = models.PositiveIntegerField(
-        blank=True,
-        default=1,
-        help_text=_("If ran as part of sliced jobs, the total number of slices. "
-                    "If 1, job is not part of a sliced job."),
-    )
 
 
-    def _get_parent_field_name(self):
+    @classmethod
+    def _get_parent_field_name(cls):
         return 'job_template'
 
     @classmethod
@@ -590,15 +544,6 @@ class Job(UnifiedJob, JobOptions, SurveyJobMixin, JobNotificationMixin, TaskMana
     @property
     def event_class(self):
         return JobEvent
-
-    def copy_unified_job(self, **new_prompts):
-        # Needed for job slice relaunch consistency, do no re-spawn workflow job
-        # target same slice as original job
-        new_prompts['_prevent_slicing'] = True
-        new_prompts.setdefault('_eager_fields', {})
-        new_prompts['_eager_fields']['job_slice_number'] = self.job_slice_number
-        new_prompts['_eager_fields']['job_slice_count'] = self.job_slice_count
-        return super(Job, self).copy_unified_job(**new_prompts)
 
     @property
     def ask_diff_mode_on_launch(self):
@@ -693,9 +638,6 @@ class Job(UnifiedJob, JobOptions, SurveyJobMixin, JobNotificationMixin, TaskMana
             count_hosts = 2
         else:
             count_hosts = Host.objects.filter(inventory__jobs__pk=self.pk).count()
-            if self.job_slice_count > 1:
-                # Integer division intentional
-                count_hosts = (count_hosts + self.job_slice_count - self.job_slice_number) / self.job_slice_count
         return min(count_hosts, 5 if self.forks == 0 else self.forks) + 1
 
     @property
@@ -894,19 +836,19 @@ class NullablePromptPsuedoField(object):
             instance.char_prompts[self.field_name] = value
 
 
-class LaunchTimeConfigBase(BaseModel):
+class LaunchTimeConfig(BaseModel):
     '''
-    Needed as separate class from LaunchTimeConfig because some models
-    use `extra_data` and some use `extra_vars`. We cannot change the API,
-    so we force fake it in the model definitions
-     - model defines extra_vars - use this class
-     - model needs to use extra data - use LaunchTimeConfig
-    Use this for models which are SurveyMixins and UnifiedJobs or Templates
+    Common model for all objects that save details of a saved launch config
+    WFJT / WJ nodes, schedules, and job launch configs (not all implemented yet)
     '''
     class Meta:
         abstract = True
 
     # Prompting-related fields that have to be handled as special cases
+    credentials = models.ManyToManyField(
+        'Credential',
+        related_name='%(class)ss'
+    )
     inventory = models.ForeignKey(
         'Inventory',
         related_name='%(class)ss',
@@ -915,6 +857,15 @@ class LaunchTimeConfigBase(BaseModel):
         default=None,
         on_delete=models.SET_NULL,
     )
+    extra_data = JSONField(
+        blank=True,
+        default={}
+    )
+    survey_passwords = prevent_search(JSONField(
+        blank=True,
+        default={},
+        editable=False,
+    ))
     # All standard fields are stored in this dictionary field
     # This is a solution to the nullable CharField problem, specific to prompting
     char_prompts = JSONField(
@@ -924,7 +875,6 @@ class LaunchTimeConfigBase(BaseModel):
 
     def prompts_dict(self, display=False):
         data = {}
-        # Some types may have different prompts, but always subset of JT prompts
         for prompt_name in JobTemplate.get_ask_mapping().keys():
             try:
                 field = self._meta.get_field(prompt_name)
@@ -937,11 +887,11 @@ class LaunchTimeConfigBase(BaseModel):
                 if len(prompt_val) > 0:
                     data[prompt_name] = prompt_val
             elif prompt_name == 'extra_vars':
-                if self.extra_vars:
+                if self.extra_data:
                     if display:
-                        data[prompt_name] = self.display_extra_vars()
+                        data[prompt_name] = self.display_extra_data()
                     else:
-                        data[prompt_name] = self.extra_vars
+                        data[prompt_name] = self.extra_data
                 if self.survey_passwords and not display:
                     data['survey_passwords'] = self.survey_passwords
             else:
@@ -950,21 +900,18 @@ class LaunchTimeConfigBase(BaseModel):
                     data[prompt_name] = prompt_val
         return data
 
-    def display_extra_vars(self):
+    def display_extra_data(self):
         '''
         Hides fields marked as passwords in survey.
         '''
         if self.survey_passwords:
-            extra_vars = parse_yaml_or_json(self.extra_vars).copy()
+            extra_data = parse_yaml_or_json(self.extra_data).copy()
             for key, value in self.survey_passwords.items():
-                if key in extra_vars:
-                    extra_vars[key] = value
-            return extra_vars
+                if key in extra_data:
+                    extra_data[key] = value
+            return extra_data
         else:
-            return self.extra_vars
-
-    def display_extra_data(self):
-        return self.display_extra_vars()
+            return self.extra_data
 
     @property
     def _credential(self):
@@ -988,42 +935,7 @@ class LaunchTimeConfigBase(BaseModel):
             return None
 
 
-class LaunchTimeConfig(LaunchTimeConfigBase):
-    '''
-    Common model for all objects that save details of a saved launch config
-    WFJT / WJ nodes, schedules, and job launch configs (not all implemented yet)
-    '''
-    class Meta:
-        abstract = True
-
-    # Special case prompting fields, even more special than the other ones
-    extra_data = JSONField(
-        blank=True,
-        default={}
-    )
-    survey_passwords = prevent_search(JSONField(
-        blank=True,
-        default={},
-        editable=False,
-    ))
-    # Credentials needed for non-unified job / unified JT models
-    credentials = models.ManyToManyField(
-        'Credential',
-        related_name='%(class)ss'
-    )
-
-    @property
-    def extra_vars(self):
-        return self.extra_data
-
-    @extra_vars.setter
-    def extra_vars(self, extra_vars):
-        self.extra_data = extra_vars
-
-
 for field_name in JobTemplate.get_ask_mapping().keys():
-    if field_name == 'extra_vars':
-        continue
     try:
         LaunchTimeConfig._meta.get_field(field_name)
     except FieldDoesNotExist:

@@ -10,6 +10,7 @@ if ($basePath) {
 }
 
 import start from './app.start';
+import systemTracking from './system-tracking/main';
 import inventoriesHosts from './inventories-hosts/main';
 import inventoryScripts from './inventory-scripts/main';
 import credentials from './credentials/main';
@@ -35,12 +36,38 @@ import RestServices from './rest/main';
 import access from './access/main';
 import scheduler from './scheduler/main';
 import instanceGroups from './instance-groups/main';
-import shared from './shared/main';
 
 import atFeatures from '~features';
 import atLibComponents from '~components';
 import atLibModels from '~models';
 import atLibServices from '~services';
+
+import ipamPrefixes from './ipam-prefixes/main';
+import ipamRirs from './ipam-rirs/main';
+import ipamVrfs from './ipam-vrfs/main';
+import ipamAggregates from './ipam-aggregates/main';
+import ipamSubnets from './ipam-subnets/main';
+import ipamIpAddresses from './ipam-ip-addresses/main';
+import ipamVlans from './ipam-vlans/main';
+import ipamDatacenters from './ipam-datacenters/main';
+
+
+import infraProviders from './infra-providers/main';
+import infraStorages from './infra-storages/main';
+import infraNetworks from './infra-networks/main';
+import infraServices from './infra-services/main';
+import infraApps from './infra-apps/main';
+import infraPki from './infra-pki/main';
+import infraMonitorings from './infra-monitorings/main';
+import infraBackups from './infra-backups/main';
+import infraSecurity from './infra-security/main';
+import infraDocumentations from './infra-documentations/main';
+import infraJobs from './infra-jobs/main';
+import resourceNetworkGears from './resource-network-gears/main';
+import resourceRegistries from './resource-registries/main';
+import resourcePhysicalHosts from './resource-physical-hosts/main';
+import resourceVirtualHosts from './resource-virtual-hosts/main';
+
 
 start.bootstrap(() => {
     angular.bootstrap(document.body, ['awApp']);
@@ -53,6 +80,7 @@ angular
         'angular-duration-format',
         'angularMoment',
         'AngularScheduler',
+        'angular-md5',
         'dndLists',
         'ncy-angular-breadcrumb',
         'ngSanitize',
@@ -61,19 +89,44 @@ angular
         'gettext',
         'Timezones',
         'lrInfiniteScroll',
-        shared.name,
         about.name,
         access.name,
         license.name,
         RestServices.name,
         browserData.name,
         configuration.name,
+        systemTracking.name,
         inventoriesHosts.name,
         inventoryScripts.name,
         credentials.name,
         credentialTypes.name,
         organizations.name,
         managementJobs.name,
+
+    	ipamPrefixes.name,
+        ipamRirs.name,
+        ipamVrfs.name,
+        ipamAggregates.name,
+        ipamSubnets.name,
+        ipamIpAddresses.name,
+        ipamVlans.name,
+        ipamDatacenters.name,
+        infraProviders.name,
+        infraStorages.name,
+        infraNetworks.name,
+        infraServices.name,
+        infraApps.name,
+        infraPki.name,
+        infraMonitorings.name,
+        infraBackups.name,
+        infraSecurity.name,
+        infraDocumentations.name,
+        infraJobs.name,
+        resourceNetworkGears.name,
+        resourceRegistries.name,
+        resourcePhysicalHosts.name,
+        resourceVirtualHosts.name,
+
         breadCrumb.name,
         home.name,
         login.name,
@@ -193,10 +246,12 @@ angular
 
             $rootScope.breadcrumb = {};
             $rootScope.BRAND_NAME = AppStrings.get('BRAND_NAME');
-            $rootScope.tabTitle = `Ansible ${$rootScope.BRAND_NAME}`;
+            //$rootScope.tabTitle = `Ansible ${$rootScope.BRAND_NAME}`;
+            $rootScope.tabTitle = `AHOME`; //changed by zy
             $rootScope.$watch('$state.current.ncyBreadcrumbLabel', function(title) {
                 title = (title) ? "| " + title : "";
-                document.title = `Ansible ${$rootScope.BRAND_NAME} ${title}`;
+                //document.title = `Ansible ${$rootScope.BRAND_NAME} ${title}`;
+                document.title = `AHOME ${title}`;
             });
 
             function activateTab() {
@@ -309,11 +364,11 @@ angular
                         }
 
                         if(!_.isEqual(toParamsWithoutSearchKeys, fromParamsWithoutSearchKeys)) {
-                            document.body.scrollTop = document.documentElement.scrollTop = 0;
+                            document.querySelector('.at-Layout-main').scrollTop = 0;
                         }
                     }
                     else {
-                        document.body.scrollTop = document.documentElement.scrollTop = 0;
+                        document.querySelector('.at-Layout-main').scrollTop = 0;
                     }
 
                     if (trans.from().name === 'license' && trans.params('to').hasOwnProperty('licenseMissing')) {

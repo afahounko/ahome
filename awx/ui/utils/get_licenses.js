@@ -6,7 +6,7 @@ const { join } = require('path');
 const licenseTexts = require('./license_texts');
 
 // path to shrinkwrap file
-const SHRINKWRAP_PATH = `${__dirname}/../package-lock.json`;
+const SHRINKWRAP_PATH = `${__dirname}/../npm-shrinkwrap.json`;
 // folder that npm install node_modules to
 const NODE_MODULES_FOLDER = `${__dirname}/../node_modules`;
 // the folder which we will put the ui license files
@@ -16,7 +16,7 @@ const OMITTED_NODE_MODULES_FOLDERS = ['@uirouter', '.bin', 'cycle'];
 // all the ways in which deps with license files have license files named
 const LICENSE_FILE_NAMES = ['LICENSE', 'LICENCE', 'LICENSE.md', 'LICENSE.txt', 'MIT-LICENSE.txt', 'LICENSE-MIT.txt', 'LICENSE-MIT', 'LICENSE.MIT', 'LICENSE.APACHE2', 'LICENSE.BSD'];
 // all the ways in which deps with license info included in readme have the license header
-const LICENSE_HEADER_NAMES = ['## License'];
+const LICENSE_HEADER_NAMES = ['LICENSE', 'License', 'Licence'];
 // all the ways in which deps with license info included in readme have readme files named
 const README_FILE_NAMES = ['README', 'README.md', 'README.markdown'];
 // deps that we need to manually grab the license info (and that info)
@@ -89,7 +89,7 @@ const licenseTextIncludedInReadme = (readmeText, returnLicenseText) => LICENSE_H
         } else if (a !== false) {
             licenseVal = a;
         } else if (readmeText.includes(b)) {
-            licenseVal = readmeText.split(b).slice(1, readmeText.split(b).length);
+            licenseVal = readmeText.split(b).slice(-1);
         } else {
             licenseVal = false;
         }
@@ -175,8 +175,7 @@ const licenseCheck = () => {
     if (noLicensePackage.length === 0) {
         console.log('Success!  All modules probably have a license associated.');
     } else {
-        console.log(`ERROR!  The following modules do not have license info associated with them: ${noLicensePackage.join(', ')}.`);
-        process.exit(1);
+        console.log(`Warning!  The following modules do not have license info associated with them: ${noLicensePackage.join(', ')}.`);
     }
 };
 
@@ -196,7 +195,7 @@ const licenseWrite = () => {
 
     modulesWithLicenseFile.forEach(path => {
         writeFileSync(
-            join(UI_LICENSE_FOLDER, `${getModulename(path)}.txt`),
+            join(UI_LICENSE_FOLDER, getModulename(path)),
             readFileSync(hasLicenseFile(path, true)).toString()
         );
     });
@@ -208,14 +207,14 @@ const licenseWrite = () => {
 
     modulesWithPackageJSONLicenseAttr.forEach(path => {
         const licenseType = hasLicenseAttrInNPM(path, true);
-        const licenseText = LICENSE_TEXTS[licenseType];
+        let licenseText = LICENSE_TEXTS[licenseType];
 
         if (!licenseText) {
-            console.log(`ERROR!  License text for ${licenseType} is not in license_texts.js.`);
-            process.exit(1);
+            console.log(`WARNING!  License text for ${licenseType} is not in license_texts.js.  Please add it.  Just adding the license type to the module's file for now.`);
+            licenseText = licenseType;
         }
 
-        writeFileSync(join(UI_LICENSE_FOLDER, `${getModulename(path)}.txt`), licenseText);
+        writeFileSync(join(UI_LICENSE_FOLDER, getModulename(path)), licenseText);
     });
 
     const modulesWithLicenseInfoInReadme = getSubdirectories(NODE_MODULES_FOLDER)
@@ -226,13 +225,13 @@ const licenseWrite = () => {
     console.log(`${modulesWithLicenseInfoInReadme.length} modules with license text in readme.`);
 
     modulesWithLicenseInfoInReadme.forEach(path => {
-        writeFileSync(join(UI_LICENSE_FOLDER, `${getModulename(path)}.txt`), hasLicenseInReadme(path, true));
+        writeFileSync(join(UI_LICENSE_FOLDER, getModulename(path)), hasLicenseInReadme(path, true));
     });
 
     console.log(`${MANUAL_NODE_MODULES_LICENSE_INFO.length} modules with license info manually added to this script.`);
 
     MANUAL_NODE_MODULES_LICENSE_INFO.forEach(mod => {
-        writeFileSync(join(UI_LICENSE_FOLDER, `${getModulename(mod.module_name)}.txt`), mod.license_info);
+        writeFileSync(join(UI_LICENSE_FOLDER, mod.module_name), mod.license_info);
     });
 };
 

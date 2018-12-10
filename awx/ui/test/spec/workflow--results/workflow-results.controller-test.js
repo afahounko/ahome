@@ -18,7 +18,7 @@ describe('Controller: workflowResults', () => {
 
     beforeEach(angular.mock.module('workflowResults', ($provide) => {
         ['PromptDialog', 'Prompt', 'Wait', 'Rest', '$state', 'ProcessErrors',
-         'jobLabels', 'workflowNodes', 'count', 'WorkflowJobModel', 'ComponentsStrings'
+         'jobLabels', 'workflowNodes', 'count', 'WorkflowJobModel',
         ].forEach((item) => {
             $provide.value(item, {});
         });
@@ -30,11 +30,11 @@ describe('Controller: workflowResults', () => {
         $provide.value('ParseVariableString', function() {});
         $provide.value('i18n', { '_': (a) => { return a; } });
         $provide.provider('$stateProvider', { '$get': function() { return function() {}; } });
-        $provide.service('WorkflowChartService', function($q) {
+        $provide.service('WorkflowService', function($q) {
             return {
-                generateArraysOfNodesAndLinks: function() {
+                buildTree: function() {
                     var deferred = $q.defer();
-                    deferred.resolve();
+                    deferred.resolve(treeData);
                     return deferred.promise;
                 }
             };
@@ -46,6 +46,7 @@ describe('Controller: workflowResults', () => {
         $rootScope = _$rootScope_;
         workflowResultsService = _workflowResultsService_;
         $interval = _$interval_;
+
     }));
 
     describe('elapsed timer', () => {

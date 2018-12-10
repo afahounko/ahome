@@ -383,8 +383,6 @@ class Credential(PasswordFieldsModel, CommonModelNameNotUnique, ResourceMixin):
         super(Credential, self).save(*args, **kwargs)
 
     def encrypt_field(self, field, ask):
-        if not hasattr(self, field):
-            return None
         encrypted = encrypt_field(self, field, ask=ask)
         if encrypted:
             self.inputs[field] = encrypted
@@ -582,7 +580,7 @@ class CredentialType(CommonModelNameNotUnique):
         if not self.injectors:
             if self.managed_by_tower and credential.kind in dir(builtin_injectors):
                 injected_env = {}
-                getattr(builtin_injectors, credential.kind)(credential, injected_env, private_data_dir)
+                getattr(builtin_injectors, credential.kind)(credential, injected_env)
                 env.update(injected_env)
                 safe_env.update(build_safe_env(injected_env))
             return
