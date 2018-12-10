@@ -12,12 +12,12 @@ const user_type_options = [
     { type: 'system_administrator', label: N_('System Administrator') },
 ];
 
-export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'Rest', 'ParseTypeChange',
+export default ['$window', '$scope', '$rootScope', '$timeout', 'JobForm', 'GenerateForm', 'Rest', 'ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath', 'MultiCredentialService', 'ProjectUpdate',
-    'Wait', 'CreateSelect2', '$state', '$location', 'i18n', 'ParseVariableString', 'SaveInfraSubItem', 'initSelect',
-    function ($window, $scope, $rootScope, JobForm, GenerateForm, Rest, ParseTypeChange, Alert,
+    'Wait', 'CreateSelect2', '$state', '$location', 'i18n', 'ParseVariableString', 'SaveInfraSubItem', 'initSelect', 'chooseSelect',
+    function ($window, $scope, $rootScope, $timeout, JobForm, GenerateForm, Rest, ParseTypeChange, Alert,
         ProcessErrors, ReturnToCaller, GetBasePath, MultiCredentialService, ProjectUpdate, Wait, CreateSelect2,
-		$state, $location, i18n, ParseVariableString, SaveInfraSubItem, initSelect) {
+		$state, $location, i18n, ParseVariableString, SaveInfraSubItem, initSelect, chooseSelect) {
 
         var defaultUrl = GetBasePath('ipam_infrastructure_jobs'),
             fk_model = $window.localStorage.getItem('fk_model'),
@@ -31,62 +31,77 @@ export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'R
         init();
 
         function init() {
-            // apply form definition's default field values
-            //$scope.canAdd = true;
-            console.log("Add FORM Init");
-            console.log(form);
-            GenerateForm.applyDefaults(form, $scope);
+			var parent_url = GetBasePath('ipam_' + fk_model) + fk_id;
+			
+			Rest.setUrl(parent_url);
+            Wait('start');
+            Rest.get(parent_url).then(({data}) => {
+            	parentData = data;
+	            console.log("Add FORM Init");
+	            console.log(form);
+	            GenerateForm.applyDefaults(form, $scope);
 
-            $scope.paramCategory = fk_model + '.' + fk_type
+	            $scope.paramCategory = fk_model + '.' + fk_type
+	            $scope.isAddForm = true;
+	            $scope.status1 = "active";
+	            $scope.tabId = 1;
+	            $scope.previous = "CLOSE";
+	            $scope.next = "NEXT";
 
-            $scope.isAddForm = true;
+				if(form.fields.datacenter) $scope.datacenter_type_options = initSelect('ipam_datacenters', '', form.fields.datacenter.ngFilter ? form.fields.datacenter.ngFilter : "");
+		        if(form.fields.credential) $scope.credential_type_options = initSelect('credentials', '', form.fields.datacenter.ngFilter ? form.fields.datacenter.ngFilter : "");
+			    if(form.fields.ipaddress)  $scope.ipaddress_type_options = initSelect('ipam_ip_addresses', '', form.fields.ipaddress.ngFilter ? form.fields.ipaddress.ngFilter : "");
 
-            $scope.status1 = "active";
-            $scope.tabId = 1;
-            $scope.previous = "CLOSE";
-            $scope.next = "NEXT";
+			    CreateSelect2({
+	                element: '#' + id_type + '_kind',
+	                multiple: false,
+	            });
 
-			if(form.fields.datacenter) $scope.datacenter_type_options = initSelect('ipam_datacenters', '', form.fields.datacenter.ngFilter ? form.fields.datacenter.ngFilter : "");
-	        if(form.fields.credential) $scope.credential_type_options = initSelect('credentials', '', form.fields.credential.ngFilter ? form.fields.credential.ngFilter : "");
-		    if(form.fields.ipaddress)  $scope.ipaddress_type_options = initSelect('ipam_ip_addresses', '', form.fields.ipaddress.ngFilter ? form.fields.ipaddress.ngFilter : "");
-		    
-		    CreateSelect2({
-                element: '#' + id_type + '_kind',
-                multiple: false,
-            });
+	            CreateSelect2({
+	                element: '#' + id_type + '_datacenter',
+	                multiple: false,
+	            });
 
-            CreateSelect2({
-                element: '#' + id_type + '_datacenter',
-                multiple: false,
-            });
+				$timeout(function(){
+					$scope.credential = chooseSelect($scope.credential_type_options, parentData.opts.credential_id);
+					CreateSelect2({
+		                element: '#' + id_type + '_credential',
+		                multiple: false,
+		            });
+				},2000);
+				
+	            
 
-            CreateSelect2({
-                element: '#' + id_type + '_credential',
-                multiple: false,
-            });
+	            CreateSelect2({
+	                element: '#' + id_type + '_ipaddress',
+	                multiple: false,
+	            });
 
-            CreateSelect2({
-                element: '#' + id_type + '_ipaddress',
-                multiple: false,
-            });
+	            //for multi credential 2018/10/25
+	            MultiCredentialService.getCredentialTypes()
+	                .then(({ data }) => {
+	                    $scope.multiCredential = {
+	                        credentialTypes: data.results,
+	                        selectedCredentials: []
+	                    };
+	                });
 
-            //for multi credential 2018/10/25
-            MultiCredentialService.getCredentialTypes()
-                .then(({ data }) => {
-                    $scope.multiCredential = {
-                        credentialTypes: data.results,
-                        selectedCredentials: []
-                    };
+	            // change to modal dialog
+
+	            var element = document.getElementById("modaldlg");
+	            element.style.display = "block";
+	            var panel = element.getElementsByClassName("Panel ng-scope");
+	            panel[0].classList.add("modal-dialog");
+	            panel[0].style.width = "60%";
+				
+            })
+            .catch(({data, status}) => {
+                ProcessErrors($scope, data, status, null, {
+                    hdr: i18n._('Error!'),
+                    msg: i18n.sprintf(i18n._('Failed to Parent Data: %s. GET status: '), fk_id) + status
                 });
-
-            // change to modal dialog
-
-            var element = document.getElementById("modaldlg");
-            element.style.display = "block";
-            var panel = element.getElementsByClassName("Panel ng-scope");
-            panel[0].classList.add("modal-dialog");
-            panel[0].style.width = "60%";
-
+            });
+			Wait('stop');
         }
 
         var callback = function () {

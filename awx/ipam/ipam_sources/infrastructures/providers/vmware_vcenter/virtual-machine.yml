@@ -53,9 +53,6 @@ configure_job:
     diff_mode: false
     allow_simultaneous: false
     network_credential: null
-    cloud_credential: null
-    credential: 2
-    credentials: '1,9'
     vault_credential: null
 
 poweroff_job:
@@ -89,10 +86,6 @@ poweroff_job:
     become_enabled: false
     diff_mode: false
     allow_simultaneous: false
-    cloud_credential: null
-    network_credential: null
-    credential: 2
-    credentials: '1,9'
     vault_credential: null
 
 remove_job:
@@ -126,10 +119,6 @@ remove_job:
     become_enabled: false
     diff_mode: false
     allow_simultaneous: false
-    cloud_credential: null
-    network_credential: null
-    credential: 2
-    credentials: '1,2'
     vault_credential: null
 
 addTitle: 'NEW VMWARE VM'
@@ -202,6 +191,7 @@ fields:
     ngOptions: 'item as item.label for item in credential_type_options'
     ngDisabled: 'true'
     ngShow: 'tabId == 2'
+
   multiCredential:
     label: 'Credential'
     type: 'custom'

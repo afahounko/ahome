@@ -1091,9 +1091,6 @@ export default
 
                                     html += ">\n";
                                     
-                                    console.log(field.multiSelect);
-                                    console.log(field.disableChooseOption);
-                                    console.log(field.ngValues);
                                     if (!field.multiSelect && !field.disableChooseOption) {
                                         html += "<option value=\"\">";
                                         // some languages use "Playbook" as a proper noun

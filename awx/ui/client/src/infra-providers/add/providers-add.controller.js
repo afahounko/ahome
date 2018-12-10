@@ -52,7 +52,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			
 			if(form.fields.datacenter) $scope.datacenter_type_options = initSelect('ipam_datacenters', '', form.fields.datacenter.ngFilter ? form.fields.datacenter.ngFilter : "");
 	        if(form.fields.credential) $scope.credential_type_options = initSelect('credentials', '', form.fields.credential.ngFilter ? form.fields.credential.ngFilter : "");
-
+			if(form.fields.status) $scope.status_type_options = initSelect('', form.fields.status.ngValues, form.fields.status.ngFilter ? form.fields.status.ngFilter : "", true);
 			//$scope.kind = cloudProcess(form);
 	        CreateSelect2({
 	            element: '#' + fk_type + '_kind',
@@ -217,10 +217,19 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 					var data = "{";
 					for (fld in form.fields) {
 						console.log($scope[fld]);
-						if(fld == "kind" || fld == "datacenter" || fld == "credential" || fld == "ipaddress")
+						if(fld == "datacenter" || fld == "credential" || fld == "ipaddress")
 						{
 							data += "'" + fld + "':";
 			            	if($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";
+			            	else data += "''";
+			            	data += ",\n"; 
+			            	continue;
+						}
+						if(fld == "kind" || fld == "status")
+						{
+							data += "'" + fld + "':";
+							console.log($scope[fld]);
+			            	if($scope[fld] != undefined) data += "'" + $scope[fld].label + "'";
 			            	else data += "''";
 			            	data += ",\n"; 
 			            	continue;
@@ -334,22 +343,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
         }
         $scope.formSave = function() {
         	var data_item = processNewData(form.fields);
-        	/*var check_flag = -100;
-        	while(check_flag != -100)
-        	{
-        		check_flag  = checkExistApi(defaultUrl, 'name', data_item.name);
-        	}
-        	console.log(check_flag);
-        	if(check_flag  == -1)
-        	{
-        		SaveInfraItem(defaultUrl, form, data_item);
-        	}
-        	else
-        	{
-        		deleteProvider(check_flag, function() {*/
-        			SaveInfraItem(defaultUrl, form, data_item, 'infraProvidersList');
-        		//});
-    //}
+        	SaveInfraItem(defaultUrl, form, data_item, 'infraProvidersList');
         };
 
         $scope.formCancel = function() {

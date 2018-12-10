@@ -55,11 +55,6 @@ configure_job:
     become_enabled: false
     diff_mode: false
     allow_simultaneous: false
-    cloud_credential: null
-    network_credential: null
-    credential: 2
-    credentials: '1,9'
-    vault_credential: null
 
 poweroff_job:
     name_prefix: 'Poweroff_'
@@ -92,11 +87,6 @@ poweroff_job:
     become_enabled: false
     diff_mode: false
     allow_simultaneous: false
-    cloud_credential: null
-    network_credential: null
-    credential: 2
-    credentials: '1,9'
-    vault_credential: null
 
 remove_job:
     name_prefix: 'Remove_'
@@ -129,11 +119,6 @@ remove_job:
     become_enabled: false
     diff_mode: false
     allow_simultaneous: false
-    cloud_credential: null
-    network_credential: null
-    credential: 2
-    credentials: '1,2'
-    vault_credential: null
 
 addTitle: 'NEW LINUX VMWARE VM'
 editTitle: '{{ name }}'

@@ -8,9 +8,9 @@ description: |
 hosts: all
 
 cloud: true
-credential_types: 1,7
+credential_types: '7'
 credential_prefix: 'Machine_'
-subitem_auto: 1
+#subitem_auto: 1
 
 label_prefix: ''
 url: 'https://github.com/afahounko'
@@ -70,7 +70,6 @@ configure_job:
     allow_simultaneous: false
     network_credential: null
     cloud_credential: null
-    credential: 2
     vault_credential: null
 
 poweroff_job:
@@ -106,7 +105,6 @@ poweroff_job:
     allow_simultaneous: false
     cloud_credential: null
     network_credential: null
-    credential: 2
     vault_credential: null
 
 remove_job:
@@ -142,7 +140,6 @@ remove_job:
     allow_simultaneous: false
     cloud_credential: null
     network_credential: null
-    credential: 2
     vault_credential: null
 
 addTitle: 'NEW PROVIDER'

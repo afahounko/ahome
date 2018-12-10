@@ -24,8 +24,6 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
 
         function init() {
         	
-
-			
             Rest.setUrl(defaultUrl);
             Wait('start');
             Rest.get(defaultUrl).then(({data}) => {
@@ -33,7 +31,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
                 $scope.provider_id = id;
 		        $scope.tabId = 1;
                 $scope.status1 = "active";
-                
+
                 for (itm in data.opts)
                 {
                 	$scope[itm] = data.opts[itm];

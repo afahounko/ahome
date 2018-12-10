@@ -8,7 +8,7 @@ description: |
 hosts: all
 
 cloud: false
-credential_type: Windows
+credential_type: BuildFactory
 credential_input:
     fields:
       - type: string
@@ -320,7 +320,6 @@ fields:
     rows: 10
     ngShow: "kind.value == '1' && tabId == 2"
     awPopOver: "<p> ansible_connection: winrm <br> ansible_winrm_server_cert_validation: ignore </p>"
-    awPopOverWatch: "<p> ansible_connection: winrm <br> ansible_winrm_server_cert_validation: ignore </p>"
     dataPlacement: 'right'
     dataContainer: 'body'
     autocomplete: false
@@ -332,6 +331,7 @@ fields:
     sourceModel: 'hosts'
     basePath: 'hosts'
     awPopOver: "<p> Select the Inventory Hosts for this Inventory to run on. </p>"
+    awPop: "<p> Select the Inventory Hosts for this Inventory to run on. </p>"
     dataTitle: 'Inventory Host'
     dataPlacement: 'right'
     dataContainer: 'body'

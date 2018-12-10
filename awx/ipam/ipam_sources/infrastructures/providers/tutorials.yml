@@ -256,6 +256,7 @@ fields:
     label: 'Fixed Data Status'
     type: 'select'
     ngValues: 'Status1,Status2'
+    ngOptions: 'item as item.label for item in status_type_options'
     disableChooseOption: true
     ngChange: 'statusChange()'
     awPopOver: '<p> Select the Status. </p>'
@@ -264,7 +265,7 @@ fields:
     dataContainer: 'body'
     ngShow: 'tabId == 2'
 
-  checkbox:
+  checkbox_TrueDefault:
     name: 'scm_clean'
     label: 'CheckBox1'
     type: 'checkbox'
@@ -273,16 +274,39 @@ fields:
     dataContainer: 'body'
     dataPlacement: 'right'
     labelClass: 'checkbox-options stack-inline'
-    ngShow: 'tabId == 2'
+    default: true
+    ngShow: 'tabId == 1'
 
-  enforce_unique:
+  checkbox2_FalseDefault:
+    name: 'scm_clean2'
+    label: 'CheckBox2'
+    type: 'checkbox'
+    awPopOver: '<p> CheckBox2.</p>'
+    dataTitle: 'CheckBox2'
+    dataContainer: 'body'
+    dataPlacement: 'right'
+    labelClass: 'checkbox-options stack-inline'
+    default: 'false'
+    ngShow: 'tabId == 1'
+
+  enforce_unique_TrueDefault:
     label: 'CHECKBOX2'
     type: 'toggleSwitch'
-    toggleSource: 'enforce_unique'
+    toggleSource: 'enforce_unique_TrueDefault'
     dataPlacement: 'right'
     dataContainer: 'body'
-    awPopOver: "<p> If enabled, CHECKBOX2 is enabled. </p>"
-    ngShow: 'tabId == 2'
+    awPopOver: "<p> If enabled, ENFORCE_UNIQUE is enabled. </p>"
+    default: true
+    ngShow: 'tabId == 1'
+
+  enforce_unique_FalseDefault:
+    label: 'CHECKBOX BIS'
+    type: 'toggleSwitch'
+    toggleSource: 'enforce_unique_FalseDefault'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    awPopOver: "<p> If enabled, ENFORCE_UNIQUE is enabled. </p>"
+    ngShow: 'tabId == 1'
 
   organization:
     label: 'Lookup'

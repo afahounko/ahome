@@ -210,6 +210,62 @@ fields:
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 1'
 
+  status:
+    label: 'Fixed Data Status'
+    type: 'select'
+    ngValues: 'Status1,Status2'
+    ngOptions: 'item as item.label for item in status_type_options'
+    disableChooseOption: true
+    ngChange: 'statusChange()'
+    awPopOver: '<p> Select the Status. </p>'
+    dataTitle: 'Fixed Status'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    ngShow: 'tabId == 1'
+
+  checkbox:
+    name: 'scm_clean'
+    label: 'CheckBox1'
+    type: 'checkbox'
+    awPopOver: '<p> CheckBox1.</p>'
+    dataTitle: 'CheckBox1'
+    dataContainer: 'body'
+    dataPlacement: 'right'
+    labelClass: 'checkbox-options stack-inline'
+    default: true
+    ngShow: 'tabId == 1'
+
+  checkbox2:
+    name: 'scm_clean2'
+    label: 'CheckBox2'
+    type: 'checkbox'
+    awPopOver: '<p> CheckBox2.</p>'
+    dataTitle: 'CheckBox2'
+    dataContainer: 'body'
+    dataPlacement: 'right'
+    labelClass: 'checkbox-options stack-inline'
+    default: 'false'
+    ngShow: 'tabId == 1'
+
+  enforce_unique:
+    label: 'CHECKBOX2'
+    type: 'toggleSwitch'
+    toggleSource: 'enforce_unique'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    awPopOver: "<p> If enabled, CHECKBOX2 is enabled. </p>"
+    default: true
+    ngShow: 'tabId == 1'
+
+  enforce_unique1:
+    label: 'CHECKBOX BIS'
+    type: 'toggleSwitch'
+    toggleSource: 'enforce_unique1'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    awPopOver: "<p> If enabled, CHECKBOX2 is enabled. </p>"
+    ngShow: 'tabId == 1'
+
   kind:
     label: 'Credential Type'
     type: 'select'
