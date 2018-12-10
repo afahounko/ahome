@@ -13,7 +13,7 @@
 Summary: AHOME
 Name: awx
 Version: 2.1.0
-Release: 1%{dist}
+Release: 2%{dist}
 Source0: /dist/awx-%{version}.tar.gz
 Source1: settings.py.dist
 %if 0%{?amzn}

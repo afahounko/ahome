@@ -48,33 +48,39 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 				{
 					$scope.kind = $scope.kind_type_options[1];
 				}
+				CreateSelect2({
+			            element: '#' + fk_type + '_kind',
+			            multiple: false,
+			    });
 			}
-			
-			if(form.fields.datacenter) $scope.datacenter_type_options = initSelect('ipam_datacenters', '', form.fields.datacenter.ngFilter ? form.fields.datacenter.ngFilter : "");
-	        if(form.fields.credential) $scope.credential_type_options = initSelect('credentials', '', form.fields.credential.ngFilter ? form.fields.credential.ngFilter : "");
-<<<<<<< HEAD
-			if(form.fields.status) $scope.status_type_options = initSelect('', form.fields.status.ngValues, form.fields.status.ngFilter ? form.fields.status.ngFilter : "", true);
-=======
-
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 			//$scope.kind = cloudProcess(form);
-	        CreateSelect2({
-	            element: '#' + fk_type + '_kind',
-	            multiple: false,
-	        });
-	        CreateSelect2({
-	            element: '#' + fk_type + '_datacenter',
-	            multiple: false,
-	        });
-	        CreateSelect2({
-	            element: '#' + fk_type + '_credential',
-	            multiple: false,
-	        });
-	        CreateSelect2({
-	            element: '#' + fk_type + '_status',
-	            multiple: false,
-	        });
-			console.log(fk_type);
+			//Init SelectBoxes
+			for(var field in form.fields)
+			{
+				console.log(field);
+				if(field.startsWith("select"))
+				{
+					if(form.fields[field].ngValues)
+					{
+						$scope[field + '_type_options'] = initSelect('', form.fields[field].ngValues, form.fields[field].ngFilter ? form.fields[field].ngFilter : "");
+					}
+					else
+					{
+						if(form.fields[field].ngSource)
+							$scope[field + '_type_options'] = initSelect(form.fields[field].ngSource, '', form.fields[field].ngFilter ? form.fields[field].ngFilter : "");
+					}
+					var elmnt = '#' + fk_type + '_' + field;
+					CreateSelect2({
+			            element: elmnt,
+			            multiple: false,
+			        });
+				}
+				if(form.fields[field].type == 'toggleSwitch')
+				{
+					if(form.fields[field].default != undefined) $scope[field] = form.fields[field].default;
+				}
+			}
+
 			if(fk_type == "vmware_vcenter")
 			{
 				Rest.setUrl(GetBasePath('hosts'));
@@ -132,7 +138,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 
         }
 		$scope.kindChange = function(){
-			console.log($scope.kind.value);
+			console.log($scope.select_kind.value);
 		}
         $scope.datacenterChange = function() {
             // When an scm_type is set, path is not required
@@ -217,34 +223,36 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 				}
 				if((form.steps && $scope.tabId == form.steps) || (!form.steps && $scope.tabId == 3))
 				{
+					console.log('Datas for the fields');
 					var fld, subid;
 					var data = "{";
 					for (fld in form.fields) {
+						console.log(fld);
 						console.log($scope[fld]);
-<<<<<<< HEAD
-						if(fld == "datacenter" || fld == "credential" || fld == "ipaddress")
-=======
-						if(fld == "kind" || fld == "datacenter" || fld == "credential" || fld == "ipaddress")
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
+						if(fld.startsWith('select_'))
 						{
 							data += "'" + fld + "':";
-			            	if($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";
-			            	else data += "''";
+							if(form.fields[fld].opt)
+							{
+								if($scope[fld] != undefined) data += "'" + $scope[fld].label + "'";
+			            		else data += "''";
+				            }
+				            else
+				            {
+				            	if($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";
+				            	else data += "''";
+				            }
 			            	data += ",\n"; 
 			            	continue;
 						}
-<<<<<<< HEAD
-						if(fld == "kind" || fld == "status")
+						if(fld == 'kind')
 						{
 							data += "'" + fld + "':";
-							console.log($scope[fld]);
-			            	if($scope[fld] != undefined) data += "'" + $scope[fld].label + "'";
-			            	else data += "''";
+							if($scope[fld] != undefined) data += "'" + $scope[fld].label + "'";
+		            		else data += "''";
 			            	data += ",\n"; 
 			            	continue;
 						}
-=======
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 						if(fld == "inventory_hosts" || fld == "instance_groups")
 						{
 							data += "'" + fld + "':";
@@ -341,7 +349,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
             });
             console.log(inputs);
             data.inputs = inputs;
-            if($scope.kind != null) data.kind = $scope.kind.value;
+            if($scope.select_kind != null) data.select_kind = $scope.select_kind.value;
 			if($scope.datacenter != null) data.datacenter = $scope.datacenter.value;
             if($scope.credential != null) data.credential = $scope.credential.value;
     		data.opts = $scope.opts;
@@ -354,26 +362,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
         }
         $scope.formSave = function() {
         	var data_item = processNewData(form.fields);
-<<<<<<< HEAD
         	SaveInfraItem(defaultUrl, form, data_item, 'infraProvidersList');
-=======
-        	/*var check_flag = -100;
-        	while(check_flag != -100)
-        	{
-        		check_flag  = checkExistApi(defaultUrl, 'name', data_item.name);
-        	}
-        	console.log(check_flag);
-        	if(check_flag  == -1)
-        	{
-        		SaveInfraItem(defaultUrl, form, data_item);
-        	}
-        	else
-        	{
-        		deleteProvider(check_flag, function() {*/
-        			SaveInfraItem(defaultUrl, form, data_item, 'infraProvidersList');
-        		//});
-    //}
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
         };
 
         $scope.formCancel = function() {

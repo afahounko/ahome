@@ -244,22 +244,20 @@ fields:
         text: 'Ask at runtime'
     autocomplete: false
 
-  datacenter: 
+  select_datacenter: 
     label: 'Datacenter from API'
     type: 'select'
     defaultText: 'Choose a Datacenter'
     ngModel: 'datacenter'
-    ngOptions: 'item as item.label for item in datacenter_type_options'
+    ngOptions: 'item as item.label for item in select_datacenter_type_options'
+    ngSource: ipam_datacenters
     ngShow: 'tabId == 2'
 
-  status:
+  select_status:
     label: 'Fixed Data Status'
     type: 'select'
     ngValues: 'Status1,Status2'
-<<<<<<< HEAD
-    ngOptions: 'item as item.label for item in status_type_options'
-=======
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
+    ngOptions: 'item as item.label for item in select_status_type_options'
     disableChooseOption: true
     ngChange: 'statusChange()'
     awPopOver: '<p> Select the Status. </p>'
@@ -268,11 +266,7 @@ fields:
     dataContainer: 'body'
     ngShow: 'tabId == 2'
 
-<<<<<<< HEAD
   checkbox_TrueDefault:
-=======
-  checkbox:
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
     name: 'scm_clean'
     label: 'CheckBox1'
     type: 'checkbox'
@@ -281,7 +275,6 @@ fields:
     dataContainer: 'body'
     dataPlacement: 'right'
     labelClass: 'checkbox-options stack-inline'
-<<<<<<< HEAD
     default: true
     ngShow: 'tabId == 1'
 
@@ -314,19 +307,8 @@ fields:
     dataPlacement: 'right'
     dataContainer: 'body'
     awPopOver: "<p> If enabled, ENFORCE_UNIQUE is enabled. </p>"
+    default: false
     ngShow: 'tabId == 1'
-=======
-    ngShow: 'tabId == 2'
-
-  enforce_unique:
-    label: 'CHECKBOX2'
-    type: 'toggleSwitch'
-    toggleSource: 'enforce_unique'
-    dataPlacement: 'right'
-    dataContainer: 'body'
-    awPopOver: "<p> If enabled, CHECKBOX2 is enabled. </p>"
-    ngShow: 'tabId == 2'
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 
   organization:
     label: 'Lookup'

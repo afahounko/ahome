@@ -1,0 +1,419 @@
+---
+name: CreateADUser
+group: Cloud
+version: 1.0
+description: |
+     Create an AD User on GSY or D12
+
+hosts: all
+
+cloud: false
+credential_type: Windows
+credential_input:
+    fields:
+      - type: string
+        id: username
+        label: Username
+      - secret: true
+        type: string
+        id: password
+        label: Password
+      - help_text: |
+          ansible_connection: winrm ansible_winrm_server_cert_validation: ignore
+        multiline: true
+        type: string
+        id: windows_options
+        label: Connection options
+    required:
+      - username
+      - password
+credential_prefix: 'Machine_'
+
+project:
+    name_prefix: 'Git_'
+    description: ''
+    scm_type: 'manual'
+    scm_branch: ''
+    scm_url: 'CreateADUser'
+    scm_clean: true
+    scm_delete_on_update: true
+    credential: null
+    timeout: 0
+    organization: 1
+    scm_update_on_launch: true
+    scm_update_cache_timeout: 0
+
+configure_job:
+    name_prefix: 'Configure_'
+    playbook: 'run.yml'
+    description: ''
+    job_type: "run"
+    inventory: 1
+    forks: 0
+    limit: ''
+    verbosity: 0
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    job_tags: ''
+    force_handlers: false
+    skip_tags: ''
+    start_at_task: ''
+    timeout: 0
+    use_fact_cache: false
+    host_config_key: ''
+    ask_diff_mode_on_launch: false
+    ask_variables_on_launch: false
+    ask_limit_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_inventory_on_launch: false
+    ask_credential_on_launch: false
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    allow_simultaneous: false
+    network_credential: null
+    cloud_credential: null
+    vault_credential: null
+
+poweroff_job:
+    name_prefix: 'Poweroff_'
+    playbook: 'stop.yml'
+    description: ''
+    job_type: "run"
+    inventory: 1
+    forks: 0
+    limit: ''
+    verbosity: 0
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    job_tags: ''
+    force_handlers: false
+    skip_tags: ''
+    start_at_task: ''
+    timeout: 0
+    use_fact_cache: false
+    host_config_key: ''
+    ask_diff_mode_on_launch: false
+    ask_variables_on_launch: false
+    ask_limit_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_inventory_on_launch: false
+    ask_credential_on_launch: false
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    allow_simultaneous: false
+    cloud_credential: null
+    network_credential: null
+    vault_credential: null
+
+remove_job:
+    name_prefix: 'Remove_'
+    playbook: 'remove.yml'
+    description: ''
+    job_type: "run"
+    inventory: 1
+    forks: 0
+    limit: ''
+    verbosity: 0
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    job_tags: ''
+    force_handlers: false
+    skip_tags: ''
+    start_at_task: ''
+    timeout: 0
+    use_fact_cache: false
+    host_config_key: ''
+    ask_diff_mode_on_launch: false
+    ask_variables_on_launch: false
+    ask_limit_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_inventory_on_launch: false
+    ask_credential_on_launch: false
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    allow_simultaneous: false
+    cloud_credential: null
+    network_credential: null
+    vault_credential: null
+
+addTitle: 'NEW AD User'
+editTitle: '{{ name }}'
+name: 'createaduser'
+title: 'Create a new AD user'
+logo: '/static/assets/logo/providers/logo-redhat-openshift.png'
+basePath: 'ipam_providers'
+stateTree: 'infraProviders'
+breadcrumbName: 'INFRA PROVIDER'
+showActions: true
+subFormTitles:
+    credentialSubForm: 'Credential Type Details'
+launchclick: 'addNew("createaduser")'
+steps: 4
+
+wizards: 
+    basic: 
+      index: 1
+      name: 'Variable'
+      type: 'collection'
+      title: 'Informations'
+
+    relation: 
+      index: 2
+      name: 'Credentials'
+      type: 'collection'
+      title: 'Credentials'
+
+    inventory:
+      index: 3
+      name: 'Inventory'
+      type: 'collection'
+      title: Inventory
+
+    opts:
+      index: 4
+      name: 'Option'
+      type: 'collection'
+      title: 'Options'
+
+fields:
+  select_domain:
+    label: 'Select Target Domain'
+    type: 'select'
+    ngValues: 'D12,GSY'
+    ngOptions: 'item as item.label for item in select_domain_type_options'
+    opt: 'label'
+    disableChooseOption: true
+    ngChange: 'statusChange()'
+    awPopOver: '<p> Select SVC target domain. </p>'
+    dataTitle: 'Target domain'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    ngShow: 'tabId == 1'
+
+  name: 
+    label: 'Service Account Name (Text & required)'
+    awPopOver: '<p> Service Account need begin by "svc_". </p>'
+    type: 'text'
+    required: true
+    ngShow: 'tabId == 1'
+
+  owner: 
+    label: 'Service Account Owner'
+    awPopOver: '<p> Please type de owner D12 ID. </p>'
+    type: 'text'
+    required: true
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 1'
+
+  description: 
+    label: 'Service Account Description'
+    awPopOver: '<p> Please provide the usage of this servier account. </p>'
+    type: 'text'
+    required: true
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 1'
+
+  select_tenant:
+    label: 'Select tenant target'
+    type: 'select'
+    ngValues: 'Paris,Singapore,Turkey,Default'
+    ngOptions: 'item as item.label for item in select_tenant_type_options'
+    opt: 'label'
+    disableChooseOption: true
+    ngChange: 'statusChange()'
+    awPopOver: '<p> Select the SVC Location. Needed only for D12 </p>'
+    dataTitle: 'tenant target'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    ngShow: 'tabId == 1'
+
+  nofityowner:
+    label: 'Send an email to the Owner'
+    awPopOver: '<p> If selected the Owner will have an email after the creation with all details (ID, Password). </p>'
+    type: 'toggleSwitch'
+    toggleSource: 'nofityowner'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    default: true
+    ngShow: 'tabId == 1'
+
+  notifyinfra:
+    label: 'Send an email to Infra Team'
+    awPopOver: '<p> If selected the infra team will receive an email after the creation. </p>'
+    type: 'toggleSwitch'
+    toggleSource: 'notifyinfra'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    default: false
+    ngShow: 'tabId == 1'
+
+  kind:
+    label: 'Credential Type'
+    type: 'select'
+    ngOptions: 'item as item.label for item in kind_type_options'
+    ngValues: 'Machine,Windows'
+    ngChange: 'kindChange()'
+    required: true
+    awPopOver: '<p> Select the Cloud Kind for this Inventory to run on. </p>'
+    dataTitle: 'Credential Type'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    hasSubForm: true
+    ngDisabled: true
+    ngShow: 'tabId == 2'
+
+  username: 
+    label: 'UserName'
+    type: 'text'
+    ngShow: "kind.value && tabId == 2"
+    autocomplete: false
+    subForm: "credentialSubForm"
+    hideSubForm: 'tabId != 2'
+    required: true
+
+  password: 
+    label: 'Password'
+    type: 'sensitive'
+    ngShow: "kind.value && tabId == 2"
+    clear: false
+    autocomplete: false
+    hasShowInputButton: true
+    subForm: "credentialSubForm"
+    required: true
+
+  ssh_key_data: 
+    label: 'SSH PRIVATE KEY'
+    type: 'textarea'
+    ngShow: "kind.value == '0' && tabId == 2"
+    class: 'Form-textAreaLabel Form-formGroup--fullWidth'
+    elementClass: 'Form-monospace'
+    awDropFile: true
+    rows: 10
+    awPopOver: "SSH key description"
+    awPopOverWatch: "key_description"
+    dataTitle: 'Private Key'
+    dataPlacement: 'right'
+    dataContainer: "body"
+    subForm: "credentialSubForm"
+    ngDisabled: '!(credential_obj.summary_fields.user_capabilities.edit || canAdd)'
+
+  ssh_key_unlock: 
+    label: 'Private Key Passphrase'
+    type: 'sensitive'
+    ngShow: "kind.value == '0' && tabId == 2"
+    ngDisabled: "keyEntered == false || ssh_key_unlock_ask || !(credential_obj.summary_fields.user_capabilities.edit || canAdd)"
+    subCheckbox: 
+        variable: 'ssh_key_unlock_ask'
+        ngShow: "kind.value == 'ssh'"
+        text: 'Ask at runtime?'
+        ngChange: "ask('ssh_key_unlock', 'undefined')"
+        ngDisabled: "keyEntered == false"
+    
+    hasShowInputButton: true
+    subForm: 'credentialSubForm'
+
+  become_method: 
+    label: "Privilege Escalation"
+    type: 'select'
+    ngShow: "kind.value == '0' && tabId == 2"
+    dataTitle: 'Privilege Escalation'
+    ngOptions: 'become.label for become in become_options track by become.value'
+    awPopOver: "<p> Specify a method for %s operations. This is equivalent to specifying the parameter </p>"
+    dataPlacement: 'right'
+    dataContainer: "body"
+    subForm: 'credentialSubForm'
+    ngDisabled: '!(credential_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngChange: 'becomeMethodChange()'
+
+  become_username: 
+    label: 'Privilege Escalation Username'
+    type: 'text'
+    ngShow: "kind.value == '0' && tabId == 2"
+    autocomplete: false
+    subForm: 'credentialSubForm'
+    ngDisabled: '!(credential_obj.summary_fields.user_capabilities.edit || canAdd)'
+
+  become_password: 
+    label: 'Privilege Escalation Password'
+    type: 'sensitive'
+    ngShow: "kind.value == '0' && tabId == 2"
+    ngDisabled: "become_password_ask || !(credential_obj.summary_fields.user_capabilities.edit || canAdd)"
+    subCheckbox: 
+        variable: 'become_password_ask'
+        text: 'Ask at runtime?'
+        ngChange: "ask(become_password, undefined)"
+        ngDisabled: false
+    hasShowInputButton: true
+    autocomplete: false
+    subForm: 'credentialSubForm'
+
+  windows_options: 
+    label: 'Connection Options'
+    type: 'textarea'
+    class: 'Form-textAreaLabel Form-formGroup--fullWidth'
+    rows: 10
+    ngShow: "kind.value == '1' && tabId == 2"
+    awPopOver: "<p>ansible_connection: winrm</p><p> ansible_winrm_server_cert_validation: ignore </p>"
+    awPopOverWatch: ""
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    autocomplete: false
+    subForm: "credentialSubForm"
+
+  inventory_hosts:
+    label: 'Inventory Host'
+    type: 'custom'
+    sourceModel: 'hosts'
+    basePath: 'hosts'
+    awPopOver: "<p> Select the Inventory Hosts for this Inventory to run on. </p>"
+    dataTitle: 'Inventory Host'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    control: '<inventory-hosts-multiselect  bind="inventory_hosts" field-is-disabled="cloud"></inventory-hosts-multiselect>'
+    ngShow: 'tabId == 3'
+
+  opts: 
+    label: Input Opts'
+    class: 'Form-textAreaLabel Form-formGroup--fullWidth'
+    type: 'textarea'
+    rows: 15
+    default: '---'
+    showParseTypeToggle: true
+    parseTypeName: 'parseTypeOpts'
+    awPopOverWatch: "opts_help_text"
+    dataTitle: 'Input Opts'
+    dataPlacement: 'right'
+    dataContainer: "body"
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 4'
+
+buttons: 
+  wizardcancel:
+    ngClick: 'formCancel()'
+    ngShow: 'tabId == 1'
+
+  previous:
+    ngClick: 'WizardClick(1)'
+    ngShow: 'tabId > 1'
+
+  next:
+    ngClick: 'WizardClick(2)'
+    ngShow: 'tabId < 4'
+
+  save:
+    title: 'Finish'
+    ngClick: 'formSave()'
+    ngShow: 'tabId == 4'
+    ngDisabled: true

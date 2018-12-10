@@ -49,11 +49,7 @@ angular.module('ProviderSaver', ['Utilities'])
 
 .factory('initSelect', ['$http', 'GetBasePath', 'Rest', 'ProcessErrors',
 	function ($http, GetBasePath, Rest, ProcessErrors) {
-<<<<<<< HEAD
         return function (basePath, fixedData, filter, chooseID) {
-=======
-        return function (basePath, fixedData, filter) {
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 		    var fld;
 		    var resdata = [], filters = {};
 		    if(fixedData != "")
@@ -65,11 +61,6 @@ angular.module('ProviderSaver', ['Utilities'])
 	        		{
 	        			for(var fld in filter)
 	        			{
-<<<<<<< HEAD
-=======
-	        				console.log(fld);
-	        				console.log(filters);
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 			                filters = filter[fld].split(',');
 			                for (var ind = 0; ind < filters.length; ind++) {
 			                	var sourceData = '' + datas[i];
@@ -96,11 +87,6 @@ angular.module('ProviderSaver', ['Utilities'])
 		        		{
 		        			for(var fld in filter)
 		        			{
-<<<<<<< HEAD
-=======
-		        				console.log(fld);
-		        				console.log(filters);
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 				                filters = filter[fld].split(',');
 				                for (var ind = 0; ind < filters.length; ind++) {
 				                	var sourceData = '' + data.results[i][fld];
@@ -121,16 +107,11 @@ angular.module('ProviderSaver', ['Utilities'])
 		        	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to Get Database for Select. Get returned status: ') + status });
 				});
 		    }
-<<<<<<< HEAD
-=======
-		    
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 		    return resdata;
         };
     }
 ])
 
-<<<<<<< HEAD
 .factory('chooseSelect', [function () {
         return function (datas, index) {
         	var res_data;
@@ -146,8 +127,6 @@ angular.module('ProviderSaver', ['Utilities'])
     }
 ])
 
-=======
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 .factory('processExtras', ['$http', 
     function ($http) {
         return function (obj, prefix) {
@@ -248,11 +227,7 @@ angular.module('ProviderSaver', ['Utilities'])
             }
             console.log(remove_credents);
             */
-<<<<<<< HEAD
             console.log(parentData);
-=======
-            console.log(poweroff_credents);
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
             if (parentData.opts.credential_id !== undefined && parentData.opts.credential_id !== null) {
                 var cred_ids = {};
 
@@ -309,21 +284,13 @@ angular.module('ProviderSaver', ['Utilities'])
                             if (data.status == 'successful') {
                             	data_subitem.project_id = new_project_id;
                             	var extra_vars = processExtras(data_subitem, "ahome_");
-<<<<<<< HEAD
 
-=======
-                            	
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
                             	console.log('Project status is succesful');
                                 //**************************** Make Job_Template named Prefix as "Poweroff_" and "Remove_" ************
                                 //************************************ Save Poweroff_JobTemplate **********************************
                                 data_job = form.poweroff_job;
                                 data_job.name = data_job.name_prefix + scope.name;
                                 data_job.project = new_project_id;
-<<<<<<< HEAD
-=======
-                                data_job.credential = parentData.opts.new_ssh_credential;
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
                                 data_job.inventory = parentData.opts.inventory_id;
                                 data_job.extra_vars = extra_vars;
 
@@ -345,11 +312,6 @@ angular.module('ProviderSaver', ['Utilities'])
                                         data_job.name = data_job.name_prefix + scope.name;
                                         data_job.project = new_project_id;
                                         data_job.inventory = parentData.opts.inventory_id;
-<<<<<<< HEAD
-=======
-                                        data_job.credential = parentData.opts.new_ssh_credential;
-                                        //data_job.extra_vars = processExtravars(data_job);
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
                                         data_job.extra_vars = extra_vars;
 
                                         console.log(data_job);
@@ -371,11 +333,6 @@ angular.module('ProviderSaver', ['Utilities'])
                                                 data_job.name = data_job.name_prefix + scope.name;
                                                 data_job.project = new_project_id;
                                                 data_job.inventory = parentData.opts.inventory_id;
-<<<<<<< HEAD
-=======
-                                                data_job.credential = parentData.opts.new_ssh_credential;
-                                                //data_job.extra_vars = processExtravars(data_job);
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 												data_job.extra_vars = extra_vars;
 
                                                 console.log(data_job);
@@ -778,22 +735,14 @@ function ($http, $rootScope, $state, $location, $timeout, $q, Store, ProcessErro
             //if(id_type == "vmware_vcenter")   // for now it is for Vmwarevcenter
             //{
 			    Wait('start');
-<<<<<<< HEAD
 
-=======
-				
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 				//Posting Inventory for this provider
 	            inventory_data.name = data_item.name + ' Inventory';
 	            inventory_data.organization = 1;
         		Rest.setUrl(GetBasePath('inventory'));
                 Rest.post(inventory_data)
                 	.then(({data}) => {
-<<<<<<< HEAD
 
-=======
-			        	
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 						new_inventory_id =  data.id;
 						data_item.new_inventory_id = data.id;
 			        	form.configure_job.inventory =  data.id;

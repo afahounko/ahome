@@ -55,13 +55,6 @@ configure_job:
     become_enabled: false
     diff_mode: false
     allow_simultaneous: false
-<<<<<<< HEAD
-=======
-    cloud_credential: null
-    network_credential: null
-    credential: 2
-    vault_credential: null
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 
 poweroff_job:
     name_prefix: 'Poweroff_'
@@ -94,13 +87,6 @@ poweroff_job:
     become_enabled: false
     diff_mode: false
     allow_simultaneous: false
-<<<<<<< HEAD
-=======
-    cloud_credential: null
-    network_credential: null
-    credential: 2
-    vault_credential: null
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 
 remove_job:
     name_prefix: 'Remove_'
@@ -133,13 +119,6 @@ remove_job:
     become_enabled: false
     diff_mode: false
     allow_simultaneous: false
-<<<<<<< HEAD
-=======
-    cloud_credential: null
-    network_credential: null
-    credential: 2
-    vault_credential: null
->>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 
 addTitle: 'NEW WINDOWS VMWARE VM'
 editTitle: '{{ name }}'
