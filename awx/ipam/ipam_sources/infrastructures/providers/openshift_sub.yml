@@ -210,6 +210,7 @@ fields:
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 1'
 
+<<<<<<< HEAD
   status:
     label: 'Fixed Data Status'
     type: 'select'
@@ -266,6 +267,8 @@ fields:
     awPopOver: "<p> If enabled, CHECKBOX2 is enabled. </p>"
     ngShow: 'tabId == 1'
 
+=======
+>>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
   kind:
     label: 'Credential Type'
     type: 'select'

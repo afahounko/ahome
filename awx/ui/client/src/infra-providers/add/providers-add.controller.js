@@ -52,7 +52,11 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			
 			if(form.fields.datacenter) $scope.datacenter_type_options = initSelect('ipam_datacenters', '', form.fields.datacenter.ngFilter ? form.fields.datacenter.ngFilter : "");
 	        if(form.fields.credential) $scope.credential_type_options = initSelect('credentials', '', form.fields.credential.ngFilter ? form.fields.credential.ngFilter : "");
+<<<<<<< HEAD
 			if(form.fields.status) $scope.status_type_options = initSelect('', form.fields.status.ngValues, form.fields.status.ngFilter ? form.fields.status.ngFilter : "", true);
+=======
+
+>>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 			//$scope.kind = cloudProcess(form);
 	        CreateSelect2({
 	            element: '#' + fk_type + '_kind',
@@ -217,7 +221,11 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 					var data = "{";
 					for (fld in form.fields) {
 						console.log($scope[fld]);
+<<<<<<< HEAD
 						if(fld == "datacenter" || fld == "credential" || fld == "ipaddress")
+=======
+						if(fld == "kind" || fld == "datacenter" || fld == "credential" || fld == "ipaddress")
+>>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 						{
 							data += "'" + fld + "':";
 			            	if($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";
@@ -225,6 +233,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			            	data += ",\n"; 
 			            	continue;
 						}
+<<<<<<< HEAD
 						if(fld == "kind" || fld == "status")
 						{
 							data += "'" + fld + "':";
@@ -234,6 +243,8 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			            	data += ",\n"; 
 			            	continue;
 						}
+=======
+>>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 						if(fld == "inventory_hosts" || fld == "instance_groups")
 						{
 							data += "'" + fld + "':";
@@ -343,7 +354,26 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
         }
         $scope.formSave = function() {
         	var data_item = processNewData(form.fields);
+<<<<<<< HEAD
         	SaveInfraItem(defaultUrl, form, data_item, 'infraProvidersList');
+=======
+        	/*var check_flag = -100;
+        	while(check_flag != -100)
+        	{
+        		check_flag  = checkExistApi(defaultUrl, 'name', data_item.name);
+        	}
+        	console.log(check_flag);
+        	if(check_flag  == -1)
+        	{
+        		SaveInfraItem(defaultUrl, form, data_item);
+        	}
+        	else
+        	{
+        		deleteProvider(check_flag, function() {*/
+        			SaveInfraItem(defaultUrl, form, data_item, 'infraProvidersList');
+        		//});
+    //}
+>>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
         };
 
         $scope.formCancel = function() {

@@ -12,12 +12,21 @@ const user_type_options = [
     { type: 'system_administrator', label: N_('System Administrator') },
 ];
 
+<<<<<<< HEAD
 export default ['$window', '$scope', '$rootScope', '$timeout', 'JobForm', 'GenerateForm', 'Rest', 'ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath', 'MultiCredentialService', 'ProjectUpdate',
     'Wait', 'CreateSelect2', '$state', '$location', 'i18n', 'ParseVariableString', 'SaveInfraSubItem', 'initSelect', 'chooseSelect',
     function ($window, $scope, $rootScope, $timeout, JobForm, GenerateForm, Rest, ParseTypeChange, Alert,
         ProcessErrors, ReturnToCaller, GetBasePath, MultiCredentialService, ProjectUpdate, Wait, CreateSelect2,
 		$state, $location, i18n, ParseVariableString, SaveInfraSubItem, initSelect, chooseSelect) {
+=======
+export default ['$window', '$scope', '$rootScope', 'JobForm', 'GenerateForm', 'Rest', 'ParseTypeChange',
+    'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath', 'MultiCredentialService', 'ProjectUpdate',
+    'Wait', 'CreateSelect2', '$state', '$location', 'i18n', 'ParseVariableString', 'SaveInfraSubItem', 'initSelect',
+    function ($window, $scope, $rootScope, JobForm, GenerateForm, Rest, ParseTypeChange, Alert,
+        ProcessErrors, ReturnToCaller, GetBasePath, MultiCredentialService, ProjectUpdate, Wait, CreateSelect2,
+		$state, $location, i18n, ParseVariableString, SaveInfraSubItem, initSelect) {
+>>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
 
         var defaultUrl = GetBasePath('ipam_infrastructure_jobs'),
             fk_model = $window.localStorage.getItem('fk_model'),
@@ -31,6 +40,7 @@ export default ['$window', '$scope', '$rootScope', '$timeout', 'JobForm', 'Gener
         init();
 
         function init() {
+<<<<<<< HEAD
 			var parent_url = GetBasePath('ipam_' + fk_model) + fk_id;
 			
 			Rest.setUrl(parent_url);
@@ -102,6 +112,64 @@ export default ['$window', '$scope', '$rootScope', '$timeout', 'JobForm', 'Gener
                 });
             });
 			Wait('stop');
+=======
+            // apply form definition's default field values
+            //$scope.canAdd = true;
+            console.log("Add FORM Init");
+            console.log(form);
+            GenerateForm.applyDefaults(form, $scope);
+
+            $scope.paramCategory = fk_model + '.' + fk_type
+
+            $scope.isAddForm = true;
+
+            $scope.status1 = "active";
+            $scope.tabId = 1;
+            $scope.previous = "CLOSE";
+            $scope.next = "NEXT";
+
+			if(form.fields.datacenter) $scope.datacenter_type_options = initSelect('ipam_datacenters', '', form.fields.datacenter.ngFilter ? form.fields.datacenter.ngFilter : "");
+	        if(form.fields.credential) $scope.credential_type_options = initSelect('credentials', '', form.fields.credential.ngFilter ? form.fields.credential.ngFilter : "");
+		    if(form.fields.ipaddress)  $scope.ipaddress_type_options = initSelect('ipam_ip_addresses', '', form.fields.ipaddress.ngFilter ? form.fields.ipaddress.ngFilter : "");
+		    
+		    CreateSelect2({
+                element: '#' + id_type + '_kind',
+                multiple: false,
+            });
+
+            CreateSelect2({
+                element: '#' + id_type + '_datacenter',
+                multiple: false,
+            });
+
+            CreateSelect2({
+                element: '#' + id_type + '_credential',
+                multiple: false,
+            });
+
+            CreateSelect2({
+                element: '#' + id_type + '_ipaddress',
+                multiple: false,
+            });
+
+            //for multi credential 2018/10/25
+            MultiCredentialService.getCredentialTypes()
+                .then(({ data }) => {
+                    $scope.multiCredential = {
+                        credentialTypes: data.results,
+                        selectedCredentials: []
+                    };
+                });
+
+            // change to modal dialog
+
+            var element = document.getElementById("modaldlg");
+            element.style.display = "block";
+            var panel = element.getElementsByClassName("Panel ng-scope");
+            panel[0].classList.add("modal-dialog");
+            panel[0].style.width = "60%";
+
+>>>>>>> adf63f446b8e9082c8a0e1740a751ec94526a324
         }
 
         var callback = function () {
