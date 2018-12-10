@@ -9,6 +9,7 @@ reference-schema.json
 
 # ahome-rpm
 *.tar.gz
+*.rpm
 ahome-rpm/result/*
 ahome-rpm/*.gz
 
