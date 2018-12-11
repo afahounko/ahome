@@ -29,12 +29,22 @@ credential_input:
       - password
 credential_prefix: 'Machine_'
 
+label_prefix: ''
+url: 'https://github.com/afahounko'
+project: 'https://github.com/ansible/ansible-tower-samples.git'
+playbook: 'local.yml'
+
+subitem_label_prefix: 'Configure'
+subitem_url: 'https://github.com/afahounko'
+subitem_project: 'https://github.com/ansible/ansible-tower-samples.git'
+subitem_playbook: 'local.yml'
+
 project:
     name_prefix: 'Git_'
     description: ''
-    scm_type: 'manual'
+    scm_type: 'git'
     scm_branch: ''
-    scm_url: 'CreateADUser'
+    scm_url: 'https://git.afahounko.com/caas/providers/vmware_vcenter.git'
     scm_clean: true
     scm_delete_on_update: true
     credential: null
@@ -45,7 +55,7 @@ project:
 
 configure_job:
     name_prefix: 'Configure_'
-    playbook: 'run.yml'
+    playbook: 'configure.yml'
     description: ''
     job_type: "run"
     inventory: 1
@@ -80,7 +90,7 @@ configure_job:
 
 poweroff_job:
     name_prefix: 'Poweroff_'
-    playbook: 'stop.yml'
+    playbook: 'poweroff.yml'
     description: ''
     job_type: "run"
     inventory: 1
@@ -274,7 +284,7 @@ fields:
     ngDisabled: true
     ngShow: 'tabId == 2'
 
-  username: 
+  credential_username: 
     label: 'UserName'
     type: 'text'
     ngShow: "kind.value && tabId == 2"
@@ -283,7 +293,7 @@ fields:
     hideSubForm: 'tabId != 2'
     required: true
 
-  password: 
+  credential_password: 
     label: 'Password'
     type: 'sensitive'
     ngShow: "kind.value && tabId == 2"
@@ -365,7 +375,7 @@ fields:
     class: 'Form-textAreaLabel Form-formGroup--fullWidth'
     rows: 10
     ngShow: "kind.value == '1' && tabId == 2"
-    awPopOver: "<p>ansible_connection: winrm</p><p> ansible_winrm_server_cert_validation: ignore </p>"
+    awPopOver: "<p>ansible_connection: winrm<br/>ansible_winrm_server_cert_validation: ignore </p>"
     awPopOverWatch: ""
     dataPlacement: 'right'
     dataContainer: 'body'
