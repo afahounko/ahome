@@ -8,7 +8,7 @@ import { N_ } from "../../i18n";
 
 export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', 'ProviderForm', 'GenerateForm', 'Rest','ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath',
-    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString', 'initSelect', 
+    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString', 'initSelect',
     function($window, $scope, $rootScope, $stateParams, $timeout, ProviderForm, GenerateForm, Rest, ParseTypeChange, Alert,
     ProcessErrors, ReturnToCaller, GetBasePath, Wait, CreateSelect2, 
 	$state, $location, i18n, ParseVariableString, initSelect) {
@@ -34,7 +34,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
 
                 for (itm in data.opts)
                 {
-                	$scope[itm] = data.opts[itm];
+                	if(data.opts[itm] !== '$Encrypted$') $scope[itm] = data.opts[itm];
                 	if(data.opts[itm] === 'true')
                 	{
                 		$scope[itm] = true;
@@ -44,16 +44,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
                 		$scope[itm] = false;
                 	}
                 }
-				if(!form.cloud && form.fields.kind){
-					$scope.kind_type_options = initSelect('', form.fields.kind.ngValues, form.fields.kind.ngFilter ? form.fields.kind.ngFilter : "");
-					if(form.credential_type == 'BuildFactory' || form.credential_type == 'Linux'){	//credential_type is machine
-						$scope.kind = $scope.kind_type_options[0];
-					}
-					else		//credential_type is custom (need to create a new credential_type with customized form)
-					{
-						$scope.kind = $scope.kind_type_options[1];
-					}
-				}
+
                 credential_id = data.opts.credential_id;  //edited 2018/11/6 for credential which created when adding
                 inventory_id = data.opts.inventory_id;  //edited 2018/11/6 for inventory which created when adding
                 host_id = data.opts.host_id;  //edited 2018/11/6 for host which created when adding
@@ -72,52 +63,53 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
 		            $scope[form.name + '_form'].$setDirty();
 		        };
 
-		        if(form.fields.datacenter){
-		        	$scope.datacenter_type_options = initSelect('ipam_datacenters', form.fields.datacenter.ngFilter ? form.fields.datacenter.ngFilter : "");
-		        	$timeout(function(){
-						for(var fld in $scope.datacenter_type_options)
+			    for(var field in form.fields)
+				{
+					console.log(field);
+					if(form.fields[field].type == 'select')
+					{
+						if(form.fields[field].ngValues)
 						{
-							if($scope.datacenter_type_options[fld].value == data.opts.datacenter)
-								$scope.datacenter = $scope.datacenter_type_options[fld];
+							$scope[field + '_type_options'] = initSelect('', form.fields[field].ngValues, form.fields[field].ngFilter ? form.fields[field].ngFilter : "");
 						}
-					},2000);
-		        }
-
-		        if(form.fields.ipaddress){
-	        		$scope.ipaddress_type_options = initSelect('ipam_ip_addresses', form.fields.ipaddress.ngFilter ? form.fields.ipaddress.ngFilter : "");
-					$timeout(function(){
-						for(var fld in $scope.ipaddress_type_options)
+						else
 						{
-							if($scope.ipaddress_type_options[fld].value == data.opts.ipaddress)
-								$scope.ipaddress = $scope.ipaddress_type_options[fld];
+							if(form.fields[field].ngSource)
+								$scope[field + '_type_options'] = initSelect(form.fields[field].ngSource, '', form.fields[field].ngFilter ? form.fields[field].ngFilter : "");
 						}
-					},2000);
-	        		
-	        	}
-
-	        	if(form.fields.credential){
-	        		$scope.credential_type_options = initSelect('credentials', form.fields.credential.ngFilter ? form.fields.credential.ngFilter : "");
-		        	$timeout(function(){
-						for(var fld in $scope.credential_type_options)
+						var elmnt = '#' + fk_type + '_' + field;
+						CreateSelect2({
+				            element: elmnt,
+				            multiple: false,
+				        });
+					}
+					if(form.fields[field].type == 'toggleSwitch')
+					{
+						if(form.fields[field].default != undefined) $scope[field] = form.fields[field].default;
+					}
+				}
+	        	//Set Default Value
+		        $timeout(function(){
+		        	for(var field in form.fields)
+					{
+						if(form.fields[field].type == 'select')
 						{
-							if($scope.credential_type_options[fld].value == data.opts.credentials)
-								$scope.credentials = $scope.credential_type_options[fld];
+							for(var fld in $scope[field + '_type_options'])
+							{
+								if(form.fields[field].opt)
+								{
+									if($scope[field + '_type_options'][fld].label == data.opts[field])
+										$scope[field] = $scope[field + '_type_options'][fld];
+					            }
+					            else
+					            {
+					            	if($scope[field + '_type_options'][fld].value == data.opts[field])
+										$scope[field] = $scope[field + '_type_options'][fld];
+					            }
+							}
 						}
-					},2000);
-	        	}
-		        CreateSelect2({
-		            element: '#' + fk_type + '_datacenter',
-		            multiple: false,
-		        }); 
-		        CreateSelect2({
-		            element: '#' + fk_type + '_ipaddress',
-		            multiple: false,
-		        }); 
-		        CreateSelect2({
-		            element: '#' + fk_type + '_credential',
-		            multiple: false,
-		        });
-
+					}
+				},2000);
                 //Get Host variable from Controller
                 
                 var inventory_hosts = data.opts.inventory_hosts;
@@ -267,34 +259,49 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
 				{
 					var fld, subid;
 					var data = "{";
-					if(inventory_id != undefined) data += "'inventory_id':'" + inventory_id + "',\n";
-					if(credential_id != undefined) data += "'credential_id':'" + credential_id + "',\n";
-					if(host_id != undefined) data += "'host_id':'" + host_id + "',\n";
-					if(project_id != undefined) data += "'project_id':'" + project_id + "',\n";
-					if(template_id != undefined) data += "'template_id':'" + template_id + "',\n";
-					if(poweroff_id != undefined) data += "'poweroff_id':'" + poweroff_id + "',\n";
-					if(remove_id != undefined) data += "'remove_id':'" + remove_id + "',\n";
-	                
+
 					for (fld in form.fields) {
-						
-						if(fld == "datacenter" || fld == "credential" || fld == "ipaddress")
+						if(form.fields[fld].type == 'select')
 						{
 							data += "'" + fld + "':";
-			            	if($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";
-			            	else data += "''";
+							console.log($scope[fld]);
+							if(form.fields[fld].opt)
+							{
+								if($scope[fld]) data += "'" + $scope[fld].label + "'";
+			            		else data += "''";
+				            }
+				            else
+				            {
+				            	if($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";
+				            	else data += "''";
+				            }
 			            	data += ",\n"; 
 			            	continue;
 						}
-						if(fld == "inventory_hosts" || fld == "instance_groups")
+						if(form.fields[fld].type == 'sensitive')
+						{
+							data += "'" + fld + "':'$Encrypted$',\n";
+			            	continue;
+						}
+						if(form.fields[fld].type == 'custom')
 						{
 							data += "'" + fld + "':";
 							if($scope[fld] != undefined)
 							{
-								data += "'"
-								for(subid in $scope[fld]){
-									data += $scope[fld][subid].id + ',';
+								console.log($scope[fld]);
+								data += "'";
+								if($scope[fld] != '' && $scope[fld] != undefined)
+								{
+									for(var subid in $scope[fld]){
+										if(subid.startsWith('selected'))
+										{
+											for(var selectedCustom in $scope[fld][subid]){
+												data += $scope[fld][subid][selectedCustom].id + ',';
+											}
+										}
+									}
+									data = data.substring(0, data.length-1);
 								}
-								data = data.substring(0, data.length-1);
 								data += "',"; 
 							}
 							else data += "'',";
@@ -310,11 +317,19 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
 			            	
 			            }
 		            }
-		            data += "'fk_type':'" + fk_type + "'\n";
+		            data += "'fk_type':'" + fk_type + "',\n";
+					if(inventory_id != undefined) data += "'inventory_id':'" + inventory_id + "',\n";
+					if(credential_id != undefined) data += "'credential_id':'" + credential_id + "',\n";
+					if(host_id != undefined) data += "'host_id':'" + host_id + "',\n";
+					if(project_id != undefined) data += "'project_id':'" + project_id + "',\n";
+					if(template_id != undefined) data += "'template_id':'" + template_id + "',\n";
+					if(poweroff_id != undefined) data += "'poweroff_id':'" + poweroff_id + "',\n";
+					if(remove_id != undefined) data += "'remove_id':'" + remove_id + "'\n";
+
 		        	data += "}";
 		            $scope.opts = ParseVariableString(data);
 					$scope.parseTypeOpts = 'yaml';
-					console.log(form);
+					console.log(data);
 			        ParseTypeChange({
 			            scope: $scope,
 			            field_id: fk_type + '_opts',
@@ -377,15 +392,22 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
         // prepares a data payload for a PUT request to the API
         var processNewData = function(fields) {
             var data = {};
+    		var inputs = {};
             _.forEach(fields, function(value, key) {
                 if ($scope[key] !== '' && $scope[key] !== null && $scope[key] !== undefined) {
                     data[key] = $scope[key];
+                    if(key.startsWith('credential_'))
+                    {
+                    	inputs[key.substring(11)] = $scope[key];
+                    }
                 }
             });
-            if($scope.datacenter != null) data.datacenter = $scope.datacenter.value;
+            console.log(inputs);
+            data.inputs = inputs;
+            if($scope.kind != null) data.kind = $scope.kind.value;
+			if($scope.datacenter != null) data.datacenter = $scope.datacenter.value;
             if($scope.credential != null) data.credential = $scope.credential.value;
     		data.opts = $scope.opts;
-    		
             return data;
         };
 

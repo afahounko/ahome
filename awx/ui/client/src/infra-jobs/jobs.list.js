@@ -35,21 +35,28 @@ export default ['i18n', function(i18n) {
                 excludeModal: true
             },
             name: {
+                key: true,
                 label: i18n._('Name'),
-                columnClass: 'col-md-3 col-sm-3 col-xs-9'
+                columnClass: 'col-md-2 col-sm-2 col-xs-8',
+                awToolTip: "Redirect to Job Page",
+                awTipPlacement: "top",
+				ngClick: "infraJobs()",
             },
-		    type: {
+			id: {
                 label: i18n._('Type'),
+                ngBind: 'job.opts.id_type',
                 columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
-			version: {
-                label: i18n._('Version'),
-                columnClass: 'col-md-2 col-sm-2 hidden-xs'
+            created: {
+            	label: i18n._('Created'),
+            	columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
-			lastupdated: {
+            last_updated: {
                 label: i18n._('Last Updated'),
-                columnClass: 'col-md-5 col-sm-5 hidden-xs'
-            },
+                filter: "longDate",
+                columnClass: "col-lg-3 hidden-md hidden-sm hidden-xs",
+                excludeModal: true
+            }
         },
 /*
         actions: {

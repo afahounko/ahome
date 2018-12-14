@@ -39,26 +39,12 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			$scope.next = "NEXT";
 			$scope.cloud = form.cloud;
 
-			if(!form.cloud && form.fields.kind){
-				$scope.kind_type_options = initSelect('', form.fields.kind.ngValues, form.fields.kind.ngFilter ? form.fields.kind.ngFilter : "");
-				if(form.credential_type == 'BuildFactory' || form.credential_type == 'Linux'){	//credential_type is machine
-					$scope.kind = $scope.kind_type_options[0];
-				}
-				else		//credential_type is custom (need to create a new credential_type with customized form)
-				{
-					$scope.kind = $scope.kind_type_options[1];
-				}
-				CreateSelect2({
-			            element: '#' + fk_type + '_kind',
-			            multiple: false,
-			    });
-			}
 			//$scope.kind = cloudProcess(form);
 			//Init SelectBoxes
 			for(var field in form.fields)
 			{
 				console.log(field);
-				if(field.startsWith("select"))
+				if(form.fields[field].type == 'select')
 				{
 					if(form.fields[field].ngValues)
 					{
@@ -79,6 +65,9 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 				{
 					if(form.fields[field].default != undefined) $scope[field] = form.fields[field].default;
 				}
+			}
+			if(!form.cloud && form.fields.kind){
+				$scope.kind = $scope.kind_type_options[0];
 			}
 
 			if(fk_type == "vmware_vcenter")
@@ -229,7 +218,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 					for (fld in form.fields) {
 						console.log(fld);
 						console.log($scope[fld]);
-						if(fld.startsWith('select_'))
+						if(form.fields[fld].type == 'select')
 						{
 							data += "'" + fld + "':";
 							if(form.fields[fld].opt)
@@ -245,12 +234,9 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			            	data += ",\n"; 
 			            	continue;
 						}
-						if(fld == 'kind')
+						if(form.fields[fld].type == 'sensitive')
 						{
-							data += "'" + fld + "':";
-							if($scope[fld] != undefined) data += "'" + $scope[fld].label + "'";
-		            		else data += "''";
-			            	data += ",\n"; 
+							data += "'" + fld + "':'$Encrypted$',\n";
 			            	continue;
 						}
 						if(fld == "inventory_hosts" || fld == "instance_groups")
@@ -349,7 +335,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
             });
             console.log(inputs);
             data.inputs = inputs;
-            if($scope.select_kind != null) data.select_kind = $scope.select_kind.value;
+            if($scope.kind != null) data.kind = $scope.kind.value;
 			if($scope.datacenter != null) data.datacenter = $scope.datacenter.value;
             if($scope.credential != null) data.credential = $scope.credential.value;
     		data.opts = $scope.opts;

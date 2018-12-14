@@ -26,7 +26,7 @@ export default ['$window', '$scope', '$rootScope', '$timeout', 'JobForm', 'Gener
             id_type = $window.localStorage.getItem('form_id'),
             parentData = [],
             form = JobForm[id_type],
-            mcredentials = [];
+            mcredentials;
 
         init();
 
@@ -37,8 +37,6 @@ export default ['$window', '$scope', '$rootScope', '$timeout', 'JobForm', 'Gener
             Wait('start');
             Rest.get(parent_url).then(({data}) => {
             	parentData = data;
-	            console.log("Add FORM Init");
-	            console.log(form);
 	            GenerateForm.applyDefaults(form, $scope);
 
 	            $scope.paramCategory = fk_model + '.' + fk_type
@@ -48,34 +46,49 @@ export default ['$window', '$scope', '$rootScope', '$timeout', 'JobForm', 'Gener
 	            $scope.previous = "CLOSE";
 	            $scope.next = "NEXT";
 
-				if(form.fields.datacenter) $scope.datacenter_type_options = initSelect('ipam_datacenters', '', form.fields.datacenter.ngFilter ? form.fields.datacenter.ngFilter : "");
-		        if(form.fields.credential) $scope.credential_type_options = initSelect('credentials', '', form.fields.datacenter.ngFilter ? form.fields.datacenter.ngFilter : "");
-			    if(form.fields.ipaddress)  $scope.ipaddress_type_options = initSelect('ipam_ip_addresses', '', form.fields.ipaddress.ngFilter ? form.fields.ipaddress.ngFilter : "");
-
-			    CreateSelect2({
-	                element: '#' + id_type + '_kind',
-	                multiple: false,
-	            });
-
-	            CreateSelect2({
-	                element: '#' + id_type + '_datacenter',
-	                multiple: false,
-	            });
+				//Init SelectBoxes
+				for(var field in form.fields)
+				{
+					if(form.fields[field].type == 'select')
+					{
+						if(form.fields[field].ngValues)
+						{
+							$scope[field + '_type_options'] = initSelect('', form.fields[field].ngValues, form.fields[field].ngFilter ? form.fields[field].ngFilter : "");
+						}
+						else
+						{
+							if(form.fields[field].ngSource)
+								$scope[field + '_type_options'] = initSelect(form.fields[field].ngSource, '', form.fields[field].ngFilter ? form.fields[field].ngFilter : "");
+						}
+						var elmnt = '#' + id_type + '_' + field;
+						CreateSelect2({
+				            element: elmnt,
+				            multiple: false,
+				        });
+					}
+					if(form.fields[field].type == 'toggleSwitch')
+					{
+						if(form.fields[field].default != undefined) $scope[field] = form.fields[field].default;
+					}
+				}
 
 				$timeout(function(){
 					$scope.credential = chooseSelect($scope.credential_type_options, parentData.opts.credential_id);
 					CreateSelect2({
-		                element: '#' + id_type + '_credential',
-		                multiple: false,
-		            });
+			            element: '#' + id_type + '_credential',
+			            multiple: false,
+			        });
 				},2000);
-				
-	            
 
-	            CreateSelect2({
-	                element: '#' + id_type + '_ipaddress',
-	                multiple: false,
-	            });
+				if(!form.cloud && form.fields.kind){
+					if(form.credential_type == 'BuildFactory' || form.credential_type == 'Linux'){	//credential_type is machine
+						$scope.kind = $scope.kind_type_options[0];
+					}
+					else		//credential_type is custom (need to create a new credential_type with customized form)
+					{
+						$scope.kind = $scope.kind_type_options[1];
+					}
+				}
 
 	            //for multi credential 2018/10/25
 	            MultiCredentialService.getCredentialTypes()
@@ -155,31 +168,49 @@ export default ['$window', '$scope', '$rootScope', '$timeout', 'JobForm', 'Gener
                     var data = "{";
                     console.log($scope);
                     for (fld in form.fields) {
-
-                        if (fld == "datacenter" || fld == "credential") {
-                            data += "'" + fld + "':";
-                            if ($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";
-                            else data += "''";
-                            data += ",\n";
-                            continue;
-                        }
+                        if(form.fields[fld].type == 'select')
+						{
+							data += "'" + fld + "':";
+							if(form.fields[fld].opt)
+							{
+								if($scope[fld] != undefined) data += "'" + $scope[fld].label + "'";
+			            		else data += "''";
+				            }
+				            else
+				            {
+				            	if($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";
+				            	else data += "''";
+				            }
+			            	data += ",\n"; 
+			            	continue;
+						}
+						if(form.fields[fld].type == 'sensitive')
+						{
+							data += "'" + fld + "':'$Encrypted$',\n";
+			            	continue;
+						}
                         if (fld == "multiCredential") {
-                            mcredentials = [];
                             data += "'" + fld + "':";
                             if ($scope[fld]['selectedCredentials'] != undefined) {
                                 data += "'"
+                                mcredentials = "";
                                 for (subid in $scope[fld]['selectedCredentials']) {
                                     var cred = {};
                                     console.log($scope[fld]['selectedCredentials'][subid]);
                                     cred.id = $scope[fld]['selectedCredentials'][subid].id;
                                     data += $scope[fld]['selectedCredentials'][subid].id + ',';
-                                    mcredentials.push(cred);
+                                    mcredentials += $scope[fld]['selectedCredentials'][subid].id + ',';
+                                }
+                                if($scope.credential != null)
+                                {
+                                    mcredentials += $scope.credential.value;
+                                    data += $scope.credential.value;
                                 }
                                 data += "',";
+                                console.log(mcredentials);
                             }
                             else data += "'',";
                             data += "\n";
-                            console.log(mcredentials);
                             continue;
                         }
                         if (fld != "opts") {
@@ -197,7 +228,7 @@ export default ['$window', '$scope', '$rootScope', '$timeout', 'JobForm', 'Gener
                     data += "}";
                     $scope.opts = ParseVariableString(data);
                     $scope.parseTypeOpts = 'yaml';
-                    console.log(form);
+                    console.log($scope.opts);
                     ParseTypeChange({
                         scope: $scope,
                         field_id: id_type + '_opts',
@@ -232,6 +263,13 @@ export default ['$window', '$scope', '$rootScope', '$timeout', 'JobForm', 'Gener
         // prepares a data payload for a PUT request to the API
         var processNewData = function (fields) {
             var data = {};
+            
+            //var properties = $scope.opts.split(', ');
+	//var obj = {};
+	//		properties.forEach(function(property) {
+	//		    var tup = property.split(':');
+	//		    obj[tup[0]] = tup[1];
+	//		});
             _.forEach(fields, function (value, key) {
                 if ($scope[key] !== '' && $scope[key] !== null && $scope[key] !== undefined) {
                     data[key] = $scope[key];
@@ -244,7 +282,8 @@ export default ['$window', '$scope', '$rootScope', '$timeout', 'JobForm', 'Gener
             data.fk_id = fk_id;
             if ($scope.datacenter != null) data.datacenter = $scope.datacenter.value;
             if ($scope.credential != null) data.credential = $scope.credential.value;
-            data.opts = $scope.opts;
+            if ($scope.multiCredential != null) data.multiCredential = mcredentials;
+            console.log($scope.opts);
             console.log(data);
             return data;
         };

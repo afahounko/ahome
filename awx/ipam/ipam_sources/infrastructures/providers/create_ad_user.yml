@@ -198,11 +198,11 @@ wizards:
       title: 'Options'
 
 fields:
-  select_domain:
+  domain:
     label: 'Select Target Domain'
     type: 'select'
     ngValues: 'D12,GSY'
-    ngOptions: 'item as item.label for item in select_domain_type_options'
+    ngOptions: 'item as item.label for item in domain_type_options'
     opt: 'label'
     disableChooseOption: true
     ngChange: 'statusChange()'
@@ -235,11 +235,11 @@ fields:
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 1'
 
-  select_tenant:
+  tenant:
     label: 'Select tenant target'
     type: 'select'
     ngValues: 'Paris,Singapore,Turkey,Default'
-    ngOptions: 'item as item.label for item in select_tenant_type_options'
+    ngOptions: 'item as item.label for item in tenant_type_options'
     opt: 'label'
     disableChooseOption: true
     ngChange: 'statusChange()'
@@ -273,7 +273,8 @@ fields:
     label: 'Credential Type'
     type: 'select'
     ngOptions: 'item as item.label for item in kind_type_options'
-    ngValues: 'Machine,Windows'
+    ngValues: 'Windows'
+    opt: 'label'
     ngChange: 'kindChange()'
     required: true
     awPopOver: '<p> Select the Cloud Kind for this Inventory to run on. </p>'
@@ -281,7 +282,7 @@ fields:
     dataPlacement: 'right'
     dataContainer: 'body'
     hasSubForm: true
-    ngDisabled: true
+    disabled: true
     ngShow: 'tabId == 2'
 
   credential_username: 
@@ -300,81 +301,16 @@ fields:
     clear: false
     autocomplete: false
     hasShowInputButton: true
+    excludeMode: 'edit'
     subForm: "credentialSubForm"
     required: true
 
-  ssh_key_data: 
-    label: 'SSH PRIVATE KEY'
-    type: 'textarea'
-    ngShow: "kind.value == '0' && tabId == 2"
-    class: 'Form-textAreaLabel Form-formGroup--fullWidth'
-    elementClass: 'Form-monospace'
-    awDropFile: true
-    rows: 10
-    awPopOver: "SSH key description"
-    awPopOverWatch: "key_description"
-    dataTitle: 'Private Key'
-    dataPlacement: 'right'
-    dataContainer: "body"
-    subForm: "credentialSubForm"
-    ngDisabled: '!(credential_obj.summary_fields.user_capabilities.edit || canAdd)'
-
-  ssh_key_unlock: 
-    label: 'Private Key Passphrase'
-    type: 'sensitive'
-    ngShow: "kind.value == '0' && tabId == 2"
-    ngDisabled: "keyEntered == false || ssh_key_unlock_ask || !(credential_obj.summary_fields.user_capabilities.edit || canAdd)"
-    subCheckbox: 
-        variable: 'ssh_key_unlock_ask'
-        ngShow: "kind.value == 'ssh'"
-        text: 'Ask at runtime?'
-        ngChange: "ask('ssh_key_unlock', 'undefined')"
-        ngDisabled: "keyEntered == false"
-    
-    hasShowInputButton: true
-    subForm: 'credentialSubForm'
-
-  become_method: 
-    label: "Privilege Escalation"
-    type: 'select'
-    ngShow: "kind.value == '0' && tabId == 2"
-    dataTitle: 'Privilege Escalation'
-    ngOptions: 'become.label for become in become_options track by become.value'
-    awPopOver: "<p> Specify a method for %s operations. This is equivalent to specifying the parameter </p>"
-    dataPlacement: 'right'
-    dataContainer: "body"
-    subForm: 'credentialSubForm'
-    ngDisabled: '!(credential_obj.summary_fields.user_capabilities.edit || canAdd)'
-    ngChange: 'becomeMethodChange()'
-
-  become_username: 
-    label: 'Privilege Escalation Username'
-    type: 'text'
-    ngShow: "kind.value == '0' && tabId == 2"
-    autocomplete: false
-    subForm: 'credentialSubForm'
-    ngDisabled: '!(credential_obj.summary_fields.user_capabilities.edit || canAdd)'
-
-  become_password: 
-    label: 'Privilege Escalation Password'
-    type: 'sensitive'
-    ngShow: "kind.value == '0' && tabId == 2"
-    ngDisabled: "become_password_ask || !(credential_obj.summary_fields.user_capabilities.edit || canAdd)"
-    subCheckbox: 
-        variable: 'become_password_ask'
-        text: 'Ask at runtime?'
-        ngChange: "ask(become_password, undefined)"
-        ngDisabled: false
-    hasShowInputButton: true
-    autocomplete: false
-    subForm: 'credentialSubForm'
-
-  windows_options: 
+  credential_windows_options: 
     label: 'Connection Options'
     type: 'textarea'
     class: 'Form-textAreaLabel Form-formGroup--fullWidth'
     rows: 10
-    ngShow: "kind.value == '1' && tabId == 2"
+    ngShow: "kind.value && tabId == 2"
     awPopOver: "<p>ansible_connection: winrm<br/>ansible_winrm_server_cert_validation: ignore </p>"
     awPopOverWatch: ""
     dataPlacement: 'right'

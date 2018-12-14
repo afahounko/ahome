@@ -166,6 +166,8 @@ basePath: 'ipam_providers'
 stateTree: 'infraProviders'
 breadcrumbName: 'TUTORIALS'
 showActions: true
+subFormTitles:
+    credentialSubForm: 'Credential Type Details'
 launchclick: 'addNew("tutorials")'
 steps: 4
 
@@ -243,28 +245,6 @@ fields:
         text: 'Ask at runtime'
     autocomplete: false
 
-  select_datacenter: 
-    label: 'Datacenter from API'
-    type: 'select'
-    defaultText: 'Choose a Datacenter'
-    ngModel: 'datacenter'
-    ngOptions: 'item as item.label for item in select_datacenter_type_options'
-    ngSource: ipam_datacenters
-    ngShow: 'tabId == 2'
-
-  select_status:
-    label: 'Fixed Data Status'
-    type: 'select'
-    ngValues: 'Status1,Status2'
-    ngOptions: 'item as item.label for item in select_status_type_options'
-    disableChooseOption: true
-    ngChange: 'statusChange()'
-    awPopOver: '<p> Select the Status. </p>'
-    dataTitle: 'Fixed Status'
-    dataPlacement: 'right'
-    dataContainer: 'body'
-    ngShow: 'tabId == 2'
-
   checkbox_TrueDefault:
     name: 'scm_clean'
     label: 'CheckBox1'
@@ -308,6 +288,141 @@ fields:
     awPopOver: "<p> If enabled, ENFORCE_UNIQUE is enabled. </p>"
     default: false
     ngShow: 'tabId == 1'
+
+  datacenter: 
+    label: 'Datacenter from API'
+    type: 'select'
+    defaultText: 'Choose a Datacenter'
+    ngModel: 'datacenter'
+    ngOptions: 'item as item.label for item in datacenter_type_options'
+    ngSource: ipam_datacenters
+    ngShow: 'tabId == 2'
+
+  status:
+    label: 'Fixed Data Status'
+    type: 'select'
+    ngValues: 'Status1,Status2'
+    ngOptions: 'item as item.label for item in status_type_options'
+    disableChooseOption: true
+    ngChange: 'statusChange()'
+    awPopOver: '<p> Select the Status. </p>'
+    dataTitle: 'Fixed Status'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    ngShow: 'tabId == 2'
+
+  kind:
+    label: 'Credential Type'
+    type: 'select'
+    ngOptions: 'item as item.label for item in kind_type_options'
+    ngValues: 'Windows'
+    opt: 'label'
+    ngChange: 'kindChange()'
+    required: true
+    awPopOver: '<p> Select the Cloud Kind for this Inventory to run on. </p>'
+    dataTitle: 'Credential Type'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    hasSubForm: true
+    ngShow: 'tabId == 2'
+
+  credential_username: 
+    label: 'UserName'
+    type: 'text'
+    ngShow: "kind.value && tabId == 2"
+    autocomplete: false
+    subForm: "credentialSubForm"
+    hideSubForm: 'tabId != 2'
+    required: true
+
+  credential_password: 
+    label: 'Password'
+    type: 'sensitive'
+    ngShow: "kind.value && tabId == 2"
+    clear: false
+    autocomplete: false
+    hasShowInputButton: true
+    subForm: "credentialSubForm"
+    required: true
+
+  credential_ssh_key_data: 
+    label: 'SSH PRIVATE KEY'
+    type: 'textarea'
+    ngShow: "kind.value == '0' && tabId == 2"
+    class: 'Form-textAreaLabel Form-formGroup--fullWidth'
+    elementClass: 'Form-monospace'
+    awDropFile: true
+    rows: 10
+    awPopOver: "SSH key description"
+    awPopOverWatch: "key_description"
+    dataTitle: 'Private Key'
+    dataPlacement: 'right'
+    dataContainer: "body"
+    subForm: "credentialSubForm"
+    ngDisabled: '!(credential_obj.summary_fields.user_capabilities.edit || canAdd)'
+
+  credential_ssh_key_unlock: 
+    label: 'Private Key Passphrase'
+    type: 'sensitive'
+    ngShow: "kind.value == '0' && tabId == 2"
+    ngDisabled: "keyEntered == false || ssh_key_unlock_ask || !(credential_obj.summary_fields.user_capabilities.edit || canAdd)"
+    subCheckbox: 
+        variable: 'ssh_key_unlock_ask'
+        ngShow: "kind.value == 'ssh'"
+        text: 'Ask at runtime?'
+        ngChange: "ask('ssh_key_unlock', 'undefined')"
+        ngDisabled: "keyEntered == false"
+    
+    hasShowInputButton: true
+    subForm: 'credentialSubForm'
+
+  credential_become_method: 
+    label: "Privilege Escalation"
+    type: 'select'
+    ngShow: "kind.value == '0' && tabId == 2"
+    dataTitle: 'Privilege Escalation'
+    ngOptions: 'become.label for become in become_options track by become.value'
+    awPopOver: "<p> Specify a method for %s operations. This is equivalent to specifying the parameter </p>"
+    dataPlacement: 'right'
+    dataContainer: "body"
+    subForm: 'credentialSubForm'
+    ngDisabled: '!(credential_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngChange: 'becomeMethodChange()'
+
+  credential_become_username: 
+    label: 'Privilege Escalation Username'
+    type: 'text'
+    ngShow: "kind.value == '0' && tabId == 2"
+    autocomplete: false
+    subForm: 'credentialSubForm'
+    ngDisabled: '!(credential_obj.summary_fields.user_capabilities.edit || canAdd)'
+
+  credential_become_password: 
+    label: 'Privilege Escalation Password'
+    type: 'sensitive'
+    ngShow: "kind.value == '0' && tabId == 2"
+    ngDisabled: "become_password_ask || !(credential_obj.summary_fields.user_capabilities.edit || canAdd)"
+    subCheckbox: 
+        variable: 'become_password_ask'
+        text: 'Ask at runtime?'
+        ngChange: "ask(become_password, undefined)"
+        ngDisabled: false
+    hasShowInputButton: true
+    autocomplete: false
+    subForm: 'credentialSubForm'
+
+  credential_windows_options: 
+    label: 'Connection Options'
+    type: 'textarea'
+    class: 'Form-textAreaLabel Form-formGroup--fullWidth'
+    rows: 10
+    ngShow: "kind.value == '1' && tabId == 2"
+    awPopOver: "<p>ansible_connection: winrm<br/>ansible_winrm_server_cert_validation: ignore </p>"
+    awPopOverWatch: ""
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    autocomplete: false
+    subForm: "credentialSubForm"
 
   organization:
     label: 'Lookup'

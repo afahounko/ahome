@@ -22,7 +22,6 @@ subitem_url: 'https://github.com/afahounko'
 subitem_project: 'https://github.com/ansible/ansible-tower-samples.git'
 subitem_playbook: 'local.yml'
 
-
 project:
     name_prefix: 'Git_'
     description: ''

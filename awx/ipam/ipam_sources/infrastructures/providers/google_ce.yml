@@ -75,6 +75,7 @@ fields:
     defaultText: 'Choose a Datacenter'
     ngModel: 'datacenter'
     ngOptions: 'item as item.label for item in datacenter_type_options'
+    ngSource: ipam_datacenters
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 2'
 
@@ -84,6 +85,7 @@ fields:
     defaultText: 'Choose a Credential'
     ngModel: 'credential'
     ngOptions: 'item as item.label for item in credential_type_options'
+    ngSource: credentials
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 2'
 

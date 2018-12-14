@@ -76,50 +76,53 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
 		            $scope[form.name + '_form'].$setDirty();
 		        };
 
-		        if(form.fields.datacenter){
-		        	$scope.datacenter_type_options = initSelect('ipam_datacenters', form.fields.datacenter.ngFilter ? form.fields.datacenter.ngFilter : "");
-		        	console.log('datacenter');
-		        	$timeout(function(){
-						for(var fld in $scope.datacenter_type_options)
+			    for(var field in form.fields)
+				{
+					console.log(field);
+					if(form.fields[field].type == 'select')
+					{
+						if(form.fields[field].ngValues)
 						{
-							if($scope.datacenter_type_options[fld].value == data.opts.datacenter)
-								$scope.datacenter = $scope.datacenter_type_options[fld];
+							$scope[field + '_type_options'] = initSelect('', form.fields[field].ngValues, form.fields[field].ngFilter ? form.fields[field].ngFilter : "");
 						}
-					},2000);
-		        }
-		        if(form.fields.ipaddress){
-	        		$scope.ipaddress_type_options = initSelect('ipam_ip_addresses', form.fields.ipaddress.ngFilter ? form.fields.ipaddress.ngFilter : "");
-	        		$timeout(function(){
-						for(var fld in $scope.ipaddress_type_options)
+						else
 						{
-							if($scope.ipaddress_type_options[fld].value == data.opts.ipaddress)
-								$scope.ipaddress = $scope.ipaddress_type_options[fld];
+							if(form.fields[field].ngSource)
+								$scope[field + '_type_options'] = initSelect(form.fields[field].ngSource, '', form.fields[field].ngFilter ? form.fields[field].ngFilter : "");
 						}
-					},2000);
-	        		
-	        	}
-	        	if(form.fields.credential){
-	        		$scope.credential_type_options = initSelect('credentials', form.fields.credential.ngFilter ? form.fields.credential.ngFilter : "");
-		        	$timeout(function(){
-						for(var fld in $scope.credential_type_options)
+						var elmnt = '#' + id_type + '_' + field;
+						CreateSelect2({
+				            element: elmnt,
+				            multiple: false,
+				        });
+					}
+					if(form.fields[field].type == 'toggleSwitch')
+					{
+						if(form.fields[field].default != undefined) $scope[field] = form.fields[field].default;
+					}
+				}
+	        	//Set Default Value 2018/12/13
+		        $timeout(function(){
+		        	for(var field in form.fields)
+					{
+						if(form.fields[field].type == 'select')
 						{
-							if($scope.credential_type_options[fld].value == data.opts.credentials)
-								$scope.credentials = $scope.credential_type_options[fld];
+							for(var fld in $scope[field + '_type_options'])
+							{
+								if(form.fields[field].opt)
+								{
+									if($scope[field + '_type_options'][fld].label == data.opts[field])
+									$scope[field] = $scope[field + '_type_options'][fld];
+					            }
+					            else
+					            {
+					            	if($scope[field + '_type_options'][fld].value == data.opts[field])
+									$scope[field] = $scope[field + '_type_options'][fld];
+					            }
+							}
 						}
-					},2000);
-	        	}
-		        CreateSelect2({
-		            element: '#' + id_type + '_datacenter',
-		            multiple: false,
-		        }); 
-		        CreateSelect2({
-		            element: '#' + id_type + '_ipaddress',
-		            multiple: false,
-		        }); 
-		        CreateSelect2({
-		            element: '#' + id_type + '_credential',
-		            multiple: false,
-		        });
+					}
+				},2000);
 				//for multi credential 2018/10/25
 				MultiCredentialService.getCredentialTypes()
 	            .then(({ data }) => {
@@ -153,23 +156,12 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
                     msg: i18n.sprintf(i18n._('Failed to retrieve Job: %s. GET status: '), $stateParams.id) + status
                 });
             });
-            /*//Update UI with backend Python
-        	Rest.get(GetBasePath('ipam_infrastructure_ui')).then(({data}) => {
-        		console.log("IPAM_INFRA_SOURCES");
-        		console.log(data);
-        	})
-            .catch(({data, status}) => {
-                ProcessErrors($scope, data, status, null, {
-                    hdr: i18n._('Error!'),
-                });
-            });	*/
             // change to modal dialog
             var element = document.getElementById("modaldlg");
             element.style.display = "block";
             var panel = element.getElementsByClassName("Panel ng-scope");
             panel[0].classList.add("modal-dialog");
             panel[0].style.width = "60%";
-            
             Wait('stop');
         }
         $scope.toggleForm = function(key) {
@@ -226,13 +218,70 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
 					console.log(form);
 					for (fld in form.fields) {
 						
-						if(fld == "datacenter" || fld == "credential")
+						if(form.fields[fld].type == 'select')
 						{
 							data += "'" + fld + "':";
-			            	if($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";
-			            	else data += "''";
+							if(form.fields[fld].opt)
+							{
+								if($scope[fld] != undefined) data += "'" + $scope[fld].label + "'";
+			            		else data += "''";
+				            }
+				            else
+				            {
+				            	if($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";
+				            	else data += "''";
+				            }
 			            	data += ",\n"; 
 			            	continue;
+						}
+						if(form.fields[fld].type == 'sensitive')
+						{
+							data += "'" + fld + "':'$Encrypted$',\n";
+			            	continue;
+						}
+                        if (fld == "multiCredential") {
+                            var mcredentials = [];
+                            data += "'" + fld + "':";
+                            if ($scope[fld]['selectedCredentials'] != undefined) {
+                                data += "'"
+                                for (subid in $scope[fld]['selectedCredentials']) {
+                                    var cred = {};
+                                    console.log($scope[fld]['selectedCredentials'][subid]);
+                                    cred.id = $scope[fld]['selectedCredentials'][subid].id;
+                                    data += $scope[fld]['selectedCredentials'][subid].id + ',';
+                                    mcredentials.push(cred);
+                                }
+                                data += "',";
+                            }
+                            else data += "'',";
+                            data += "\n";
+                            console.log(mcredentials);
+                            continue;
+                        }
+						if(form.fields[fld].type == 'custom')
+						{
+							data += "'" + fld + "':";
+							if($scope[fld] != undefined)
+							{
+								console.log($scope[fld]);
+								data += "'";
+								if($scope[fld] != '' && $scope[fld] != undefined)
+								{
+									for(var subid in $scope[fld]){
+										if(subid.startsWith('selected'))
+										{
+											for(var selectedCustom in $scope[fld][subid]){
+												data += $scope[fld][subid][selectedCustom].id + ',';
+											}
+										}
+									}
+									data = data.substring(0, data.length-1);
+								}
+								data += "',"; 
+							}
+							else data += "'',";
+							data+= "\n";
+							continue;
 						}
 		            	if(fld != "opts")
 		            	{
@@ -240,18 +289,12 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
 			            	if($scope[fld] != undefined) data += "'" + $scope[fld] + "'";
 			            	else data += "''";
 			            	data += ",\n"; 
-			            	/*
-			                if (form.fields[fld].realName) {
-			                    data = data[form.fields[fld].realName] = $scope[fld];
-			                }else {
-			                    data[fld] = $scope[fld]; 
-			                }*/
 			            }
 		            }
-		            data += "'id_type':'" + id_type + "',\n";
 		            data += "'fk_model':'" + fk_model + "',\n";
 		            data += "'fk_type':'" + fk_type + "',\n";
 		            data += "'fk_id':'" + fk_id + "',\n";
+		            data += "'id_type':'" + id_type + "',\n";
 		            data += "'scm_type':'',\n";
 		            data += "'project_id':'" + project_id + "',\n";
 		            data += "'template_id':'" + template_id + "',\n";

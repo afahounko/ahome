@@ -227,11 +227,11 @@ angular.module('ProviderSaver', ['Utilities'])
             }
             console.log(remove_credents);
             */
-            console.log(parentData);
-            if (parentData.opts.credential_id !== undefined && parentData.opts.credential_id !== null) {
+            console.log(data_subitem);
+            if (data_subitem.multiCredential !== undefined && data_subitem.multiCredential !== null) {
                 var cred_ids = {};
 
-                cred_ids = parentData.opts.credential_id.split(',');
+                cred_ids = data_subitem.multiCredential.split(',');
                 console.log(cred_ids);
                 for (var ind = 0; ind < cred_ids.length; ind++) {
                     var tmp_cred = {};
@@ -242,7 +242,7 @@ angular.module('ProviderSaver', ['Utilities'])
                 }
             }
             console.log(remove_credents);
-            
+
             //Project Saving
             if (form.project) {
                 data_project = form.project;
