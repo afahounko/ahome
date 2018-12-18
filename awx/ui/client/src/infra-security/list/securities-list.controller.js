@@ -1,21 +1,22 @@
 /*************************************************
- * Copyright (c) 2016 Ansible, Inc.
+ * Copyright (c) 2018 Ansible, Inc.
  *
  * All Rights Reserved
+ * Truegardener
  *************************************************/
 
 import { N_ } from "../../i18n";
 
-export default ['$window', '$scope', '$rootScope', 'Rest', 'SecurityList', 'Prompt',
+export default ['$window', '$scope', '$rootScope', '$location', 'Rest', 'SecurityList', 'Prompt', 'JobTemplateModel', 'WorkflowJobTemplateModel',
     'ProcessErrors', 'GetBasePath', 'Wait', '$state', '$filter',
-    'rbacUiControlService', 'Dataset', 'i18n', 
-    function($window, $scope, $rootScope, Rest, SecurityList, Prompt,
+    'rbacUiControlService', 'Dataset', 'i18n', 'processRow', 'LaunchRelatedJobTemplate', 'DeleteInfrastructure',
+    function($window, $scope, $rootScope, $location, Rest, SecurityList, Prompt, JobTemplateModel, WorkflowJobTemplateModel,
     ProcessErrors, GetBasePath, Wait, $state, $filter, rbacUiControlService,
-    Dataset, i18n) {
+	Dataset, i18n, processRow, LaunchRelatedJobTemplate, DeleteInfrastructure) {
 
         var list = SecurityList,
         defaultUrl = GetBasePath('ipam_securities');
-
+		var project_id, template_id, poweroff_id, remove_id;
         init();
 
         function init() {
@@ -26,7 +27,10 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'SecurityList', 'Prom
                 .then(function(params) {
                     $scope.canAdd = params.canAdd;
                 });
-                
+            $scope.$watchCollection(list.name, function(){
+	            _.forEach($scope[list.name], processSecurityRow);
+	        });
+	        
             // search init
             $scope.list = list;
             $scope[`${list.iterator}_dataset`] = Dataset.data;
@@ -34,7 +38,24 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'SecurityList', 'Prom
 
             $rootScope.flashMessage = null;
             $scope.selected = [];
+            
         }
+
+		//This function is for Getting Job Template's status
+	    function processSecurityRow(security) {
+            security = processRow('ipam_securities', security);
+	    }
+ 
+ 		$scope.showJobScript = function(id)
+ 		{
+ 			if(this.security.job_status == 'pending'){
+ 				Alert(i18n._('Job Pending'), i18n._('The selected job is under pending status.'), 'alert-info');
+ 			}
+ 			else{
+ 				console.log('/jobs/playbook/' + this.security.last_id);
+ 				$location.path('/jobs/playbook/' + this.security.last_id);
+ 			}
+ 		}
 
         $scope.addNew = function(param) {
             console.log("Add Security infraSecurity" + param);
@@ -44,64 +65,41 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'SecurityList', 'Prom
         
         $scope.infraJobs= function() {
         	console.log("********* Launch ************");
-        	//var locationTo = 'infraJobsList.securities.' + this.security.related.opts.id_type;
+        	//var locationTo = 'infraJobsList.securities.' + this.security.related.opts.fk_type;
         	//console.log(locationTo);
+        	console.log(this.security);
         	$window.localStorage.setItem('fk_model', 'securities');
-        	$window.localStorage.setItem('fk_type', this.security.related.opts.id_type);
+        	$window.localStorage.setItem('fk_type', this.security.related.opts.fk_type);
         	$window.localStorage.setItem('fk_id', this.security.id);
-            $state.go('infraJobsList');
+
+            $rootScope.infraJob = "infraSecurityList";
+
+            $state.go('infraJobsList', {job_search:{fk_model:'securities', fk_type:this.security.related.opts.fk_type, fk_id:this.security.id}}, { reload: true });
 			console.log("State Go finished");
+
         };
-        
-        $scope.launchSecurity= function() {
-        	console.log("Launch");
-            //$rootScope.form_id = this.security.related.opts.id_type;
-            //$state.go('infraJobsList', null, { reload: true});
+
+        $scope.launchSecurity = function(security_id) {
+        	LaunchRelatedJobTemplate(defaultUrl, security_id, null, 'template_id', 0, '');
+        };
+
+        $scope.poweroffSecurity= function(security_id, name) {
+        	LaunchRelatedJobTemplate(defaultUrl, security_id, name, 'poweroff_id', 1, 'Power Off');
+        };
+
+        $scope.removeSecurity = function(security_id, name) {
+        	LaunchRelatedJobTemplate(defaultUrl, security_id, name, 'remove_id', 1, 'Remove');
         };
 
         $scope.editSecurity= function() {
         	console.log("stateGO");
-            console.log('infraSecurityList.edit_' + this.security.related.opts.id_type);
-            $window.localStorage.setItem('form_id', this.security.related.opts.id_type);
-            $state.go('infraSecurityList.edit_' + this.security.related.opts.id_type, { security_id: this.security.id });
+            console.log('infraSecurityList.edit_' + this.security.related.opts.fk_type);
+            $window.localStorage.setItem('form_id', this.security.related.opts.fk_type);
+            $state.go('infraSecurityList.edit_' + this.security.related.opts.fk_type, { security_id: this.security.id });
         };
 
         $scope.deleteSecurity = function(id, name) {
-            var action = function() {
-                $('#prompt-modal').modal('hide');
-                Wait('start');
-                var url = defaultUrl + id + '/';
-                Rest.setUrl(url);
-                Rest.destroy()
-                    .then(() => {
-                        let reloadListStateParams = null;
-
-                        if($scope.ipam_securities.length === 1 && $state.params.security_search && !_.isEmpty($state.params.security_search.page) && $state.params.security_search.page !== '1') {
-                            reloadListStateParams = _.cloneDeep($state.params);
-                            reloadListStateParams.security_search.page = (parseInt(reloadListStateParams.security_search.page)-1).toString();
-                        }
-
-                        if (parseInt($state.params.security_id) === id) {
-                            $state.go('^', null, { reload: true });
-                        } else {
-                            $state.go('.', null, { reload: true });
-                        }
-                    })
-                    .catch(({data, status}) => {
-                        ProcessErrors($scope, data, status, null, {
-                            hdr: i18n._('Error!'),
-                            msg: i18n.sprintf(i18n._('Call to %s failed. DELETE returned status: '), url) + status
-                        });
-                    });
-            };
-
-            Prompt({
-                hdr: i18n._('Delete'),
-                resourceName: $filter('sanitize')(name),
-                body: '<div class="Prompt-bodyQuery">' + i18n._('Are you sure you want to delete this Security?') + '</div>',
-                action: action,
-                actionText: i18n._('DELETE')
-            });
+			DeleteInfrastructure(defaultUrl, id, name, 'securities',  this.security.related.opts.fk_type);
         };
     }
 ];

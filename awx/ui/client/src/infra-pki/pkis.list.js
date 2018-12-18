@@ -1,7 +1,8 @@
 /*************************************************
- * Copyright (c) 2015 Ansible, Inc.
+ * Copyright (c) 2018 Ansible, Inc.
  *
  * All Rights Reserved
+ * Truegardener
  *************************************************/
 
 
@@ -24,12 +25,10 @@ export default ['i18n', function(i18n) {
             status: {
                 label: '',
                 iconOnly: true,
-                ngClick: 'showSCMStatus(pki.id)',
-//                awToolTip: '{{ project.statusTip }}',
-				awToolTip: 'Update Succeed',
-                dataTipWatch: 'project.statusTip',
+                ngClick: 'showJobScript(pki.id)',
+				awToolTip: 'PKI running status. Green:running, Blink:pending',
                 dataPlacement: 'right',
-                icon: "icon-job-success",
+                icon: "{{ 'icon-job-' + pki.job_status }}",
                 columnClass: "List-staticColumn--smallStatus",
                 nosort: true,
                 excludeModal: true
@@ -37,47 +36,51 @@ export default ['i18n', function(i18n) {
             name: {
                 key: true,
                 label: i18n._('Name'),
-                columnClass: 'col-md-3 col-sm-3 col-xs-9',
+                columnClass: 'col-md-2 col-sm-2 col-xs-8',
                 awToolTip: "Redirect to Job Page",
                 awTipPlacement: "top",
 				ngClick: "infraJobs()",
             },
-		    type: {
+			id: {
                 label: i18n._('Type'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
+                ngBind: 'pki.opts.fk_type',
+                columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
-			version: {
-                label: i18n._('Version'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
+            created: {
+            	label: i18n._('Created'),
+            	columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
-			lastupdated: {
+            last_updated: {
                 label: i18n._('Last Updated'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
-            },
-        },
-/*
-        actions: {
-            add: {
-                label: i18n._('Create New'),
-                mode: 'all', // One of: edit, select, all
-                ngClick: 'addApp()',
-                awToolTip: i18n._('Create a new APP'),
-                actionClass: 'at-Button--add',
-                actionId: 'button-add',
-                ngShow: 'canAdd'
+                filter: "longDate",
+                columnClass: "col-lg-3 hidden-md hidden-sm hidden-xs",
+                excludeModal: true
             }
         },
-*/
         fieldActions: {
-
             columnClass: 'col-md-2 col-sm-3 col-xs-3',
-
             launch: {
                 label: i18n._('Launch'),
                 icon: 'icon-launch',
                	ngClick: "launchPki(pki.id)",
                 "class": 'btn-xs btn-default',
                 awToolTip: i18n._('Launch Pki'),
+                dataPlacement: 'top',
+            },
+		    poweroff: {
+                label: i18n._('Stop Pki'),
+                iconClass: 'fa fa-power-off',
+               	ngClick: "poweroffPki(pki.id, pki.name)",
+                "class": 'btn-xs btn-default',
+                awToolTip: i18n._('Stop Pki'),
+                dataPlacement: 'top',
+            },
+			remove: {
+                label: i18n._('Clean Pki'),
+                iconClass: 'fa fa-remove',
+               	ngClick: "removePki(pki.id, pki.name)",
+                "class": 'btn-xs btn-default',
+                awToolTip: i18n._('Remove Pki'),
                 dataPlacement: 'top',
             },
             edit: {
@@ -88,7 +91,7 @@ export default ['i18n', function(i18n) {
                 awToolTip: i18n._('Edit Pki'),
                 dataPlacement: 'top',
             },
-			view: {
+            view: {
                 ngClick: "viewPki(pki.id)",
                 awToolTip: i18n._('View the Pki'),
                 dataPlacement: 'top',

@@ -7,9 +7,27 @@ description: |
 
 hosts: all
 
-cloud: true
-credential_types: 1,7
-credential_prefix: 'Machine_'
+cloud: false
+credential_type: Windows
+credential_input:
+    fields:
+      - type: string
+        id: username
+        label: Username
+      - secret: true
+        type: string
+        id: password
+        label: Password
+      - help_text: |
+          ansible_connection: winrm ansible_winrm_server_cert_validation: ignore
+        multiline: true
+        type: string
+        id: windows_options
+        label: Connection options
+    required:
+      - username
+      - password
+credential_prefix: 'Storage_'
 
 label_prefix: ''
 url: 'https://github.com/afahounko'
@@ -67,10 +85,6 @@ configure_job:
     become_enabled: false
     diff_mode: false
     allow_simultaneous: false
-    network_credential: null
-    cloud_credential: null
-    credential: 2
-    vault_credential: null
 
 poweroff_job:
     name_prefix: 'Poweroff_'
@@ -103,10 +117,6 @@ poweroff_job:
     become_enabled: false
     diff_mode: false
     allow_simultaneous: false
-    cloud_credential: null
-    network_credential: null
-    credential: 2
-    vault_credential: null
 
 remove_job:
     name_prefix: 'Remove_'
@@ -139,12 +149,8 @@ remove_job:
     become_enabled: false
     diff_mode: false
     allow_simultaneous: false
-    cloud_credential: null
-    network_credential: null
-    credential: 2
-    vault_credential: null
 
-addTitle: 'NEW STORAGE'
+addTitle: 'NEW FC STORAGE'
 editTitle: '{{ name }}'
 name: 'fc_storage'
 title: 'FC Storage'
@@ -154,7 +160,8 @@ stateTree: 'infraStoragesList'
 breadcrumbName: 'INFRA STORAGE'
 showActions: true
 launchclick: 'addNew("fc_storage")'
-steps: 4
+subFormTitles:
+    credentialSubForm: 'Credential Type Details'
 
 wizards: 
     basic: 
@@ -169,14 +176,8 @@ wizards:
       type: 'collection'
       title: 'Credentials'
 
-    inventory:
-      index: 3
-      name: 'Inventory'
-      type: 'collection'
-      title: Inventory
-
     opts:
-      index: 4
+      index: 3
       name: 'Option'
       type: 'collection'
       title: 'Options'
@@ -201,26 +202,55 @@ fields:
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 1'
 
-  host:
-    label: Openshift Host
-    type: 'text'
-    dataTitle: 'Choose a Credential'
-    awPopOverWatch: 'Enter the hostname or IP address that corresponds to your VMware vCenter.'
+  kind:
+    label: 'Credential Type'
+    type: 'select'
+    ngOptions: 'item as item.label for item in kind_type_options'
+    ngValues: 'Windows'
+    ngChange: 'kindChange()'
+    opt: 'label'
     required: true
+    awPopOver: '<p> Select the Cloud Kind for this Inventory to run on. </p>'
+    dataTitle: 'Credential Type'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    hasSubForm: true
+    ngDisabled: true
     ngShow: 'tabId == 2'
 
-  username: 
-    label: 'Username'
+  credential_username: 
+    label: 'UserName'
     type: 'text'
+    ngShow: "kind.value && tabId == 2"
+    autocomplete: false
+    subForm: "credentialSubForm"
+    hideSubForm: 'tabId != 2'
     required: true
-    ngShow: 'tabId == 2'
 
-  password: 
+  credential_password: 
     label: 'Password'
     type: 'sensitive'
+    ngShow: "kind.value && tabId == 2"
+    clear: false
+    autocomplete: false
     hasShowInputButton: true
+    subForm: "credentialSubForm"
     required: true
-    ngShow: 'tabId == 2'
+    excludeMode: 'edit'
+
+  credential_windows_options: 
+    label: 'Connection Options'
+    type: 'textarea'
+    class: 'Form-textAreaLabel Form-formGroup--fullWidth'
+    rows: 10
+    ngShow: "kind.value && tabId == 2"
+    awPopOver: "<p>ansible_connection: winrm</p><p> ansible_winrm_server_cert_validation: ignore </p>"
+    awPopOverWatch: ""
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    autocomplete: false
+    subForm: "credentialSubForm"
+    excludeMode: 'edit'
 
   datacenter: 
     label: 'Datacenter'
@@ -228,6 +258,7 @@ fields:
     defaultText: 'Choose a Datacenter'
     ngModel: 'datacenter'
     ngOptions: 'item as item.label for item in datacenter_type_options'
+    ngSource: ipam_datacenters
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 2'
   
@@ -237,20 +268,9 @@ fields:
     defaultText: 'Choose a Credential'
     ngModel: 'credential'
     ngOptions: 'item as item.label for item in credential_type_options'
+    ngSource: credentials
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 2'
-
-  inventory_hosts:
-     label: 'Inventory Host'
-     type: 'custom'
-     sourceModel: 'hosts'
-     basePath: 'hosts'
-     awPopOver: "<p> Select the Inventory Hosts for this Inventory to run on. </p>"
-     dataTitle: 'Inventory Host'
-     dataPlacement: 'right'
-     dataContainer: 'body'
-     control: '<inventory-hosts-multiselect  bind="inventory_hosts" field-is-disabled="cloud"></inventory-hosts-multiselect>'
-     ngShow: 'tabId == 3'
 
   opts: 
     label: 'Input Opts'
@@ -265,7 +285,7 @@ fields:
     dataPlacement: 'right'
     dataContainer: "body"
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
-    ngShow: 'tabId == 4'
+    ngShow: 'tabId == 3'
 
 buttons: 
   wizardcancel:
@@ -278,10 +298,10 @@ buttons:
 
   next:
     ngClick: 'WizardClick(2)'
-    ngShow: 'tabId < 4'
+    ngShow: 'tabId < 3'
 
   save:
     title: 'Finish'
     ngClick: 'formSave()'
-    ngShow: 'tabId == 4'
+    ngShow: 'tabId == 3'
     ngDisabled: true

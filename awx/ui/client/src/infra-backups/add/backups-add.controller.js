@@ -1,7 +1,8 @@
 /*************************************************
- * Copyright (c) 2016 Ansible, Inc.
+ * Copyright (c) 2018 Ansible, Inc.
  *
  * All Rights Reserved
+ * Truegardener
  *************************************************/
 
 import { N_ } from "../../i18n";
@@ -12,84 +13,113 @@ const user_type_options = [
  { type: 'system_administrator', label: N_('System Administrator') },
 ];
 
-export default ['$window', '$scope', '$rootScope', 'BackupForm', 'GenerateForm', 'Rest','ParseTypeChange',
-    'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath',
-    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString',
-    function($window, $scope, $rootScope, BackupForm, GenerateForm, Rest, ParseTypeChange, Alert,
-    ProcessErrors, ReturnToCaller, GetBasePath, Wait, CreateSelect2,
-    $state, $location, i18n, ParseVariableString) {
+export default ['$window', '$scope', '$rootScope', '$stateParams', 'BackupForm', 'GenerateForm', 'Rest','ParseTypeChange',
+    'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath', 'SaveInfraItem', 'DeleteSubJobTemplate', 'checkExistApi' ,
+    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString', '$q', 'initSelect', 'cloudProcess', 'SetActiveWizard', 'GetOptsValues',
+    function($window, $scope, $rootScope, $stateParams, BackupForm, GenerateForm, Rest, ParseTypeChange, Alert,
+    ProcessErrors, ReturnToCaller, GetBasePath, SaveInfraItem, DeleteSubJobTemplate, checkExistApi, Wait, CreateSelect2, 
+	$state, $location, i18n, ParseVariableString, $q, initSelect, cloudProcess, SetActiveWizard, GetOptsValues) {
 
         var defaultUrl = GetBasePath('ipam_backups'),
-        	id_type = $window.localStorage.getItem('form_id'),
-            form = BackupForm[id_type];
+        	fk_type = $window.localStorage.getItem('form_id'),
+            form = BackupForm[fk_type];
 
         init();
 
         function init() {
             // apply form definition's default field values
-
 			console.log("Add FORM Init");
-			console.log(id_type);
 			console.log(form);
             GenerateForm.applyDefaults(form, $scope);
 
             $scope.isAddForm = true;
-            
+
 			$scope.status1 = "active";
             $scope.tabId = 1;
 			$scope.previous = "CLOSE";
 			$scope.next = "NEXT";
-			
-	        var datacenter_options = [];
-			var datacenterLists = [];
-	    	Rest.setUrl(GetBasePath('ipam_datacenters'));
-	        Rest.get().then(({data}) => {
-	        	datacenterLists = data.results;
-	        	for (var i = 0; i < datacenterLists.length; i++) {
-	        		datacenter_options.push({label:datacenterLists[i].name, value:datacenterLists[i].id});
-	        	}
-	        	$scope.datacenter_type_options = datacenter_options;l
-	            for (var i = 0; i < datacenter_options.length; i++) {
-	                if (datacenter_options[i].value === datacenter_value) {
-	                    $scope.datacenter = datacenter_options[i];
-	                    break;
-	                }
-	            }
-	            
-	        })
-	    	.catch(({data, status}) => {
-	        	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get datacenters. Get returned status: ') + status });
-			});
+			$scope.cloud = form.cloud;
 
-			var credential_options = [];
-			Rest.setUrl(GetBasePath('credentials'));
-	        Rest.get().then(({data}) => {
-	        	var credentialLists = data.results;
-	        	for (var i = 0; i < credentialLists.length; i++)
-	        		credential_options.push({label:credentialLists[i].name, value:credentialLists[i].id});
-	        	$scope.credential_type_options = credential_options;
-				//Set Selectbox
-				for (var i = 0; i < credential_options.length; i++) {
-	                if (credential_options[i].value === credential_value) {
-	                    $scope.credential = credential_options[i];
-	                    break;
-	                }
-	            }
-	        })
-	    	.catch(({data, status}) => {
-	        	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get Credentials. Get returned status: ') + status });
-			});
-	        CreateSelect2({
-	            element: '#' + id_type + '_datacenter',
-	            multiple: false,
-	        }); 
+			//$scope.kind = cloudProcess(form);
+			//Init SelectBoxes
+			for(var field in form.fields)
+			{
+				console.log(field);
+				if(form.fields[field].type == 'select')
+				{
+					if(form.fields[field].ngValues)
+					{
+						$scope[field + '_type_options'] = initSelect('', form.fields[field].ngValues, form.fields[field].ngFilter ? form.fields[field].ngFilter : "");
+					}
+					else
+					{
+						if(form.fields[field].ngSource)
+							$scope[field + '_type_options'] = initSelect(form.fields[field].ngSource, '', form.fields[field].ngFilter ? form.fields[field].ngFilter : "");
+					}
+					var elmnt = '#' + fk_type + '_' + field;
+					CreateSelect2({
+			            element: elmnt,
+			            multiple: false,
+			        });
+				}
+				if(form.fields[field].type == 'toggleSwitch')
+				{
+					if(form.fields[field].default != undefined) $scope[field] = form.fields[field].default;
+				}
+			}
+			if(!form.cloud && form.fields.kind){
+				$scope.kind = $scope.kind_type_options[0];
+			}
 
-	        CreateSelect2({
-	            element: '#' + id_type + '_credential',
-	            multiple: false,
-	        });
-            // change to modal dialog
+			if(fk_type == "vmware_vcenter")
+			{
+				Rest.setUrl(GetBasePath('hosts'));
+		        Rest.get().then(({data}) => {
+		        	console.log(data);
+		        	console.log(form);
+		        	var hostLists = data.results;
+		        	var localexist = false;
+		        	
+		        	if(form.cloud)	//if cloud = true
+		        	{
+		        		var localres = [];
+			        	for (var i = 0; i < hostLists.length; i++)
+			        	{
+				        	if(hostLists[i].name == "localhost"){
+				        		console.log("localhost Exist");
+				        		localres.push(hostLists[i]);
+				        		localexist = true;
+				        	}
+				        }
+				        if(localexist == true)
+				        {
+				        	$scope.inventory_hosts = localres;
+				        }
+				        else
+				        {
+				        	//If 'localhost' not exist, we must create a new Host named localhost
+				        	//For now i will skip this
+				        	//2018/11/5
+				    		var localhost_data = {};
+				    		localhost_data.name = "localhost";
+				    		localhost_data.variables = "ansible_connection: local";
+				    		localhost_data.enabled = true;
+				        	Rest.setUrl(GetBasePath('hosts'));
+		        			Rest.post(localhost_data).then(({data}) => {
+		        				localres.push(data);
+		        				$scope.inventory_hosts = localres;
+		        			});
+				        }
+				    }
+				    else  // if cloud = false
+				    {
+				    	
+				    }
+		        });
+            
+        	}
 
+			// change to modal dialog
             var element = document.getElementById("modaldlg");
             element.style.display = "block";
             var panel = element.getElementsByClassName("Panel ng-scope");
@@ -97,13 +127,51 @@ export default ['$window', '$scope', '$rootScope', 'BackupForm', 'GenerateForm',
             panel[0].style.width = "60%";
 
         }
+		$scope.kindChange = function(){
+			console.log($scope.select_kind.value);
+		}
+        $scope.datacenterChange = function() {
+            // When an scm_type is set, path is not required
+            console.log($scope.datacenter);
+	        var ipaddress_options = [];
+			var ipaddressLists = [];
+	    	Rest.setUrl(GetBasePath('ipam_ip_addresses'));
+	        Rest.get().then(({data}) => {
+	        	ipaddressLists = data.results;
+	        	for (var i = 0; i < ipaddressLists.length; i++) {
+	        		console.log(ipaddressLists[i].address);
+	        		if(ipaddressLists[i].datacenter === $scope.datacenter.value)
+	        		{
+	        			ipaddress_options.push({label:ipaddressLists[i].address, value:ipaddressLists[i].id});
+	        		}
+	        	}
+	        	$scope.ipaddress_type_options = ipaddress_options;l
+	            for (var i = 0; i < ipaddress_options.length; i++) {
+	                if (ipaddress_options[i].value === ipaddress_value) {
+	                    $scope.ipaddress = ipaddress_options[i];
+	                    break;
+	                }
+	            }
+	        })
+	    	.catch(({data, status}) => {
+	        	ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to get IpAddress. Get returned status: ') + status });
+			});
+			
+			CreateSelect2({
+	            element: '#' + fk_type + '_ipaddress',
+	            multiple: false,
+	        }); 
+        };
+
 		var callback = function() {
             // Make sure the form controller knows there was a change
             $scope[form.name + '_form'].$setDirty();
         };
+
         $scope.toggleForm = function(key) {
             $scope[key] = !$scope[key];
         };
+
 		function getVars(str){
             // Quick function to test if the host vars are a json-object-string,
             // by testing if they can be converted to a JSON object w/o error.
@@ -127,111 +195,65 @@ export default ['$window', '$scope', '$rootScope', 'BackupForm', 'GenerateForm',
                 return str;
             }
         }
-        
+
 		$scope.WizardClick = function (clickID) {
 			if (clickID == 1) {
-				if($scope.tabId > 1)
+				if($scope.tabId > 1){
 					$scope.tabId = $scope.tabId - 1;
+				}
 			}
 			else if (clickID == 2) {
-				 
-				if($scope.tabId < 3)
-				{
-					$scope.tabId = $scope.tabId + 1;
-				}
-				if($scope.tabId == 1)
-				{
+				if($scope.tabId == 1){
 					$scope.opts = "---";
 				}
-				if($scope.tabId == 3)
-				{
-					var fld;
-					var data = "{";
-					for (fld in form.fields) {
-						
-						if(fld == "datacenter" || fld == "credential")
-						{
-							data += "'" + fld + "':";
-			            	if($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";
-			            	else data += "''";
-			            	data += ",\n"; 
-			            	continue;
-						}
-		            	if(fld != "opts")
-		            	{
-			            	data += "'" + fld + "':";
-			            	if($scope[fld] != undefined) data += "'" + $scope[fld] + "'";
-			            	else data += "''";
-			            	data += ",\n"; 
-			            }
-		            }
-		            data += "'id_type':'" + id_type + "'\n";
-		        	data += "}";
+				if((form.steps && $scope.tabId < form.steps) || (!form.steps && $scope.tabId < 3)){
+					$scope.tabId = $scope.tabId + 1;
+				}
+				if((form.steps && $scope.tabId == form.steps) || (!form.steps && $scope.tabId == 3)){
+					var data = GetOptsValues($scope, form, 'backups', fk_type);
 		            $scope.opts = ParseVariableString(data);
 					$scope.parseTypeOpts = 'yaml';
-					console.log(form);
 			        ParseTypeChange({
 			            scope: $scope,
-			            field_id: id_type + '_opts',
+			            field_id: fk_type + '_opts',
 			            variable: 'opts',
 			            onChange: callback,
 			            parse_variable: 'parseTypeOpts'
 			        });
 				}
 			}
-
-			if ($scope.tabId == 1) {
-				$scope.status1 = "active";
-				$scope.status2 = "";
-				$scope.status3 = "";
-			}
-			else if ($scope.tabId == 2) {
-				$scope.status1 = "complete";
-				$scope.status2 = "active";
-				$scope.status3 = "";
-			}
-			else if ($scope.tabId == 3) {
-				$scope.status1 = "complete";
-				$scope.status2 = "complete";
-				$scope.status3 = "active";
-			}
+			$scope = SetActiveWizard($scope, $scope.tabId);
 		};
 
         // prepares a data payload for a PUT request to the API
         var processNewData = function(fields) {
             var data = {};
+    		var inputs = {};
             _.forEach(fields, function(value, key) {
                 if ($scope[key] !== '' && $scope[key] !== null && $scope[key] !== undefined) {
                     data[key] = $scope[key];
+                    if(key.startsWith('credential_'))
+                    {
+                    	inputs[key.substring(11)] = $scope[key];
+                    }
                 }
             });
+            console.log(inputs);
+            data.inputs = inputs;
+            if($scope.kind != null) data.kind = $scope.kind.value;
 			if($scope.datacenter != null) data.datacenter = $scope.datacenter.value;
             if($scope.credential != null) data.credential = $scope.credential.value;
     		data.opts = $scope.opts;
-    		
             return data;
         };
         // Save
+        function deleteBackup(id, _callback){
+        	DeleteSubJobTemplate(defaultUrl, id, '', 0);
+        	_callback();
+        }
         $scope.formSave = function() {
-            var fld, data = {};
-            Rest.setUrl(defaultUrl);
-            var data = processNewData(form.fields);
-            Wait('start');
-            Rest.post(data)
-                .then(({data}) => {
-                    var base = $location.path().replace(/^\//, '').split('/')[0];
-                    if (base === 'ipam_backups') {
-                        $rootScope.flashMessage = i18n._('New Backup successfully created!');
-                        $rootScope.$broadcast("EditIndicatorChange", "Backup", data.id);
-                        
-                         $state.go('infraBackupsList', null, { reload: true });
-                    } else {
-                        ReturnToCaller(1);
-                    }
-                })
-                .catch(({data, status}) => {
-                    ProcessErrors($scope, data, status, form, { hdr: i18n._('Error!'), msg: i18n._('Failed to add new Backup. POST returned status: ') + status });
-                });
+        	var data_item = processNewData(form.fields);
+        	SaveInfraItem(defaultUrl, form, data_item, 'infraBackupsList');
         };
 
         $scope.formCancel = function() {

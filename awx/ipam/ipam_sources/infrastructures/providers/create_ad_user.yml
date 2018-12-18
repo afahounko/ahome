@@ -27,7 +27,7 @@ credential_input:
     required:
       - username
       - password
-credential_prefix: 'Machine_'
+credential_prefix: 'AD_'
 
 label_prefix: ''
 url: 'https://github.com/afahounko'
@@ -84,9 +84,6 @@ configure_job:
     become_enabled: false
     diff_mode: false
     allow_simultaneous: false
-    network_credential: null
-    cloud_credential: null
-    vault_credential: null
 
 poweroff_job:
     name_prefix: 'Poweroff_'
@@ -119,9 +116,6 @@ poweroff_job:
     become_enabled: false
     diff_mode: false
     allow_simultaneous: false
-    cloud_credential: null
-    network_credential: null
-    vault_credential: null
 
 remove_job:
     name_prefix: 'Remove_'
@@ -154,15 +148,12 @@ remove_job:
     become_enabled: false
     diff_mode: false
     allow_simultaneous: false
-    cloud_credential: null
-    network_credential: null
-    vault_credential: null
 
 addTitle: 'NEW AD User'
 editTitle: '{{ name }}'
 name: 'createaduser'
 title: 'Create a new AD user'
-logo: '/static/assets/logo/providers/logo-redhat-openshift.png'
+#logo: '/static/assets/logo/providers/logo-redhat-openshift.png'
 basePath: 'ipam_providers'
 stateTree: 'infraProviders'
 breadcrumbName: 'INFRA PROVIDER'
@@ -198,6 +189,13 @@ wizards:
       title: 'Options'
 
 fields:
+  name: 
+    label: 'Service Account Name (Text & required)'
+    awPopOver: '<p> Service Account need begin by "svc_". </p>'
+    type: 'text'
+    required: true
+    ngShow: 'tabId == 1'
+
   domain:
     label: 'Select Target Domain'
     type: 'select'
@@ -210,13 +208,6 @@ fields:
     dataTitle: 'Target domain'
     dataPlacement: 'right'
     dataContainer: 'body'
-    ngShow: 'tabId == 1'
-
-  name: 
-    label: 'Service Account Name (Text & required)'
-    awPopOver: '<p> Service Account need begin by "svc_". </p>'
-    type: 'text'
-    required: true
     ngShow: 'tabId == 1'
 
   owner: 
@@ -317,6 +308,7 @@ fields:
     dataContainer: 'body'
     autocomplete: false
     subForm: "credentialSubForm"
+    excludeMode: 'edit'
 
   inventory_hosts:
     label: 'Inventory Host'

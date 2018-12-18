@@ -47,6 +47,174 @@ angular.module('ProviderSaver', ['Utilities'])
     }
 ])
 
+.factory('SetActiveWizard', ['$http', 'GetBasePath', 'Rest', 'ProcessErrors', '$timeout',
+	function ($http, GetBasePath, Rest, ProcessErrors, $timeout) {
+        return function (scope, tabId) {
+        	if (tabId == 1) {
+				scope.status1 = "active";
+				scope.status2 = "";
+				scope.status3 = "";
+				scope.status4 = "";
+				scope.status5 = "";
+			}
+			else if (tabId == 2) {
+				scope.status1 = "complete";
+				scope.status2 = "active";
+				scope.status3 = "";
+				scope.status4 = "";
+				scope.status5 = "";
+			}
+			else if (tabId == 3) {
+				scope.status1 = "complete";
+				scope.status2 = "complete";
+				scope.status3 = "active";
+				scope.status4 = "";
+				scope.status5 = "";
+			}
+			else if (tabId == 4) {
+				scope.status1 = "complete";
+				scope.status2 = "complete";
+				scope.status3 = "complete";
+				scope.status4 = "active";
+				scope.status5 = "";
+				console.log('scope is ');
+				console.log(scope);
+				
+			}
+			else if (tabId == 5) {
+				scope.status1 = "complete";
+				scope.status2 = "complete";
+				scope.status3 = "complete";
+				scope.status4 = "complete";
+				scope.status5 = "active";
+			}
+			return scope
+        };
+    }
+])
+
+.factory('GetOptsValues', ['$http', 'GetBasePath', 'Rest', 'ProcessErrors', '$timeout',
+	function ($http, GetBasePath, Rest, ProcessErrors, $timeout) {
+        return function (scope, form, fk_model, fk_type, prev_opts) {
+			console.log('WizardProcessing');
+			var fld, subid;
+			var data = "{";
+			if(prev_opts != undefined && prev_opts != null) //Edit Mode: Attach changed data to Previous OPTS
+			{
+				for (fld in prev_opts) {
+					data += "'" + fld + "':";
+					console.log(fld);
+					console.log(form.fields[fld]);
+					if(form.fields[fld] == undefined){
+						data += "'" + prev_opts[fld] + "',\n";
+					}
+					else{
+						if(form.fields[fld].type == 'select')
+						{
+							if(form.fields[fld].opt)
+							{
+								if(scope[fld] != undefined) data += "'" + scope[fld].label + "'";
+					    		else data += "''";
+					        }
+					        else
+					        {
+					        	if(scope[fld] != undefined) data += "'" + scope[fld].value + "'";
+					        	else data += "''";
+					        }
+					    	data += ",\n"; 
+					    	continue;
+						}
+						if(form.fields[fld].type == 'sensitive')
+						{
+							data += "'$Encrypted$',\n";
+					    	continue;
+						}
+						if(fld == "inventory_hosts" || fld == "instance_groups")
+						{
+							console.log(scope[fld]);
+							if(scope[fld] != undefined && scope[fld] != '')
+							{
+								data += "'"
+								for(subid in scope[fld]){
+									data += scope[fld][subid].id + ',';
+								}
+								data = data.substring(0, data.length-1);
+								data += "',"; 
+							}
+							else data += "'',";
+							data+= "\n";
+							continue;
+						}
+						if(fld != "opts")
+						{
+					    	if(scope[fld] != undefined) data += "'" + scope[fld] + "'";
+					    	else data += "''";
+					    	data += ",\n"; 
+					    	
+					    }
+					}
+				}
+			}
+			else	// Add Mode, 
+			{
+				for (fld in form.fields) {
+					if(form.fields[fld].type == 'select')
+					{
+						data += "'" + fld + "':";
+						if(form.fields[fld].opt)
+						{
+							if(scope[fld] != undefined) data += "'" + scope[fld].label + "'";
+				    		else data += "''";
+				        }
+				        else
+				        {
+				        	if(scope[fld] != undefined) data += "'" + scope[fld].value + "'";
+				        	else data += "''";
+				        }
+				    	data += ",\n"; 
+				    	continue;
+					}
+					if(form.fields[fld].type == 'sensitive')
+					{
+						data += "'" + fld + "':'$Encrypted$',\n";
+				    	continue;
+					}
+					if(fld == "inventory_hosts" || fld == "instance_groups")
+					{
+						data += "'" + fld + "':";
+						console.log(scope[fld]);
+						if(scope[fld] != undefined && scope[fld] != '')
+						{
+							data += "'"
+							for(subid in scope[fld]){
+								data += scope[fld][subid].id + ',';
+							}
+							data = data.substring(0, data.length-1);
+							data += "',"; 
+						}
+						else data += "'',";
+						data+= "\n";
+						continue;
+					}
+					if(fld != "opts")
+					{
+				    	data += "'" + fld + "':";
+				    	if(scope[fld] != undefined) data += "'" + scope[fld] + "'";
+				    	else data += "''";
+				    	data += ",\n"; 
+				    	
+				    }
+				}
+				data += "'fk_model':'"+ fk_model+ "',\n";
+				data += "'fk_type':'" + fk_type + "'\n";
+			}
+			data += "}";
+			console.log(data);
+			return data;
+        };
+    }
+])
+
 .factory('initSelect', ['$http', 'GetBasePath', 'Rest', 'ProcessErrors',
 	function ($http, GetBasePath, Rest, ProcessErrors) {
         return function (basePath, fixedData, filter, chooseID) {
@@ -453,20 +621,16 @@ function ($http, $rootScope, $state, $location, $q, Store, ProcessErrors, Return
         //Posting Multi Credential for the Provider
         for (var i = 0; i < cred_types.length; i++) {
         		console.log(data_item);
-	        	//credential_data.credential_type = form.inventory_type;
 	    		credential_data[i] = {};
 	        	credential_data[i].credential_type = cred_types[i];
 	        	
-	        	if(cred_types[i]>1) credential_data[i].name = data_item.name;
-	        	else  credential_data[i].name = form.credential_prefix + data_item.name;
+	        	//if(cred_types[i]>1) credential_data[i].name = data_item.name;
+	        	//else  credential_data[i].name = form.credential_prefix + data_item.name;
+	        	credential_data[i].name = form.credential_prefix + data_item.name;
 
 	            credential_data[i].description = data_item.description;
 	            credential_data[i].user = 1;   // only for user type
 	            credential_data[i].inputs = data_item.inputs;
-	        	console.log(i);
-	        	console.log(cred_types[i]);
-	        	console.log(credential_data[i].credential_type);
-	        	console.log(credential_data[i]);
 	        	
 	            Rest.setUrl(GetBasePath('credentials'));
 		        Rest.post(credential_data[i])
@@ -1235,8 +1399,10 @@ function ($http, $rootScope, $state, $location, $timeout, $q, Store, ProcessErro
             Rest.setUrl(GetBasePath(url) + obj.id);
             Rest.get(GetBasePath(url) + obj.id).then(({data}) => {
             	var template_id = data.opts.template_id;
+            	console.log(data);
             	Rest.setUrl(GetBasePath('job_templates') + template_id);
             	Rest.get(GetBasePath('job_templates') + template_id).then(({data}) => {
+            		console.log(data);
             		if(data.summary_fields.last_job.status == 'successful')
             		{
 	            		obj.tool_tip = i18n._('Most recent job Succeed. Click to view job script.');
@@ -1247,12 +1413,14 @@ function ($http, $rootScope, $state, $location, $timeout, $q, Store, ProcessErro
 				    }
 				    obj.job_status = data.summary_fields.last_job.status;
 				    obj.last_id = data.summary_fields.last_job.id;
-				    
+				    console.log(obj);
+
 			        return obj;
 	 			})
 	            .catch(({data, status}) => {
 	            	obj.tool_tip = i18n._('Most recent job failed. Click to view jobs.');;
 	            	obj.job_status = 'pending';
+	            	console.log(obj);
 	            	return obj;
 	            });
  			})
@@ -1261,6 +1429,7 @@ function ($http, $rootScope, $state, $location, $timeout, $q, Store, ProcessErro
                     hdr: i18n._('Error!'),
                     msg: i18n.sprintf(i18n._('Failed to retrieve Job: %s. GET status: '), $stateParams.id) + status
                 });
+                console.log(obj);
                 return obj;
             });
         };

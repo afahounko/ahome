@@ -1,7 +1,8 @@
 /*************************************************
- * Copyright (c) 2015 Ansible, Inc.
+ * Copyright (c) 2018 Ansible, Inc.
  *
  * All Rights Reserved
+ * Truegardener
  *************************************************/
 
 
@@ -10,8 +11,8 @@ export default ['i18n', function(i18n) {
 
         name: 'ipam_documentations',
         iterator: 'documentation',
-        editTitle: i18n._('INFRA DOCUMENTATION'),
-        listTitle: i18n._('INFRA DOCUMENTATION'),
+        editTitle: i18n._('INFRA DOCUMENTATIONS'),
+        listTitle: i18n._('INFRA DOCUMENTATIONS'),
         search: {
             order_by: 'name'
         },
@@ -24,12 +25,10 @@ export default ['i18n', function(i18n) {
             status: {
                 label: '',
                 iconOnly: true,
-                ngClick: 'showSCMStatus(documentation.id)',
-//                awToolTip: '{{ documentation.statusTip }}',
-				awToolTip: 'Update Succeed',
-                dataTipWatch: 'documentation.statusTip',
+                ngClick: 'showJobScript(documentation.id)',
+				awToolTip: 'Documentation running status. Green:running, Blink:pending',
                 dataPlacement: 'right',
-                icon: "icon-job-success",
+                icon: "{{ 'icon-job-' + documentation.job_status }}",
                 columnClass: "List-staticColumn--smallStatus",
                 nosort: true,
                 excludeModal: true
@@ -37,33 +36,51 @@ export default ['i18n', function(i18n) {
             name: {
                 key: true,
                 label: i18n._('Name'),
-                columnClass: 'col-md-3 col-sm-3 col-xs-9',
+                columnClass: 'col-md-2 col-sm-2 col-xs-8',
                 awToolTip: "Redirect to Job Page",
                 awTipPlacement: "top",
 				ngClick: "infraJobs()",
             },
-		    type: {
+			id: {
                 label: i18n._('Type'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
+                ngBind: 'documentation.opts.fk_type',
+                columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
-			version: {
-                label: i18n._('Version'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
+            created: {
+            	label: i18n._('Created'),
+            	columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
-			lastupdated: {
+            last_updated: {
                 label: i18n._('Last Updated'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
-            },
+                filter: "longDate",
+                columnClass: "col-lg-3 hidden-md hidden-sm hidden-xs",
+                excludeModal: true
+            }
         },
         fieldActions: {
             columnClass: 'col-md-2 col-sm-3 col-xs-3',
-
             launch: {
                 label: i18n._('Launch'),
                 icon: 'icon-launch',
                	ngClick: "launchDocumentation(documentation.id)",
                 "class": 'btn-xs btn-default',
-                awToolTip: i18n._('Launch App'),
+                awToolTip: i18n._('Launch Documentation'),
+                dataPlacement: 'top',
+            },
+		    poweroff: {
+                label: i18n._('Stop Documentation'),
+                iconClass: 'fa fa-power-off',
+               	ngClick: "poweroffDocumentation(documentation.id, documentation.name)",
+                "class": 'btn-xs btn-default',
+                awToolTip: i18n._('Stop Documentation'),
+                dataPlacement: 'top',
+            },
+			remove: {
+                label: i18n._('Clean Documentation'),
+                iconClass: 'fa fa-remove',
+               	ngClick: "removeDocumentation(documentation.id, documentation.name)",
+                "class": 'btn-xs btn-default',
+                awToolTip: i18n._('Remove Documentation'),
                 dataPlacement: 'top',
             },
             edit: {
@@ -74,7 +91,7 @@ export default ['i18n', function(i18n) {
                 awToolTip: i18n._('Edit Documentation'),
                 dataPlacement: 'top',
             },
-			view: {
+            view: {
                 ngClick: "viewDocumentation(documentation.id)",
                 awToolTip: i18n._('View the Documentation'),
                 dataPlacement: 'top',

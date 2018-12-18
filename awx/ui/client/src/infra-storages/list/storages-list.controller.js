@@ -1,15 +1,16 @@
 /*************************************************
- * Copyright (c) 2016 Ansible, Inc.
+ * Copyright (c) 2018 Ansible, Inc.
  *
  * All Rights Reserved
+ * Truegardener
  *************************************************/
 
 import { N_ } from "../../i18n";
 
-export default ['$window', '$scope', '$rootScope', 'Rest', 'StorageList', 'Prompt', 'JobTemplateModel', 'WorkflowJobTemplateModel',
+export default ['$window', '$scope', '$rootScope', '$location', 'Rest', 'StorageList', 'Prompt', 'JobTemplateModel', 'WorkflowJobTemplateModel',
     'ProcessErrors', 'GetBasePath', 'Wait', '$state', '$filter',
     'rbacUiControlService', 'Dataset', 'i18n', 'processRow', 'LaunchRelatedJobTemplate', 'DeleteInfrastructure',
-    function($window, $scope, $rootScope, Rest, StorageList, Prompt, JobTemplateModel, WorkflowJobTemplateModel,
+    function($window, $scope, $rootScope, $location, Rest, StorageList, Prompt, JobTemplateModel, WorkflowJobTemplateModel,
     ProcessErrors, GetBasePath, Wait, $state, $filter, rbacUiControlService,
 	Dataset, i18n, processRow, LaunchRelatedJobTemplate, DeleteInfrastructure) {
 
@@ -44,6 +45,17 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'StorageList', 'Promp
 	    function processStorageRow(storage) {
             storage = processRow('ipam_storages', storage);
 	    }
+ 
+ 		$scope.showJobScript = function(id)
+ 		{
+ 			if(this.storage.job_status == 'pending'){
+ 				Alert(i18n._('Job Pending'), i18n._('The selected job is under pending status.'), 'alert-info');
+ 			}
+ 			else{
+ 				console.log('/jobs/playbook/' + this.storage.last_id);
+ 				$location.path('/jobs/playbook/' + this.storage.last_id);
+ 			}
+ 		}
 
         $scope.addNew = function(param) {
             console.log("Add Storage infraStorage" + param);
@@ -77,7 +89,7 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'StorageList', 'Promp
         $scope.removeStorage = function(storage_id, name) {
         	LaunchRelatedJobTemplate(defaultUrl, storage_id, name, 'remove_id', 1, 'Remove');
         };
-        
+
         $scope.editStorage= function() {
         	console.log("stateGO");
             console.log('infraStoragesList.edit_' + this.storage.related.opts.fk_type);

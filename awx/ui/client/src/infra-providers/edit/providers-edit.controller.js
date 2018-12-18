@@ -8,17 +8,17 @@ import { N_ } from "../../i18n";
 
 export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', 'ProviderForm', 'GenerateForm', 'Rest','ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath',
-    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString', 'initSelect',
+    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString', 'initSelect', 'SetActiveWizard', 'GetOptsValues',
     function($window, $scope, $rootScope, $stateParams, $timeout, ProviderForm, GenerateForm, Rest, ParseTypeChange, Alert,
     ProcessErrors, ReturnToCaller, GetBasePath, Wait, CreateSelect2, 
-	$state, $location, i18n, ParseVariableString, initSelect) {
+	$state, $location, i18n, ParseVariableString, initSelect, SetActiveWizard, GetOptsValues) {
 
         var master = {}, boxes, box, variable, 
             id = $stateParams.provider_id,
         	fk_type = $window.localStorage.getItem('form_id'),
             form = ProviderForm[fk_type],
             defaultUrl = GetBasePath('ipam_providers') + id;
-        var credential_id, inventory_id, host_id, project_id, template_id, poweroff_id, remove_id;
+        var prev_opts = [], credential_id, inventory_id, host_id, project_id, template_id, poweroff_id, remove_id;
         console.log($stateParams);
         init();
 
@@ -31,6 +31,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
                 $scope.provider_id = id;
 		        $scope.tabId = 1;
                 $scope.status1 = "active";
+                prev_opts = data.opts;
 
                 for (itm in data.opts)
                 {
@@ -52,7 +53,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
                 template_id = data.opts.template_id;
                 poweroff_id = data.opts.poweroff_id;
                 remove_id = data.opts.remove_id;
-                
+
                 fk_type = data.opts.fk_type;
                 console.log("FK_TYPE " + fk_type);
 
@@ -242,94 +243,21 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
         
 		$scope.WizardClick = function (clickID) {
 			if (clickID == 1) {
-				if($scope.tabId > 1)
+				if($scope.tabId > 1){
 					$scope.tabId = $scope.tabId - 1;
+				}
 			}
 			else if (clickID == 2) {
-				 
-				if($scope.tabId < 4)
-				{
-					$scope.tabId = $scope.tabId + 1;
-				}
-				if($scope.tabId == 1)
-				{
+				if($scope.tabId == 1){
 					$scope.opts = "---";
 				}
-				if($scope.tabId == 4)
-				{
-					var fld, subid;
-					var data = "{";
-
-					for (fld in form.fields) {
-						if(form.fields[fld].type == 'select')
-						{
-							data += "'" + fld + "':";
-							console.log($scope[fld]);
-							if(form.fields[fld].opt)
-							{
-								if($scope[fld]) data += "'" + $scope[fld].label + "'";
-			            		else data += "''";
-				            }
-				            else
-				            {
-				            	if($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";
-				            	else data += "''";
-				            }
-			            	data += ",\n"; 
-			            	continue;
-						}
-						if(form.fields[fld].type == 'sensitive')
-						{
-							data += "'" + fld + "':'$Encrypted$',\n";
-			            	continue;
-						}
-						if(form.fields[fld].type == 'custom')
-						{
-							data += "'" + fld + "':";
-							if($scope[fld] != undefined)
-							{
-								console.log($scope[fld]);
-								data += "'";
-								if($scope[fld] != '' && $scope[fld] != undefined)
-								{
-									for(var subid in $scope[fld]){
-										if(subid.startsWith('selected'))
-										{
-											for(var selectedCustom in $scope[fld][subid]){
-												data += $scope[fld][subid][selectedCustom].id + ',';
-											}
-										}
-									}
-									data = data.substring(0, data.length-1);
-								}
-								data += "',"; 
-							}
-							else data += "'',";
-							data+= "\n";
-							continue;
-						}
-		            	if(fld != "opts")
-		            	{
-			            	data += "'" + fld + "':";
-			            	if($scope[fld] != undefined) data += "'" + $scope[fld] + "'";
-			            	else data += "''";
-			            	data += ",\n"; 
-			            	
-			            }
-		            }
-		            data += "'fk_type':'" + fk_type + "',\n";
-					if(inventory_id != undefined) data += "'inventory_id':'" + inventory_id + "',\n";
-					if(credential_id != undefined) data += "'credential_id':'" + credential_id + "',\n";
-					if(host_id != undefined) data += "'host_id':'" + host_id + "',\n";
-					if(project_id != undefined) data += "'project_id':'" + project_id + "',\n";
-					if(template_id != undefined) data += "'template_id':'" + template_id + "',\n";
-					if(poweroff_id != undefined) data += "'poweroff_id':'" + poweroff_id + "',\n";
-					if(remove_id != undefined) data += "'remove_id':'" + remove_id + "'\n";
-
-		        	data += "}";
+				if((form.steps && $scope.tabId < form.steps) || (!form.steps && $scope.tabId < 3)){
+					$scope.tabId = $scope.tabId + 1;
+				}
+				if((form.steps && $scope.tabId == form.steps) || (!form.steps && $scope.tabId == 3)){
+					var data = GetOptsValues($scope, form, 'providers', fk_type, prev_opts);
 		            $scope.opts = ParseVariableString(data);
 					$scope.parseTypeOpts = 'yaml';
-					console.log(data);
 			        ParseTypeChange({
 			            scope: $scope,
 			            field_id: fk_type + '_opts',
@@ -339,42 +267,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', '$timeout', '
 			        });
 				}
 			}
-
-			if ($scope.tabId == 1) {
-				$scope.status1 = "active";
-				$scope.status2 = "";
-				$scope.status3 = "";
-				$scope.status4 = "";
-				$scope.status5 = "";
-			}
-			else if ($scope.tabId == 2) {
-				$scope.status1 = "complete";
-				$scope.status2 = "active";
-				$scope.status3 = "";
-				$scope.status4 = "";
-				$scope.status5 = "";
-			}
-			else if ($scope.tabId == 3) {
-				$scope.status1 = "complete";
-				$scope.status2 = "complete";
-				$scope.status3 = "active";
-				$scope.status4 = "";
-				$scope.status5 = "";
-			}
-			else if ($scope.tabId == 4) {
-				$scope.status1 = "complete";
-				$scope.status2 = "complete";
-				$scope.status3 = "complete";
-				$scope.status4 = "active";
-				$scope.status5 = "";
-			}
-			else if ($scope.tabId == 5) {
-				$scope.status1 = "complete";
-				$scope.status2 = "complete";
-				$scope.status3 = "complete";
-				$scope.status4 = "complete";
-				$scope.status5 = "active";
-			}
+			$scope = SetActiveWizard($scope, $scope.tabId);
 		};
 
 		function setScopeFields(data) {

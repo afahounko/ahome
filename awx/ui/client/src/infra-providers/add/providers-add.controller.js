@@ -14,10 +14,10 @@ const user_type_options = [
 
 export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm', 'GenerateForm', 'Rest','ParseTypeChange',
     'Alert', 'ProcessErrors', 'ReturnToCaller', 'GetBasePath', 'SaveInfraItem', 'DeleteSubJobTemplate', 'checkExistApi' ,
-    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString', '$q', 'initSelect', 'cloudProcess',
+    'Wait', 'CreateSelect2', '$state', '$location', 'i18n','ParseVariableString', '$q', 'initSelect', 'cloudProcess', 'SetActiveWizard', 'GetOptsValues',
     function($window, $scope, $rootScope, $stateParams, ProviderForm, GenerateForm, Rest, ParseTypeChange, Alert,
     ProcessErrors, ReturnToCaller, GetBasePath, SaveInfraItem, DeleteSubJobTemplate, checkExistApi, Wait, CreateSelect2, 
-	$state, $location, i18n, ParseVariableString, $q, initSelect, cloudProcess) {
+	$state, $location, i18n, ParseVariableString, $q, initSelect, cloudProcess, SetActiveWizard, GetOptsValues) {
 
         var defaultUrl = GetBasePath('ipam_providers'),
         	fk_type = $window.localStorage.getItem('form_id'),
@@ -197,77 +197,19 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 
 		$scope.WizardClick = function (clickID) {
 			if (clickID == 1) {
-				if($scope.tabId > 1)
+				if($scope.tabId > 1){
 					$scope.tabId = $scope.tabId - 1;
+				}
 			}
 			else if (clickID == 2) {
-				 
-				if($scope.tabId < 4)
-				{
-					$scope.tabId = $scope.tabId + 1;
-				}
-				if($scope.tabId == 1)
-				{
+				if($scope.tabId == 1){
 					$scope.opts = "---";
 				}
-				if((form.steps && $scope.tabId == form.steps) || (!form.steps && $scope.tabId == 3))
-				{
-					console.log('Datas for the fields');
-					var fld, subid;
-					var data = "{";
-					for (fld in form.fields) {
-						console.log(fld);
-						console.log($scope[fld]);
-						if(form.fields[fld].type == 'select')
-						{
-							data += "'" + fld + "':";
-							if(form.fields[fld].opt)
-							{
-								if($scope[fld] != undefined) data += "'" + $scope[fld].label + "'";
-			            		else data += "''";
-				            }
-				            else
-				            {
-				            	if($scope[fld] != undefined) data += "'" + $scope[fld].value + "'";
-				            	else data += "''";
-				            }
-			            	data += ",\n"; 
-			            	continue;
-						}
-						if(form.fields[fld].type == 'sensitive')
-						{
-							data += "'" + fld + "':'$Encrypted$',\n";
-			            	continue;
-						}
-						if(fld == "inventory_hosts" || fld == "instance_groups")
-						{
-							data += "'" + fld + "':";
-							if($scope[fld] != undefined)
-							{
-								data += "'"
-								for(subid in $scope[fld]){
-									data += $scope[fld][subid].id + ',';
-								}
-								data = data.substring(0, data.length-1);
-								data += "',"; 
-							}
-							else data += "'',";
-							data+= "\n";
-							continue;
-						}
-		            	if(fld != "opts")
-		            	{
-			            	data += "'" + fld + "':";
-			            	if($scope[fld] != undefined) data += "'" + $scope[fld] + "'";
-			            	else data += "''";
-			            	data += ",\n"; 
-			            	
-			            }
-		            }
-		            data += "'fk_model':'providers',\n";
-		            data += "'fk_type':'" + fk_type + "'\n";
-		        	data += "}";
-		        	console.log(data);
+				if((form.steps && $scope.tabId < form.steps) || (!form.steps && $scope.tabId < 3)){
+					$scope.tabId = $scope.tabId + 1;
+				}
+				if((form.steps && $scope.tabId == form.steps) || (!form.steps && $scope.tabId == 3)){
+					var data = GetOptsValues($scope, form, 'providers', fk_type);
 		            $scope.opts = ParseVariableString(data);
 					$scope.parseTypeOpts = 'yaml';
 			        ParseTypeChange({
@@ -279,45 +221,7 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
 			        });
 				}
 			}
-
-			if ($scope.tabId == 1) {
-				$scope.status1 = "active";
-				$scope.status2 = "";
-				$scope.status3 = "";
-				$scope.status4 = "";
-				$scope.status5 = "";
-			}
-			else if ($scope.tabId == 2) {
-				$scope.status1 = "complete";
-				$scope.status2 = "active";
-				$scope.status3 = "";
-				$scope.status4 = "";
-				$scope.status5 = "";
-			}
-			else if ($scope.tabId == 3) {
-				$scope.status1 = "complete";
-				$scope.status2 = "complete";
-				$scope.status3 = "active";
-				$scope.status4 = "";
-				$scope.status5 = "";
-			}
-			else if ($scope.tabId == 4) {
-				$scope.status1 = "complete";
-				$scope.status2 = "complete";
-				$scope.status3 = "complete";
-				$scope.status4 = "active";
-				$scope.status5 = "";
-				console.log('scope is ');
-				console.log($scope);
-				
-			}
-			else if ($scope.tabId == 5) {
-				$scope.status1 = "complete";
-				$scope.status2 = "complete";
-				$scope.status3 = "complete";
-				$scope.status4 = "complete";
-				$scope.status5 = "active";
-			}
+			$scope = SetActiveWizard($scope, $scope.tabId);
 		};
 
         // prepares a data payload for a PUT request to the API

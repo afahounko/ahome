@@ -1,21 +1,22 @@
 /*************************************************
- * Copyright (c) 2016 Ansible, Inc.
+ * Copyright (c) 2018 Ansible, Inc.
  *
  * All Rights Reserved
+ * Truegardener
  *************************************************/
 
 import { N_ } from "../../i18n";
 
-export default ['$window', '$scope', '$rootScope', 'Rest', 'NetworkList', 'Prompt',
+export default ['$window', '$scope', '$rootScope', '$location', 'Rest', 'NetworkList', 'Prompt', 'JobTemplateModel', 'WorkflowJobTemplateModel',
     'ProcessErrors', 'GetBasePath', 'Wait', '$state', '$filter',
-    'rbacUiControlService', 'Dataset', 'i18n', 
-    function($window, $scope, $rootScope, Rest, NetworkList, Prompt,
+    'rbacUiControlService', 'Dataset', 'i18n', 'processRow', 'LaunchRelatedJobTemplate', 'DeleteInfrastructure',
+    function($window, $scope, $rootScope, $location, Rest, NetworkList, Prompt, JobTemplateModel, WorkflowJobTemplateModel,
     ProcessErrors, GetBasePath, Wait, $state, $filter, rbacUiControlService,
-    Dataset, i18n) {
+	Dataset, i18n, processRow, LaunchRelatedJobTemplate, DeleteInfrastructure) {
 
         var list = NetworkList,
         defaultUrl = GetBasePath('ipam_networks');
-
+		var project_id, template_id, poweroff_id, remove_id;
         init();
 
         function init() {
@@ -26,7 +27,10 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'NetworkList', 'Promp
                 .then(function(params) {
                     $scope.canAdd = params.canAdd;
                 });
-                
+            $scope.$watchCollection(list.name, function(){
+	            _.forEach($scope[list.name], processNetworkRow);
+	        });
+	        
             // search init
             $scope.list = list;
             $scope[`${list.iterator}_dataset`] = Dataset.data;
@@ -34,7 +38,24 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'NetworkList', 'Promp
 
             $rootScope.flashMessage = null;
             $scope.selected = [];
+            
         }
+
+		//This function is for Getting Job Template's status
+	    function processNetworkRow(network) {
+            network = processRow('ipam_networks', network);
+	    }
+ 
+ 		$scope.showJobScript = function(id)
+ 		{
+ 			if(this.network.job_status == 'pending'){
+ 				Alert(i18n._('Job Pending'), i18n._('The selected job is under pending status.'), 'alert-info');
+ 			}
+ 			else{
+ 				console.log('/jobs/playbook/' + this.network.last_id);
+ 				$location.path('/jobs/playbook/' + this.network.last_id);
+ 			}
+ 		}
 
         $scope.addNew = function(param) {
             console.log("Add Network infraNetwork" + param);
@@ -44,64 +65,40 @@ export default ['$window', '$scope', '$rootScope', 'Rest', 'NetworkList', 'Promp
         
         $scope.infraJobs= function() {
         	console.log("********* Launch ************");
-        	//var locationTo = 'infraJobsList.networks.' + this.network.related.opts.id_type;
+        	//var locationTo = 'infraJobsList.networks.' + this.network.related.opts.fk_type;
         	//console.log(locationTo);
         	$window.localStorage.setItem('fk_model', 'networks');
-        	$window.localStorage.setItem('fk_type', this.network.related.opts.id_type);
+        	$window.localStorage.setItem('fk_type', this.network.related.opts.fk_type);
         	$window.localStorage.setItem('fk_id', this.network.id);
-            $state.go('infraJobsList');
+
+            $rootScope.infraJob = "infraNetworksList";
+
+            $state.go('infraJobsList', {job_search:{fk_model:'networks', fk_type:this.network.related.opts.fk_type, fk_id:this.network.id}}, { reload: true });
 			console.log("State Go finished");
+
         };
-        
-        $scope.launchNetwork= function() {
-        	console.log("Launch");
-            //$rootScope.form_id = this.network.related.opts.id_type;
-            //$state.go('infraJobsList', null, { reload: true});
+
+        $scope.launchNetwork = function(network_id) {
+        	LaunchRelatedJobTemplate(defaultUrl, network_id, null, 'template_id', 0, '');
+        };
+
+        $scope.poweroffNetwork= function(network_id, name) {
+        	LaunchRelatedJobTemplate(defaultUrl, network_id, name, 'poweroff_id', 1, 'Power Off');
+        };
+
+        $scope.removeNetwork = function(network_id, name) {
+        	LaunchRelatedJobTemplate(defaultUrl, network_id, name, 'remove_id', 1, 'Remove');
         };
 
         $scope.editNetwork= function() {
         	console.log("stateGO");
-            console.log('infraNetworksList.edit_' + this.network.related.opts.id_type);
-            $window.localStorage.setItem('form_id', this.network.related.opts.id_type);
-            $state.go('infraNetworksList.edit_' + this.network.related.opts.id_type, { network_id: this.network.id });
+            console.log('infraNetworksList.edit_' + this.network.related.opts.fk_type);
+            $window.localStorage.setItem('form_id', this.network.related.opts.fk_type);
+            $state.go('infraNetworksList.edit_' + this.network.related.opts.fk_type, { network_id: this.network.id });
         };
 
         $scope.deleteNetwork = function(id, name) {
-            var action = function() {
-                $('#prompt-modal').modal('hide');
-                Wait('start');
-                var url = defaultUrl + id + '/';
-                Rest.setUrl(url);
-                Rest.destroy()
-                    .then(() => {
-                        let reloadListStateParams = null;
-
-                        if($scope.ipam_networks.length === 1 && $state.params.network_search && !_.isEmpty($state.params.network_search.page) && $state.params.network_search.page !== '1') {
-                            reloadListStateParams = _.cloneDeep($state.params);
-                            reloadListStateParams.network_search.page = (parseInt(reloadListStateParams.network_search.page)-1).toString();
-                        }
-
-                        if (parseInt($state.params.network_id) === id) {
-                            $state.go('^', null, { reload: true });
-                        } else {
-                            $state.go('.', null, { reload: true });
-                        }
-                    })
-                    .catch(({data, status}) => {
-                        ProcessErrors($scope, data, status, null, {
-                            hdr: i18n._('Error!'),
-                            msg: i18n.sprintf(i18n._('Call to %s failed. DELETE returned status: '), url) + status
-                        });
-                    });
-            };
-
-            Prompt({
-                hdr: i18n._('Delete'),
-                resourceName: $filter('sanitize')(name),
-                body: '<div class="Prompt-bodyQuery">' + i18n._('Are you sure you want to delete this Network?') + '</div>',
-                action: action,
-                actionText: i18n._('DELETE')
-            });
+			DeleteInfrastructure(defaultUrl, id, name, 'networks',  this.network.related.opts.fk_type);
         };
     }
 ];

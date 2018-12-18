@@ -272,6 +272,7 @@ fields:
     ngOptions: 'item as item.label for item in kind_type_options'
     ngValues: 'Windows'
     ngChange: 'kindChange()'
+    opt: 'label'
     required: true
     awPopOver: '<p> Select the Cloud Kind for this Inventory to run on. </p>'
     dataTitle: 'Credential Type'
@@ -299,6 +300,7 @@ fields:
     hasShowInputButton: true
     subForm: "credentialSubForm"
     required: true
+    excludeMode: 'edit'
 
   credential_windows_options: 
     label: 'Connection Options'
@@ -312,6 +314,7 @@ fields:
     dataContainer: 'body'
     autocomplete: false
     subForm: "credentialSubForm"
+    excludeMode: 'edit'
 
   inventory_hosts:
     label: 'Inventory Host'

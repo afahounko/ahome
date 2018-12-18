@@ -1,7 +1,8 @@
 /*************************************************
- * Copyright (c) 2015 Ansible, Inc.
+ * Copyright (c) 2018 Ansible, Inc.
  *
  * All Rights Reserved
+ * Truegardener
  *************************************************/
 
 
@@ -10,8 +11,8 @@ export default ['i18n', function(i18n) {
 
         name: 'ipam_backups',
         iterator: 'backup',
-        editTitle: i18n._('INFRA BACKUP'),
-        listTitle: i18n._('INFRA BACKUP'),
+        editTitle: i18n._('INFRA BACKUPS'),
+        listTitle: i18n._('INFRA BACKUPS'),
         search: {
             order_by: 'name'
         },
@@ -24,12 +25,10 @@ export default ['i18n', function(i18n) {
             status: {
                 label: '',
                 iconOnly: true,
-                ngClick: 'showSCMStatus(backup.id)',
-//                awToolTip: '{{ backup.statusTip }}',
-				awToolTip: 'Update Succeed',
-                dataTipWatch: 'backup.statusTip',
+                ngClick: 'showJobScript(backup.id)',
+				awToolTip: 'Backup running status. Green:running, Blink:pending',
                 dataPlacement: 'right',
-                icon: "icon-job-success",
+                icon: "{{ 'icon-job-' + backup.job_status }}",
                 columnClass: "List-staticColumn--smallStatus",
                 nosort: true,
                 excludeModal: true
@@ -37,33 +36,51 @@ export default ['i18n', function(i18n) {
             name: {
                 key: true,
                 label: i18n._('Name'),
-                columnClass: 'col-md-3 col-sm-3 col-xs-9',
+                columnClass: 'col-md-2 col-sm-2 col-xs-8',
                 awToolTip: "Redirect to Job Page",
                 awTipPlacement: "top",
 				ngClick: "infraJobs()",
             },
-		    type: {
+			id: {
                 label: i18n._('Type'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
+                ngBind: 'backup.opts.fk_type',
+                columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
-			version: {
-                label: i18n._('Version'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
+            created: {
+            	label: i18n._('Created'),
+            	columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
-			lastupdated: {
+            last_updated: {
                 label: i18n._('Last Updated'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
-            },
+                filter: "longDate",
+                columnClass: "col-lg-3 hidden-md hidden-sm hidden-xs",
+                excludeModal: true
+            }
         },
         fieldActions: {
             columnClass: 'col-md-2 col-sm-3 col-xs-3',
-
             launch: {
                 label: i18n._('Launch'),
                 icon: 'icon-launch',
                	ngClick: "launchBackup(backup.id)",
                 "class": 'btn-xs btn-default',
-                awToolTip: i18n._('Launch App'),
+                awToolTip: i18n._('Launch Backup'),
+                dataPlacement: 'top',
+            },
+		    poweroff: {
+                label: i18n._('Stop Backup'),
+                iconClass: 'fa fa-power-off',
+               	ngClick: "poweroffBackup(backup.id, backup.name)",
+                "class": 'btn-xs btn-default',
+                awToolTip: i18n._('Stop Backup'),
+                dataPlacement: 'top',
+            },
+			remove: {
+                label: i18n._('Clean Backup'),
+                iconClass: 'fa fa-remove',
+               	ngClick: "removeBackup(backup.id, backup.name)",
+                "class": 'btn-xs btn-default',
+                awToolTip: i18n._('Remove Backup'),
                 dataPlacement: 'top',
             },
             edit: {
@@ -74,7 +91,7 @@ export default ['i18n', function(i18n) {
                 awToolTip: i18n._('Edit Backup'),
                 dataPlacement: 'top',
             },
-			view: {
+            view: {
                 ngClick: "viewBackup(backup.id)",
                 awToolTip: i18n._('View the Backup'),
                 dataPlacement: 'top',

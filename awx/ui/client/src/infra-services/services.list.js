@@ -1,7 +1,8 @@
 /*************************************************
- * Copyright (c) 2015 Ansible, Inc.
+ * Copyright (c) 2018 Ansible, Inc.
  *
  * All Rights Reserved
+ * Truegardener
  *************************************************/
 
 
@@ -10,8 +11,8 @@ export default ['i18n', function(i18n) {
 
         name: 'ipam_services',
         iterator: 'service',
-        editTitle: i18n._('INFRA SERVICES'),
-        listTitle: i18n._('INFRA SERVICES'),
+        editTitle: i18n._('INFRA BACKUPS'),
+        listTitle: i18n._('INFRA BACKUPS'),
         search: {
             order_by: 'name'
         },
@@ -24,12 +25,10 @@ export default ['i18n', function(i18n) {
             status: {
                 label: '',
                 iconOnly: true,
-                ngClick: 'showSCMStatus(service.id)',
-//                awToolTip: '{{ project.statusTip }}',
-				awToolTip: 'Update Succeed',
-                dataTipWatch: 'project.statusTip',
+                ngClick: 'showJobScript(service.id)',
+				awToolTip: 'Service running status. Green:running, Blink:pending',
                 dataPlacement: 'right',
-                icon: "icon-job-success",
+                icon: "{{ 'icon-job-' + service.job_status }}",
                 columnClass: "List-staticColumn--smallStatus",
                 nosort: true,
                 excludeModal: true
@@ -37,47 +36,51 @@ export default ['i18n', function(i18n) {
             name: {
                 key: true,
                 label: i18n._('Name'),
-                columnClass: 'col-md-3 col-sm-3 col-xs-9',
+                columnClass: 'col-md-2 col-sm-2 col-xs-8',
                 awToolTip: "Redirect to Job Page",
                 awTipPlacement: "top",
 				ngClick: "infraJobs()",
             },
-		    type: {
+			id: {
                 label: i18n._('Type'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
+                ngBind: 'service.opts.fk_type',
+                columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
-			version: {
-                label: i18n._('Version'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
+            created: {
+            	label: i18n._('Created'),
+            	columnClass: 'col-md-2 col-sm-2 hidden-xs'
             },
-			lastupdated: {
+            last_updated: {
                 label: i18n._('Last Updated'),
-                columnClass: 'col-md-3 col-sm-3 hidden-xs'
-            },
-        },
-/*
-        actions: {
-            add: {
-                label: i18n._('Create New'),
-                mode: 'all', // One of: edit, select, all
-                ngClick: 'addApp()',
-                awToolTip: i18n._('Create a new APP'),
-                actionClass: 'at-Button--add',
-                actionId: 'button-add',
-                ngShow: 'canAdd'
+                filter: "longDate",
+                columnClass: "col-lg-3 hidden-md hidden-sm hidden-xs",
+                excludeModal: true
             }
         },
-*/
         fieldActions: {
-
             columnClass: 'col-md-2 col-sm-3 col-xs-3',
-
             launch: {
                 label: i18n._('Launch'),
                 icon: 'icon-launch',
                	ngClick: "launchService(service.id)",
                 "class": 'btn-xs btn-default',
                 awToolTip: i18n._('Launch Service'),
+                dataPlacement: 'top',
+            },
+		    poweroff: {
+                label: i18n._('Stop Service'),
+                iconClass: 'fa fa-power-off',
+               	ngClick: "poweroffService(service.id, service.name)",
+                "class": 'btn-xs btn-default',
+                awToolTip: i18n._('Stop Service'),
+                dataPlacement: 'top',
+            },
+			remove: {
+                label: i18n._('Clean Service'),
+                iconClass: 'fa fa-remove',
+               	ngClick: "removeService(service.id, service.name)",
+                "class": 'btn-xs btn-default',
+                awToolTip: i18n._('Remove Service'),
                 dataPlacement: 'top',
             },
             edit: {
@@ -88,7 +91,7 @@ export default ['i18n', function(i18n) {
                 awToolTip: i18n._('Edit Service'),
                 dataPlacement: 'top',
             },
-			view: {
+            view: {
                 ngClick: "viewService(service.id)",
                 awToolTip: i18n._('View the Service'),
                 dataPlacement: 'top',

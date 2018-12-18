@@ -6,8 +6,148 @@ description: |
      Red Hat CloudForms
 
 hosts: all
-  
 
+cloud: false
+credential_type: Windows
+credential_input:
+    fields:
+      - type: string
+        id: username
+        label: Username
+      - secret: true
+        type: string
+        id: password
+        label: Password
+      - help_text: |
+          ansible_connection: winrm ansible_winrm_server_cert_validation: ignore
+        multiline: true
+        type: string
+        id: windows_options
+        label: Connection options
+    required:
+      - username
+      - password
+credential_prefix: 'CloudForm_'
+
+label_prefix: ''
+url: 'https://github.com/afahounko'
+project: 'https://github.com/ansible/ansible-tower-samples.git'
+playbook: 'local.yml'
+
+subitem_label_prefix: 'Configure'
+subitem_url: 'https://github.com/afahounko'
+subitem_project: 'https://github.com/ansible/ansible-tower-samples.git'
+subitem_playbook: 'local.yml'
+
+project:
+    name_prefix: 'Git_'
+    description: ''
+    scm_type: 'git'
+    scm_branch: ''
+    scm_url: 'https://git.afahounko.com/caas/providers/vmware_vcenter.git'
+    scm_clean: true
+    scm_delete_on_update: true
+    credential: null
+    timeout: 0
+    organization: 1
+    scm_update_on_launch: true
+    scm_update_cache_timeout: 0
+
+configure_job:
+    name_prefix: 'Configure_'
+    playbook: 'configure.yml'
+    description: ''
+    job_type: "run"
+    inventory: 1
+    forks: 0
+    limit: ''
+    verbosity: 0
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    job_tags: ''
+    force_handlers: false
+    skip_tags: ''
+    start_at_task: ''
+    timeout: 0
+    use_fact_cache: false
+    host_config_key: ''
+    ask_diff_mode_on_launch: false
+    ask_variables_on_launch: false
+    ask_limit_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_inventory_on_launch: false
+    ask_credential_on_launch: false
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    allow_simultaneous: false
+
+poweroff_job:
+    name_prefix: 'Poweroff_'
+    playbook: 'poweroff.yml'
+    description: ''
+    job_type: "run"
+    inventory: 1
+    forks: 0
+    limit: ''
+    verbosity: 0
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    job_tags: ''
+    force_handlers: false
+    skip_tags: ''
+    start_at_task: ''
+    timeout: 0
+    use_fact_cache: false
+    host_config_key: ''
+    ask_diff_mode_on_launch: false
+    ask_variables_on_launch: false
+    ask_limit_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_inventory_on_launch: false
+    ask_credential_on_launch: false
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    allow_simultaneous: false
+
+remove_job:
+    name_prefix: 'Remove_'
+    playbook: 'remove.yml'
+    description: ''
+    job_type: "run"
+    inventory: 1
+    forks: 0
+    limit: ''
+    verbosity: 0
+    extra_vars: ""
+    webapp_version: 91d7a895302744cfd3c5ad40cc261dec4b796de3
+    job_tags: ''
+    force_handlers: false
+    skip_tags: ''
+    start_at_task: ''
+    timeout: 0
+    use_fact_cache: false
+    host_config_key: ''
+    ask_diff_mode_on_launch: false
+    ask_variables_on_launch: false
+    ask_limit_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_inventory_on_launch: false
+    ask_credential_on_launch: false
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    allow_simultaneous: false
 
 addTitle: 'NEW SERVICE'
 editTitle: '{{ name }}'
@@ -18,6 +158,8 @@ basePath: 'ipam_services'
 stateTree: 'infraServicesList'
 breadcrumbName: 'INFRA SERVICE'
 showActions: true
+subFormTitles:
+    credentialSubForm: 'Credential Type Details'
 launchclick: 'addNew("cloudforms")'
 wizards: 
     basic: 
@@ -57,24 +199,56 @@ fields:
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 1'
 
-  datacenter: 
-    label: 'Datacenter'
+  kind:
+    label: 'Credential Type'
     type: 'select'
-    defaultText: 'Choose a Datacenter'
-    ngModel: 'datacenter'
-    ngOptions: 'item as item.label for item in datacenter_type_options'
-    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngOptions: 'item as item.label for item in kind_type_options'
+    ngValues: 'Windows'
+    opt: 'label'
+    ngChange: 'kindChange()'
+    required: true
+    awPopOver: '<p> Select the Cloud Kind for this Inventory to run on. </p>'
+    dataTitle: 'Credential Type'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    hasSubForm: true
+    disabled: true
     ngShow: 'tabId == 2'
-  
-  credential: 
-    label: 'Credential'
-    type: 'select'
-    defaultText: 'Choose a Credential'
-    ngModel: 'credential'
-    ngOptions: 'item as item.label for item in credential_type_options'
-    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
-    ngShow: 'tabId == 2'
-      
+
+  credential_username: 
+    label: 'UserName'
+    type: 'text'
+    ngShow: "kind.value && tabId == 2"
+    autocomplete: false
+    subForm: "credentialSubForm"
+    hideSubForm: 'tabId != 2'
+    required: true
+
+  credential_password: 
+    label: 'Password'
+    type: 'sensitive'
+    ngShow: "kind.value && tabId == 2"
+    clear: false
+    autocomplete: false
+    hasShowInputButton: true
+    excludeMode: 'edit'
+    subForm: "credentialSubForm"
+    required: true
+
+  credential_windows_options: 
+    label: 'Connection Options'
+    type: 'textarea'
+    class: 'Form-textAreaLabel Form-formGroup--fullWidth'
+    rows: 10
+    ngShow: "kind.value && tabId == 2"
+    awPopOver: "<p>ansible_connection: winrm<br/>ansible_winrm_server_cert_validation: ignore </p>"
+    awPopOverWatch: ""
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    autocomplete: false
+    subForm: "credentialSubForm"
+    excludeMode: 'edit'
+
   opts: 
     label: 'Input Opts'
     class: 'Form-textAreaLabel Form-formGroup--fullWidth'
