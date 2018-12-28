@@ -282,8 +282,11 @@ angular.module('ProviderSaver', ['Utilities'])
 
 .factory('chooseSelect', [function () {
         return function (datas, index) {
+        	console.log(datas);
         	var res_data;
-			for (var i = 0; i < datas.length; i++) {
+			for (var i in datas) {
+				console.log(i);
+				console.log(datas[i]);
                 if (('' + datas[i].value) === index) {
                 	console.log('same here');
                     res_data = datas[i];
@@ -351,7 +354,7 @@ angular.module('ProviderSaver', ['Utilities'])
             var new_project_id = 0, poweroff_id = 0, remove_id = 0;
             var scope = data_subitem;
             console.log(parentData);
-            
+
 			console.log(scope);
             Wait('start');
             
