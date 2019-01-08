@@ -1,8 +1,31 @@
 [![Run Status](https://api.shippable.com/projects/591c82a22f895107009e8b35/badge?branch=devel)](https://app.shippable.com/github/ansible/awx)
 
-AWX
+AHOME
 ===
 
+AHOME, Cloud as a Service, provides an intuitive web interface, which is a hassle-free tool able to
+document a complete private and public infrastructure and automate from scratch the provisioning of
+cloud solutions. The equipment to be provisioned can be physical or virtual and they can be located in
+private or public Cloud infrastructure.
+ahomé intuitively guides you through an automated step by step process as you document your
+infrastructure.
+And let ahomé do the rest.
+1. Document your infrastructure (organization, location, ip addresses, vlans, domains and
+gateways)
+2. Identify your physical equipment (network appliances, storage devices and physical
+machines)
+3. Specify your type of cloud infrastructure provider (Red Hat Enterprise Virtualization, Red Hat
+OpenShift Container Platform, KVM, Red Hat OpenStack, Amazon, Azure, Google EC)
+4. Specify your storage infrastructure (local, NFS, FIC, GlusterFS, CEPH)
+5. Define what kind of services you want to install (Red Hat products, Container applications)
+6. Ask ahomé to deploy and maintain your hybrid infrastructure
+Repeat and redo as many times…
+
+
+AHOME uses AWX as engine.
+
+AWX
+----
 AWX provides a web-based user interface, REST API, and task engine built on top of [Ansible](https://github.com/ansible/ansible). It is the upstream project for [Tower](https://www.ansible.com/tower), a commercial derivative of AWX.  
 
 To install AWX, please view the [Install guide](./INSTALL.md).
