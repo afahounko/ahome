@@ -25,7 +25,7 @@
  */
 
 
-
+ 
 export default
 angular.module('ProviderSaver', ['Utilities'])
 
@@ -300,17 +300,66 @@ angular.module('ProviderSaver', ['Utilities'])
 
 .factory('processExtras', ['$http', 
     function ($http) {
-        return function (obj, prefix) {
+        return function (obj, form, prefix) {
 		    var fld, subid;
 		    var data = "{";
+		    console.log(obj);
+		    console.log(form);
 		    for (fld in obj) {
-
-		        if (fld != "extra_vars" && fld != "opts") {
-		            data += "'" + prefix + fld + "':";
-		            if (obj[fld] != undefined) data += "'" + obj[fld] + "'";
-		            else data += "''";
-		            data += ",\n";
-		        }
+		    	if(form.fields[fld] && fld != 'credential')
+		    	{
+			        if(form.fields[fld].type == 'select')
+					{
+						data += "'" + prefix + fld + "':";
+						if(form.fields[fld].opt)
+						{
+							if(obj[fld] != undefined) data += "'" + obj[fld].label + "'";
+				    		else data += "''";
+				        }
+				        else
+				        {
+				        	if(obj[fld] != undefined) data += "'" + obj[fld].value + "'";
+				        	else data += "''";
+				        }
+				    	data += ",\n"; 
+				    	continue;
+					}
+					if(form.fields[fld].type == 'sensitive')
+					{
+						data += "'" + prefix + fld + "':'$Encrypted$',\n";
+				    	continue;
+					}
+					if(fld == "inventory_hosts" || fld == "instance_groups")
+					{
+						data += "'" + prefix + fld + "':";
+						console.log(obj[fld]);
+						if(obj[fld] != undefined && obj[fld] != '')
+						{
+							data += "'"
+							for(subid in obj[fld]){
+								data += obj[fld][subid].id + ',';
+							}
+							data = data.substring(0, data.length-1);
+							data += "',"; 
+						}
+						else data += "'',";
+						data+= "\n";
+						continue;
+					}
+					if(fld != "opts")
+					{
+				    	data += "'" + prefix + fld + "':";
+				    	if(obj[fld] != undefined) data += "'" + obj[fld] + "'";
+				    	else data += "''";
+				    	data += ",\n"; 
+				    }
+				}
+				else
+				{
+					data += "'" + prefix + fld + "':";
+			    	data += "'" + obj[fld] + "'";
+			    	data += ",\n"; 
+				}
 		    }
 		    data += "'extra_vars':''\n";
 		    data += "}";
@@ -362,42 +411,6 @@ angular.module('ProviderSaver', ['Utilities'])
             poweroff_credents = [],
             remove_credents = [];
 
-			/*console.log(form.configure_job.credentials);
-            if (form.configure_job.credentials !== undefined && form.configure_job.credentials !== null) {
-                var cred_ids = {};
-                cred_ids = form.configure_job.credentials.split(',');
-                console.log(cred_ids);
-                for (var ind = 0; ind < cred_ids.length; ind++) {
-                    var tmp_cred = {};
-                    tmp_cred.id = parseInt(cred_ids[ind]);
-                    credents.push(tmp_cred);
-                }
-            }
-            console.log(credents);
-            if (form.poweroff_job.credentials !== undefined && form.poweroff_job.credentials !== null) {
-                var cred_ids = {};
-                cred_ids = form.poweroff_job.credentials.split(',');
-                console.log(cred_ids);
-                for (var ind = 0; ind < cred_ids.length; ind++) {
-                    var tmp_cred = {};
-                    tmp_cred.id = parseInt(cred_ids[ind]);
-                    poweroff_credents.push(tmp_cred);
-                }
-            }
-            console.log(poweroff_credents);
-            if (form.remove_job.credentials !== undefined && form.remove_job.credentials !== null) {
-                var cred_ids = {};
-
-                cred_ids = form.remove_job.credentials.split(',');
-                console.log(cred_ids);
-                for (var ind = 0; ind < cred_ids.length; ind++) {
-                    var tmp_cred = {};
-                    tmp_cred.id = parseInt(cred_ids[ind]);
-                    remove_credents.push(tmp_cred);
-                }
-            }
-            console.log(remove_credents);
-            */
             console.log(data_subitem);
             if (data_subitem.multiCredential !== undefined && data_subitem.multiCredential !== null) {
                 var cred_ids = {};
@@ -412,7 +425,12 @@ angular.module('ProviderSaver', ['Utilities'])
                     remove_credents.push(tmp_cred);
                 }
             }
-            console.log(remove_credents);
+            var tmp_cred = {};
+            tmp_cred.id = parseInt(parentData.opts.credential_id);
+            credents.push(tmp_cred);
+            poweroff_credents.push(tmp_cred);
+            remove_credents.push(tmp_cred);
+            console.log(credents);
 
             //Project Saving
             if (form.project) {
@@ -454,7 +472,7 @@ angular.module('ProviderSaver', ['Utilities'])
 
                             if (data.status == 'successful') {
                             	data_subitem.project_id = new_project_id;
-                            	var extra_vars = processExtras(data_subitem, "ahome_");
+                            	var extra_vars = processExtras(data_subitem, form, "ahome_");
 
                             	console.log('Project status is succesful');
                                 //**************************** Make Job_Template named Prefix as "Poweroff_" and "Remove_" ************
@@ -532,7 +550,7 @@ angular.module('ProviderSaver', ['Utilities'])
                                                         console.log(url);
                                                         data.scm_type = "";
                                                         //data_subitem.opts = data_subitem.opts.slice(0, 1) + opts_field + data_subitem.opts.slice(1);
-                                                        data_subitem.opts = processExtras(data_subitem, '');
+                                                        data_subitem.opts = processExtras(data_subitem, form, '');
                                                         //data_subitem.opts = data_subitem;
                                                         console.log(data_subitem);
 

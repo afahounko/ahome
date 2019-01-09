@@ -171,6 +171,109 @@ fields:
     ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
     ngShow: 'tabId == 1'
 
+
+  environment:
+    label: 'Select environment'
+    type: 'select'
+    ngValues: 'PROD,DEV'
+    ngOptions: 'item as item.label for item in environment_type_options'
+    opt: 'label'
+    disableChooseOption: true
+    ngChange: 'statusChange()'
+    awPopOver: '<p> Select environment: <br/> PROD for Production environment. <br/> DEV for Developpement environment. </p>'
+    dataTitle: 'Target environment'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    ngShow: 'tabId == 1'
+
+  role:
+    label: 'Role'
+    type: 'select'
+    ngValues: 'GEN,WEB,APP,SDB'
+    ngOptions: 'item as item.label for item in role_type_options'
+    opt: 'label'
+    disableChooseOption: true
+    ngChange: 'statusChange()'
+    awPopOver: '<p> Select environment: <br/> GEN for Generic. <br/> WEB for web server.<br/> APP for Application server.<br/> SDB for System Data Base server. </p>'
+    dataTitle: 'Target role'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    ngShow: 'tabId == 1'
+
+  os:
+    label: 'Operating System'
+    type: 'select'
+    ngValues: 'Redhat74'
+    ngOptions: 'item as item.label for item in os_type_options'
+    opt: 'label'
+    disableChooseOption: true
+    ngChange: 'statusChange()'
+    awPopOver: '<p> Select Operating System: <br/> Redhat74 for Redhat 7.4. </p>'
+    dataTitle: 'Target OS'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    ngShow: 'tabId == 1'
+
+  num_cpus:
+    label: 'vCPU'
+    type: 'select'
+    ngValues: '1,2,3,4'
+    ngOptions: 'item as item.label for item in num_cpus_type_options'
+    opt: 'label'
+    disableChooseOption: true
+    ngChange: 'statusChange()'
+    awPopOver: '<p> select amount of vCPU to allocate to your VM.<br/> 1,2,3 or 4</p>'
+    dataTitle: 'Target CPU'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    ngShow: 'tabId == 1'
+
+  memory_mb:
+    label: 'RAM (mg)'
+    type: 'select'
+    ngValues: '1024,2048,3072,4096,5120,6144,7168,8192'
+    ngOptions: 'item as item.label for item in memory_mb_type_options'
+    opt: 'label'
+    disableChooseOption: true
+    ngChange: 'statusChange()'
+    awPopOver: '<p> select amount of memory (mb) to allocate to your VM.<br/> 1 024, 2 048, 3 072, 4 096, 5 120, 6 144, 7 168 or 8 192</p>'
+    dataTitle: 'Target RAM'
+    dataPlacement: 'right'
+    dataContainer: 'body'
+    ngShow: 'tabId == 1'
+
+  owner: 
+    label: 'User admin access'
+    awPopOver: '<p> Specify User name who have admin access. </p>'
+    type: 'text'
+    required: true
+    ngShow: 'tabId == 1'
+
+  nodename: 
+    label: 'Chef node name'
+    awPopOver: '<p> Specify a name if you want a specific name in chef console. </p>'
+    type: 'text'
+    required: true
+    ngShow: 'tabId == 1'
+
+  credential: 
+    label: Credential
+    type: 'select'
+    defaultText: 'Choose a Credential'
+    ngModel: 'credential'
+    ngOptions: 'item as item.label for item in credential_type_options'
+    ngSource: credentials
+    ngDisabled: '!(user_obj.summary_fields.user_capabilities.edit || canAdd)'
+    ngShow: 'tabId == 2'
+
+  guest_id: 
+    label: 'Guest ID'
+    type: 'text'
+    required: false
+    default: 'rhel7_64Guest'
+    ngShow: 'false'
+    ngDisabled: 'true'
+
   datacenter: 
     label: 'Datacenter'
     type: 'select'
