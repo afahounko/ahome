@@ -51,6 +51,8 @@ logger = logging.getLogger('awx.ipam.utils')
 # Load environment
 CURRENT = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = os.path.abspath(os.path.join(CURRENT, ".."))
+if os.path.exists("/opt/ipam_sources"):
+    BASE_DIR = "/opt"
 DIR_INFRASTRUCTURES = "%s/ipam_sources/infrastructures" % (BASE_DIR)
 DIR_RESOURCES = "%s/ipam_sources/resources" % (BASE_DIR)
 DIR_JOBS = "%s/ipam_sources/infrastructures" % (BASE_DIR)
