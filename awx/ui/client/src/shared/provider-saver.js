@@ -47,6 +47,29 @@ angular.module('ProviderSaver', ['Utilities'])
     }
 ])
 
+.factory('makeName', ['$http',
+	function ($http) {
+        return function (prefix, provider_type, job_type, name) {
+        	var res_name = '';
+        	var currentdate = new Date();
+        	//var time_suffix = currentdate.getDay() + "/"+currentdate.getMonth() + "/" + currentdate.getFullYear() + " @ " + currentdate.getHours() + ":" + currentdate.getMinutes() + ":" + currentdate.getSeconds();
+        	//var time_suffix = currentdate.getFullYear() + "_" + currentdate.getMonth() + "_" + currentdate.getDay() + "_" + currentdate.getHours() + "_" + currentdate.getMinutes() + "_" + currentdate.getSeconds();
+        	var time_suffix = "" + currentdate.getHours() + ":" + currentdate.getMinutes() + ":" + currentdate.getSeconds();
+
+        	if(prefix != undefined || prefix != '')
+        		res_name += prefix;
+        	if(provider_type != undefined || provider_type != '')
+        	    res_name += provider_type + '.';
+        	res_name += name;
+        	if(job_type != undefined || job_type != '')
+        		res_name += ('.' + job_type);
+        	res_name += '@' + time_suffix;
+        	
+        	return res_name;
+        };
+    }
+])
+
 .factory('SetActiveWizard', ['$http', 'GetBasePath', 'Rest', 'ProcessErrors', '$timeout',
 	function ($http, GetBasePath, Rest, ProcessErrors, $timeout) {
         return function (scope, tabId) {
@@ -395,8 +418,8 @@ angular.module('ProviderSaver', ['Utilities'])
     }
 ])
 
-.factory('SaveInfraSubItem', ['$http', '$rootScope', '$state', '$location', 'Store', 'ProcessErrors', 'ReturnToCaller', 'i18n', 'GetBasePath', '$filter', 'Rest', 'Wait', 'Prompt', 'processExtras',
-		function ($http, $rootScope, $state, $location, Store, ProcessErrors, ReturnToCaller, i18n, GetBasePath, $filter, Rest, Wait, Prompt, processExtras) {
+.factory('SaveInfraSubItem', ['$http', '$rootScope', '$state', '$location', 'Store', 'ProcessErrors', 'ReturnToCaller', 'i18n', 'GetBasePath', '$filter', 'Rest', 'Wait', 'Prompt', 'processExtras', 'LaunchRelatedJobTemplate', 'makeName',
+function ($http, $rootScope, $state, $location, Store, ProcessErrors, ReturnToCaller, i18n, GetBasePath, $filter, Rest, Wait, Prompt, processExtras, LaunchRelatedJobTemplate, makeName) {
         return function (parentData, url, form, data_subitem) {
 
             var fld, base, data = {}, data_project = {}, data_job = {};
@@ -431,14 +454,19 @@ angular.module('ProviderSaver', ['Utilities'])
             poweroff_credents.push(tmp_cred);
             remove_credents.push(tmp_cred);
             console.log(credents);
+            
+            console.log(parentData);
+            console.log(form);
+            console.log(data_subitem);
+            
 
             //Project Saving
             if (form.project) {
                 data_project = form.project;
-                data_project.name = data_project.name_prefix + scope.name;
+                data_project.name = makeName(data_project.name_prefix , data_subitem.fk_type, data_subitem.id_type, scope.name);
             }
             else {
-                data_project.name = form.configure_label_prefix + scope.name;
+                data_project.name = makeName(form.configure_label_prefix , data_subitem.fk_type, data_subitem.id_type, scope.name);
                 data_project.description = "";
                 data_project.scm_type = "git";
                 data_project.scm_url = form.configure_project;
@@ -478,7 +506,7 @@ angular.module('ProviderSaver', ['Utilities'])
                                 //**************************** Make Job_Template named Prefix as "Poweroff_" and "Remove_" ************
                                 //************************************ Save Poweroff_JobTemplate **********************************
                                 data_job = form.poweroff_job;
-                                data_job.name = data_job.name_prefix + scope.name;
+                                data_job.name = makeName(data_job.name_prefix , data_subitem.fk_type, data_subitem.id_type, scope.name);
                                 data_job.project = new_project_id;
                                 data_job.inventory = parentData.opts.inventory_id;
                                 data_job.extra_vars = extra_vars;
@@ -498,7 +526,7 @@ angular.module('ProviderSaver', ['Utilities'])
                                         }
                                         //************************************ Save Remove_JobTemplate **********************************
                                         data_job = form.remove_job;
-                                        data_job.name = data_job.name_prefix + scope.name;
+                                        data_job.name = makeName(data_job.name_prefix , data_subitem.fk_type, data_subitem.id_type, scope.name);
                                         data_job.project = new_project_id;
                                         data_job.inventory = parentData.opts.inventory_id;
                                         data_job.extra_vars = extra_vars;
@@ -519,7 +547,7 @@ angular.module('ProviderSaver', ['Utilities'])
                                                 }
                                                 //************************************ Save Configure_JobTemplate **********************************
                                                 data_job = form.configure_job;
-                                                data_job.name = data_job.name_prefix + scope.name;
+                                                data_job.name = makeName(data_job.name_prefix , data_subitem.fk_type, data_subitem.id_type, scope.name);
                                                 data_job.project = new_project_id;
                                                 data_job.inventory = parentData.opts.inventory_id;
 												data_job.extra_vars = extra_vars;
@@ -558,20 +586,28 @@ angular.module('ProviderSaver', ['Utilities'])
 
 														Rest.setUrl(url);
 														console.log(data_subitem);
+														data_subitem.name = scope.name;
                                                         Rest.post(data_subitem)
                                                             .then(({ data }) => {
                                                             	console.log(data);
                                                             	
                                                                 base = $location.path().replace(/^\//, '').split('/')[0];
                                                                 console.log(base);
-                                                                if (base === 'ipam_infrastructure_jobs') {
-                                                                    $rootScope.flashMessage = i18n._('New Job successfully created!');
-                                                                    $rootScope.$broadcast("EditIndicatorChange", "Job", data.id);
-																	Wait('stop');
-                                                                    $state.go('infraJobsList', null, { reload: true });
-                                                                } else {
-                                                                    //ReturnToCaller(1);
-                                                                }
+                                                                if(form.run_on_save != undefined)
+														        {
+														        	LaunchRelatedJobTemplate(url, data.id, null, 'template_id', 0, '');
+																}
+																else
+																{
+	                                                                if (base === 'ipam_infrastructure_jobs') {
+	                                                                    $rootScope.flashMessage = i18n._('New Job successfully created!');
+	                                                                    $rootScope.$broadcast("EditIndicatorChange", "Job", data.id);
+																		Wait('stop');
+	                                                                    $state.go('infraJobsList', null, { reload: true });
+	                                                                } else {
+	                                                                    //ReturnToCaller(1);
+	                                                                }
+	                                                            }
                                                                 console.log('InfraJob Post succeed');
                                                             })
                                                             .catch(({ data, status }) => {
@@ -629,8 +665,8 @@ angular.module('ProviderSaver', ['Utilities'])
 ])
 
 
-.factory('SaveFromCredential', ['$http', '$rootScope', '$state', '$location', '$q', 'Store', 'ProcessErrors', 'ReturnToCaller', 'i18n', 'GetBasePath', '$filter', 'Rest', 'Wait', 'Prompt', 'SaveInfraSubItem', 'processExtras', 'RollbackInfraSaving',
-function ($http, $rootScope, $state, $location, $q, Store, ProcessErrors, ReturnToCaller, i18n, GetBasePath, $filter, Rest, Wait, Prompt, SaveInfraSubItem, processExtras, RollbackInfraSaving) {
+.factory('SaveFromCredential', ['$http', '$rootScope', '$state', '$location', '$q', 'Store', 'ProcessErrors', 'ReturnToCaller', 'i18n', 'GetBasePath', '$filter', 'Rest', 'Wait', 'Prompt', 'SaveInfraSubItem', 'processExtras', 'RollbackInfraSaving', 'LaunchRelatedJobTemplate', 'makeName',
+function ($http, $rootScope, $state, $location, $q, Store, ProcessErrors, ReturnToCaller, i18n, GetBasePath, $filter, Rest, Wait, Prompt, SaveInfraSubItem, processExtras, RollbackInfraSaving, LaunchRelatedJobTemplate, makeName) {
 	return function (url, cred_types, form, data_item, opts_field, ret_addr) {
         var new_credents = [], new_ssh_credential = 0, new_project_id = 0, poweroff_id = 0, remove_id = 0;
 		var  data_project = {}, data_job = {}
@@ -638,16 +674,15 @@ function ($http, $rootScope, $state, $location, $q, Store, ProcessErrors, Return
 		var credential_data = [];
         
         console.log(cred_types);
-        
+        console.log(form);
+        console.log(data_item);
+        console.log(opts_field);
         //Posting Multi Credential for the Provider
         for (var i = 0; i < cred_types.length; i++) {
-        		console.log(data_item);
 	    		credential_data[i] = {};
 	        	credential_data[i].credential_type = cred_types[i];
 	        	
-	        	//if(cred_types[i]>1) credential_data[i].name = data_item.name;
-	        	//else  credential_data[i].name = form.credential_prefix + data_item.name;
-	        	credential_data[i].name = form.credential_prefix + data_item.name;
+	        	credential_data[i].name = makeName(form.credential_prefix, data_item.fk_type, '', data_item.name );
 
 	            credential_data[i].description = data_item.description;
 	            credential_data[i].user = 1;   // only for user type
@@ -692,7 +727,7 @@ function ($http, $rootScope, $state, $location, $q, Store, ProcessErrors, Return
 	                		
 							//Project Posting 2018.11.7
 			                data_project = form.project;
-			                data_project.name = data_project.name_prefix + data_item.name;
+			                data_project.name = makeName(data_project.name_prefix, data_item.fk_type, '', data_item.name );
 				            Rest.setUrl(GetBasePath('projects'));
 				            Rest.post(data_project)
 				                .then(({ data }) => {
@@ -726,7 +761,7 @@ function ($http, $rootScope, $state, $location, $q, Store, ProcessErrors, Return
 				                                //**************************** Make Job_Template named Prefix as "Poweroff_" and "Remove_" ************
 				                                //************************************ Save Poweroff_JobTemplate **********************************
 				                                data_job = form.poweroff_job;
-				                                data_job.name = data_job.name_prefix + data_item.name;
+				                                data_job.name = makeName(data_job.name_prefix , data_item.fk_type, '', data_item.name );
 
 				                                console.log(data_job);
 
@@ -750,7 +785,7 @@ function ($http, $rootScope, $state, $location, $q, Store, ProcessErrors, Return
 				                                        //************************************ Save Remove_JobTemplate **********************************
 
 						                                data_job = form.remove_job;
-						                                data_job.name = data_job.name_prefix + data_item.name;
+						                                data_job.name = makeName(data_job.name_prefix , data_item.fk_type, '', data_item.name );
 
 				                                        console.log(data_job);
 
@@ -773,7 +808,7 @@ function ($http, $rootScope, $state, $location, $q, Store, ProcessErrors, Return
 				                                                //************************************ Save Configure_JobTemplate **********************************
 
 								                                data_job = form.configure_job;
-								                                data_job.name = data_job.name_prefix + data_item.name;
+								                                data_job.name = makeName(data_job.name_prefix , data_item.fk_type, '', data_item.name );
 
 				                                                console.log(data_job);
 
@@ -795,6 +830,8 @@ function ($http, $rootScope, $state, $location, $q, Store, ProcessErrors, Return
 								                                        }
 												                		
 											                			Rest.setUrl(url);
+											                			var original_name = data_item.name;
+											                			
 														                Rest.post(data_item)
 															                .then(({data}) => {
 															                	var parentData = data;
@@ -819,7 +856,7 @@ function ($http, $rootScope, $state, $location, $q, Store, ProcessErrors, Return
 				                        													console.log(boxes[loopval]);
 																						    var data_subitem = {};
 				                        													data_subitem = parentData.related.opts
-				                        													data_subitem.name = data_item.name + '_auto_' + boxes[loopval];
+				                        													data_subitem.name = original_name + '_auto_' + boxes[loopval];
 				                        													data_subitem.id_type = boxes[loopval];
 				                        													data_subitem.fk_id = parentData.id;
 				                        													data_subitem.fk_type = parentData.related.opts.fk_type;
@@ -837,6 +874,12 @@ function ($http, $rootScope, $state, $location, $q, Store, ProcessErrors, Return
 														                		}
 														                		//else
 														                		//{
+														                		if(form.run_on_save != undefined)
+														                		{
+														                			LaunchRelatedJobTemplate(url, parentData.id, null, 'template_id', 0, '');
+														                		}
+														                		else
+														                		{		
 														                			console.log('No Subitem');
 														                			var base = $location.path().replace(/^\//, '').split('/')[0];
 														                			console.log(base);
@@ -848,6 +891,7 @@ function ($http, $rootScope, $state, $location, $q, Store, ProcessErrors, Return
 																                    } else {
 																                        ReturnToCaller(1);
 																                    }
+																                }
 																        //}
 															                })
 															                .catch(({data, status}) => {
@@ -911,8 +955,8 @@ function ($http, $rootScope, $state, $location, $q, Store, ProcessErrors, Return
 }
 ])
 
-.factory('SaveInfraItem', ['$http', '$rootScope', '$state', '$location', '$timeout', '$q', 'Store', 'ProcessErrors', 'ReturnToCaller', 'i18n', 'GetBasePath', '$filter', 'Rest', 'Wait', 'Prompt', 'SaveInfraSubItem', 'processExtras', 'SaveFromCredential', 'RollbackInfraSaving', 'checkExistApi',
-function ($http, $rootScope, $state, $location, $timeout, $q, Store, ProcessErrors, ReturnToCaller, i18n, GetBasePath, $filter, Rest, Wait, Prompt, SaveInfraSubItem, processExtras, SaveFromCredential, RollbackInfraSaving, checkExistApi) {
+.factory('SaveInfraItem', ['$http', '$rootScope', '$state', '$location', '$timeout', '$q', 'Store', 'ProcessErrors', 'ReturnToCaller', 'i18n', 'GetBasePath', '$filter', 'Rest', 'Wait', 'Prompt', 'SaveInfraSubItem', 'processExtras', 'SaveFromCredential', 'RollbackInfraSaving', 'checkExistApi', 'makeName',
+function ($http, $rootScope, $state, $location, $timeout, $q, Store, ProcessErrors, ReturnToCaller, i18n, GetBasePath, $filter, Rest, Wait, Prompt, SaveInfraSubItem, processExtras, SaveFromCredential, RollbackInfraSaving, checkExistApi, makeName) {
         return function (url, form, data_item, ret_addr) {
 			var fld, data = {};
 			var inventory_data = {}, host_data = {}, credential_type_data = {}, cred_types = {};
@@ -922,7 +966,7 @@ function ($http, $rootScope, $state, $location, $timeout, $q, Store, ProcessErro
 			    Wait('start');
 
 				//Posting Inventory for this provider
-	            inventory_data.name = data_item.name + ' Inventory';
+	            inventory_data.name = makeName('' , data_item.fk_type, '', data_item.name ) + '_Inventory';
 	            inventory_data.organization = 1;
         		Rest.setUrl(GetBasePath('inventory'));
                 Rest.post(inventory_data)
@@ -937,7 +981,7 @@ function ($http, $rootScope, $state, $location, $timeout, $q, Store, ProcessErro
 			        	opts_field = "'inventory_id':'" + data.id + "',\n";
                 		data_item.opts = data_item.opts.slice(0, 1) + opts_field + data_item.opts.slice(1);
 				        
-				        host_data.name = data_item.name.toLowerCase() + '_endpoint';
+				        host_data.name = makeName('' , data_item.fk_type, '', data_item.name ) + '_Endpoint';
 				        host_data.inventory = data.id;
 				        if(!data_item.windows_options) host_data.variables = 'ansible_connection: local';
 				        else host_data.variables = data_item.windows_options;
@@ -1415,15 +1459,15 @@ function ($http, $rootScope, $state, $location, $timeout, $q, Store, ProcessErro
     function ($rootScope, $stateParams, Store, LoadBasePaths, Empty, JobTemplate, GetBasePath, Rest, Wait, i18n, ProcessErrors) {
         return function (url, obj) {
             // use /api/v2/ results to construct API URLs.
-            console.log('Process ' + url);
+            //console.log('Process ' + url);
             Wait('start');
             Rest.setUrl(GetBasePath(url) + obj.id);
             Rest.get(GetBasePath(url) + obj.id).then(({data}) => {
             	var template_id = data.opts.template_id;
-            	console.log(data);
+            	//console.log(data);
             	Rest.setUrl(GetBasePath('job_templates') + template_id);
             	Rest.get(GetBasePath('job_templates') + template_id).then(({data}) => {
-            		console.log(data);
+            		//console.log(data);
             		if(data.summary_fields.last_job.status == 'successful')
             		{
 	            		obj.tool_tip = i18n._('Most recent job Succeed. Click to view job script.');
@@ -1434,7 +1478,7 @@ function ($http, $rootScope, $state, $location, $timeout, $q, Store, ProcessErro
 				    }
 				    obj.job_status = data.summary_fields.last_job.status;
 				    obj.last_id = data.summary_fields.last_job.id;
-				    console.log(obj);
+				    //console.log(obj);
 
 			        return obj;
 	 			})

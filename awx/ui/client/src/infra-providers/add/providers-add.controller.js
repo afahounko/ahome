@@ -239,9 +239,11 @@ export default ['$window', '$scope', '$rootScope', '$stateParams', 'ProviderForm
             });
             console.log(inputs);
             data.inputs = inputs;
+            data.fk_type = fk_type;
             if($scope.kind != null) data.kind = $scope.kind.value;
 			if($scope.datacenter != null) data.datacenter = $scope.datacenter.value;
             if($scope.credential != null) data.credential = $scope.credential.value;
+            
     		data.opts = $scope.opts;
             return data;
         };

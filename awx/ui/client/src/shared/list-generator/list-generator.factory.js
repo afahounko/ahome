@@ -97,9 +97,9 @@
 import { templateUrl } from '../../shared/template-url/template-url.factory';
 
 export default ['$compile', 'Attr', 'Icon',
-    'Column', 'DropDown', 'SelectIcon', 'ActionButton', 'i18n',
+    'Column', 'DropDown', 'SelectIcon', 'ActionButton', 'i18n', '$rootScope', '$window',
     function ($compile, Attr, Icon, Column, DropDown,
-        SelectIcon, ActionButton, i18n) {
+SelectIcon, ActionButton, i18n, $rootScope, $window) {
         return {
 
             setList: function (list) {
@@ -127,47 +127,66 @@ export default ['$compile', 'Attr', 'Icon',
                 console.log("buildBox");
                 var html = '',
                 	card, itm;
+                console.log(this);
+                //Added for filtering boxes with User Type
                 
+                var UserType = localStorage.getItem('isSuperUser');
                 //Added for Boxes Style : Truegarener 9/4
 	                    html += "<div class=\"MgmtCards\">";
 	                    for (itm in options.boxes) {
+	                    	var drawByFilter;
 	                        card = options.boxes[itm];
-	                        if (options.boxes[itm]['category'] !== undefined) {
-	                        	var category = options.boxes[itm]['category'];
-	                        	html += `<div class="MgmtCards-card" ng-show="paramCategory === '${category}'">`;
+	                        console.log(options.boxes[itm]);
+	                        
+	                        //Check for filtering 2019/1/21
+	                        if (options.boxes[itm]['hideNormal'] !== undefined) {
+	                        	console.log(UserType);
+	                        	if(options.boxes[itm]['hideNormal'] == true && UserType == 'false')
+	                        		drawByFilter = false;
+	                        	else
+	                        		drawByFilter = true;
 	                        }
 	                        else
+	                        	drawByFilter = true;
+	                        
+	                        //Draw Box only when checked true
+	                        if(drawByFilter)
 	                        {
-	                        	html += `<div class="MgmtCards-card">`;
-	                        }
-	                        	html += `<div class="MgmtCards-header">`;
-	                                html += `<div class="col-md-8"><h3 class="MgmtCards-label"> ${card.title}</h3><p>${(card.description || "Place organization description here")}</p></div>`;
-	                                if(card.logo != undefined && card.logo != null){
-	                                	html += `<div class="col-md-4"><img style="width:100px;position:absolute;" ng-src= ${card.logo}></img></div>`;	
-	                                }
-	                                else
-	                                {
-	                                	html += `<div class="col-md-4"><img style="width:85px;position:absolute;" ng-src= "/static/assets/logo/logo-ahome.png"></img></div>`;	
-	                                }
-	                                
-	                                //html += `<span class = "title">${(card.title || card.editTitle)}</span>`;
-	                                html += "<div class=\"MgmtCards-actionItems\">";
-		                                html += "<button class=\"MgmtCards-actionItem List-actionButton\"";
-										html += "ng-click='" + card.launchclick + "'";
-										html += "ng-show='current_user.is_superuser'";
-										html += "data-placement=\"top\" aw-tool-tip=\"{{'Create New'|translate}}\" data-original-title=\"\" title=\"\">";
-											html += "<i class=\"MgmtCards-actionItemIcon fa fa-paste\"></i>";
-										html += "</button>";
-									html += "</div>";
-									
-	                            html += `</div>`;
-	                        html += `</div>`;
+		                        if (options.boxes[itm]['category'] !== undefined) {
+		                        	var category = options.boxes[itm]['category'];
+		                        	html += `<div class="MgmtCards-card" ng-show="paramCategory === '${category}'">`;
+		                        }
+		                        else
+		                        {
+		                        	html += `<div class="MgmtCards-card">`;
+		                        }
+		                        	html += `<div class="MgmtCards-header">`;
+		                                html += `<div class="col-md-8"><h3 class="MgmtCards-label"> ${card.title}</h3><p>${(card.description || "Place organization description here")}</p></div>`;
+		                                if(card.logo != undefined && card.logo != null){
+		                                	html += `<div class="col-md-4"><img style="width:100px;position:absolute;" ng-src= ${card.logo}></img></div>`;	
+		                                }
+		                                else
+		                                {
+		                                	html += `<div class="col-md-4"><img style="width:85px;position:absolute;" ng-src= "/static/assets/logo/logo-ahome.png"></img></div>`;	
+		                                }
+		                                
+		                                //html += `<span class = "title">${(card.title || card.editTitle)}</span>`;
+		                                html += "<div class=\"MgmtCards-actionItems\">";
+			                                html += "<button class=\"MgmtCards-actionItem List-actionButton\"";
+											html += "ng-click='" + card.launchclick + "'";
+											html += "data-placement=\"top\" aw-tool-tip=\"{{'Create New'|translate}}\" data-original-title=\"\" title=\"\">";
+												html += "<i class=\"MgmtCards-actionItemIcon fa fa-paste\"></i>";
+											html += "</button>";
+										html += "</div>";
+										
+		                            html += `</div>`;
+		                        html += `</div>`;
+		                    }
 	                    }
 	                    html += "</div>";//boxes Holder
 	                //Modify Finished
                 return html;
             },
-
             build: function (options) {
                 this.list = options.list;
                 this.options = options;

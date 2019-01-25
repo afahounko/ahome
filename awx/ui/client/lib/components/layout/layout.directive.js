@@ -13,7 +13,8 @@ function AtLayoutController ($scope, $http, strings, ProcessErrors, $transitions
             vm.isSuperUser = $scope.$root.user_is_superuser || $scope.$root.user_is_system_auditor;
             vm.currentUsername = val.username;
             vm.currentUserId = val.id;
-
+            console.log(vm);
+			localStorage.setItem('isSuperUser', vm.isSuperUser);
             if (!vm.isSuperUser) {
                 checkOrgAdmin();
                 checkNotificationAdmin();

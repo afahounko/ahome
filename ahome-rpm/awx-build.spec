@@ -11,7 +11,7 @@
 %define service_configdir /etc/awx
 
 Summary: AHOME
-Name: awx
+Name: ahome
 Version: 2.1.0
 Release: 2%{dist}
 Source0: /dist/awx-%{version}.tar.gz

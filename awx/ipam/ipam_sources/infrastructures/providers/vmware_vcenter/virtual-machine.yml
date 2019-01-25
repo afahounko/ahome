@@ -22,7 +22,7 @@ project:
     scm_update_cache_timeout: 0
 
 configure_job:
-    name_prefix: 'Run_'
+    name_prefix: 'Configure_'
     playbook: 'create_vm.yml'
     description: ''
     job_type: "run"

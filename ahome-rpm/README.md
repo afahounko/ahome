@@ -80,3 +80,31 @@ Start and enable services (again, example for centos7)
     systemctl enable awx-channels-worker
     systemctl enable awx-daphne
     systemctl enable awx-web
+
+
+## External postgresql database
+
+The configuration is in /etc/awx/settings.py..
+
+more specific:
+
+    DATABASES = {
+        'default': {
+            'ATOMIC_REQUESTS': True,
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'awx',
+            'USER': 'DATABASE_USER',
+            'PASSWORD': 'DATABASE_PASSWORD',
+            'HOST': 'DATABASE_HOST',
+            'PORT': 'DATABASE_PORT',
+        }
+    }
+
+
+Run sql migrations (takes a few minutes)
+
+    sudo -u awx /opt/awx/bin/awx-manage migrate
+
+
+
+    

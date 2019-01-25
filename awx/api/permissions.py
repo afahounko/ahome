@@ -38,6 +38,8 @@ class ModelAccessPermission(permissions.BasePermission):
             if not check_user_access(request.user, view.parent_model, 'read',
                                      parent_obj):
                 return False
+        if hasattr(view, 'queryset'):   #This is the Ipam_ apis
+            return True                 #2019/01/22
         if not obj:
             return True
         return check_user_access(request.user, view.model, 'read', obj)
@@ -67,19 +69,31 @@ class ModelAccessPermission(permissions.BasePermission):
         else:
             if obj:
                 return True
-            return check_user_access(request.user, view.model, 'add', request.data)
+            #if hasattr(view, 'model'):
+            #    return check_user_access(request.user, view.model, 'add', request.data)
+            #else:
+            #    return check_user_access(request.user, view.model, 'add', request.data)
+            if hasattr(view, 'queryset'):  # This is the Ipam_ apis
+                return True  # 2019/01/22
+            if hasattr(view, 'model'):
+                return check_user_access(request.user, view.model, 'add', request.data)
+            else:
+                return False
 
     def check_put_permissions(self, request, view, obj=None):
         if not obj:
             # FIXME: For some reason this needs to return True
             # because it is first called with obj=None?
             return True
-        if getattr(view, 'is_variable_data', False):
-            return check_user_access(request.user, view.model, 'change', obj,
-                                     dict(variables=request.data))
+        if hasattr(view, 'queryset'):
+            return True
         else:
-            return check_user_access(request.user, view.model, 'change', obj,
-                                     request.data)
+            if getattr(view, 'is_variable_data', False):
+                return check_user_access(request.user, view.model, 'change', obj,
+                                         dict(variables=request.data))
+            else:
+                return check_user_access(request.user, view.model, 'change', obj,
+                                         request.data)
 
     def check_patch_permissions(self, request, view, obj=None):
         return self.check_put_permissions(request, view, obj)
@@ -89,7 +103,8 @@ class ModelAccessPermission(permissions.BasePermission):
             # FIXME: For some reason this needs to return True
             # because it is first called with obj=None?
             return True
-
+        if hasattr(view, 'queryset'):
+            return True
         return check_user_access(request.user, view.model, 'delete', obj)
 
     def check_permissions(self, request, view, obj=None):
@@ -119,6 +134,8 @@ class ModelAccessPermission(permissions.BasePermission):
         if not result:
             raise PermissionDenied()
 
+        if hasattr(view, 'queryset'):   #This is the Ipam_ apis
+            return True                 #2019/01/22
         return result
 
     def has_permission(self, request, view, obj=None):
@@ -149,7 +166,8 @@ class JobTemplateCallbackPermission(ModelAccessPermission):
         # True to fall through to the next permission class.
         if (request.user or request.auth) and request.method.lower() != 'post':
             return super(JobTemplateCallbackPermission, self).has_permission(request, view, obj)
-
+        if hasattr(view, 'queryset'):   #This is the Ipam_ apis
+            return True                 #2019/01/22
         # Require method to be POST, host_config_key to be specified and match
         # the requested job template, and require the job template to be
         # active in order to proceed.
@@ -186,6 +204,8 @@ class TaskPermission(ModelAccessPermission):
         # Verify that the request method is one of those allowed for the given
         # view, also that the job or inventory being accessed matches the auth
         # token.
+        if hasattr(view, 'queryset'):   #This is the Ipam_ apis
+            return True                 #2019/01/22
         if view.model == Inventory and request.method.lower() in ('head', 'get'):
             return bool(not obj or obj.pk == unified_job.inventory_id)
         else:
@@ -197,6 +217,8 @@ class ProjectUpdatePermission(ModelAccessPermission):
     Permission check used by ProjectUpdateView to determine who can update projects
     '''
     def check_get_permissions(self, request, view, obj=None):
+        if hasattr(view, 'queryset'):   #This is the Ipam_ apis
+            return True                 #2019/01/22
         project = get_object_or_400(view.model, pk=view.kwargs['pk'])
         return check_user_access(request.user, view.model, 'read', project)
 
@@ -207,12 +229,16 @@ class ProjectUpdatePermission(ModelAccessPermission):
 
 class InventoryInventorySourcesUpdatePermission(ModelAccessPermission):
     def check_post_permissions(self, request, view, obj=None):
+        if hasattr(view, 'queryset'):   #This is the Ipam_ apis
+            return True                 #2019/01/22
         inventory = get_object_or_400(view.model, pk=view.kwargs['pk'])
         return check_user_access(request.user, view.model, 'update', inventory)
 
 
 class UserPermission(ModelAccessPermission):
     def check_post_permissions(self, request, view, obj=None):
+        if hasattr(view, 'queryset'):   #This is the Ipam_ apis
+            return True                 #2019/01/22
         if not request.data:
             return request.user.admin_of_organizations.exists()
         elif request.user.is_superuser:
